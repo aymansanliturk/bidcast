@@ -162,6 +162,11 @@
       </div>
     </div>
     <div class="brand-right">
+      <label id="logo-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1.5px solid var(--border);border-radius:20px;background:var(--surface);font-size:10px;font-weight:600;color:var(--faint);letter-spacing:0.5px;text-transform:uppercase;transition:border-color 0.15s,color 0.15s;flex-shrink:0;" title="Upload company logo" onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--faint)';">
+      <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
+      <img id="company-logo-img" src="" alt="" style="height:18px;width:auto;max-width:72px;object-fit:contain;display:none;border-radius:2px;">
+      <span id="company-logo-lbl" style="white-space:nowrap;">⬆ Logo</span>
+    </label>
       <a href="/" style="font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;padding:4px 12px;border:1.5px solid var(--accent);border-radius:20px;transition:all 0.15s;" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">⌂ Home</a>
       <div class="brand-desc">SVG Connectors &nbsp;·&nbsp; Vacancy Nodes &nbsp;·&nbsp; Auto-Scale &nbsp;·&nbsp; PDF Export</div>
       <span class="v-badge">v1.2</span>
@@ -259,7 +264,7 @@
     <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;background:#c0392b;" onclick="exportPDF()">⬇ PDF</button>
   </div>
   <div class="chart-header">
-    <div class="logo-area"><img id="out-logo" src="" alt="Company Logo"></div>
+    <div class="logo-area"><img id="out-logo" src="" alt="Company Logo" style="display:none;"></div>
     <div class="title-block">
       <h1 id="out-title"></h1>
       <div class="sub" id="out-sub"></div>
@@ -831,35 +836,32 @@
   }
 
 
+
   function handleLogoUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(ev) {
-      const data = ev.target.result;
-      localStorage.setItem('companyLogo', data);
-      applyLogo(data);
+      localStorage.setItem('companyLogo', ev.target.result);
+      applyLogo(ev.target.result);
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   }
   function clearLogo() {
     localStorage.removeItem('companyLogo');
     applyLogo('');
   }
   function applyLogo(src) {
-    const outLogo = document.getElementById('out-logo');
-    const prev = document.getElementById('logo-preview');
-    const placeholder = document.getElementById('logo-placeholder');
-    if (outLogo) { outLogo.src = src; outLogo.style.display = src ? '' : 'none'; }
-    if (prev) { prev.src = src; prev.style.display = src ? '' : 'none'; }
-    if (placeholder) placeholder.style.display = src ? 'none' : '';
+    const outEl  = document.getElementById('out-logo');
+    const btnImg = document.getElementById('company-logo-img');
+    const btnLbl = document.getElementById('company-logo-lbl');
+    if (outEl) { outEl.src = src || ''; outEl.style.display = src ? '' : 'none'; }
+    if (btnImg) { btnImg.src = src || ''; btnImg.style.display = src ? '' : 'none'; }
+    if (btnLbl) btnLbl.style.display = src ? 'none' : '';
   }
   (function initLogo() {
     const saved = localStorage.getItem('companyLogo');
-    if (saved) { setTimeout(function(){ applyLogo(saved); }, 50); }
-    const prev = document.getElementById('logo-preview');
-    const ph = document.getElementById('logo-placeholder');
-    if (saved && prev) { prev.src = saved; prev.style.display = ''; if(ph) ph.style.display='none'; }
+    if (saved) applyLogo(saved);
   })();
 </script>
 </body>
