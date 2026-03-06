@@ -6,6 +6,7 @@
 <title>RFQCAST — Supplier RFQ Overview</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -254,6 +255,19 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     </button>
     <div class="pb-sep"></div>
     <button class="pb-btn export" onclick="exportHTML()">Export HTML</button>
+    <button class="pb-btn" onclick="exportPDF()" title="Export as PDF">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      PDF
+    </button>
+    <div class="pb-sep"></div>
+    <button class="pb-btn" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+      Undo
+    </button>
+    <button class="pb-btn" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
+      Redo
+    </button>
   </div>
 
   <div class="section">
@@ -1072,6 +1086,74 @@ window.addEventListener('afterprint', function() {
   const today = new Date();
   document.getElementById('doc-date').value = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
 })();
+
+// ── Undo / Redo ──
+let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
+
+function _snapshot() {
+  if (_suppHist) return;
+  const s = JSON.stringify(collectState());
+  if (_hist[_histIdx] === s) return;
+  _hist = _hist.slice(0, _histIdx + 1);
+  _hist.push(s);
+  if (_hist.length > 50) _hist.shift(); else _histIdx++;
+  _syncUndoUI();
+}
+function _scheduleSnap() {
+  if (_suppHist) return;
+  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
+}
+function undo() {
+  clearTimeout(_histTimer);
+  if (_histIdx <= 0) return;
+  _suppHist = true; _histIdx--;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+function redo() {
+  clearTimeout(_histTimer);
+  if (_histIdx >= _hist.length - 1) return;
+  _suppHist = true; _histIdx++;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+function _syncUndoUI() {
+  const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+  if (u) u.disabled = _histIdx <= 0;
+  if (r) r.disabled = _histIdx >= _hist.length - 1;
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+});
+(function() {
+  const _rawApply = applyState;
+  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
+  const ed = document.getElementById('editor');
+  if (ed) {
+    new MutationObserver(() => {
+      if (_suppHist) return;
+      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
+    }).observe(ed, { childList: true, subtree: true });
+    ed.addEventListener('input', _scheduleSnap);
+  }
+  setTimeout(_snapshot, 300);
+})();
+
+// ── PDF Export ──
+async function exportPDF() {
+  const inEditor = document.getElementById('editor').style.display !== 'none';
+  if (inEditor) { generate(); await new Promise(r => setTimeout(r, 400)); }
+  const state = collectState();
+  const name = (state.projName || 'rfqcast').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const fmt = (state.format || 'A3').toUpperCase();
+  html2pdf().set({
+    margin: 0, filename: name + '.pdf',
+    image: { type: 'jpeg', quality: 0.97 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: fmt === 'A4' ? 'a4' : 'a3', orientation: 'landscape' }
+  }).from(document.getElementById('output')).save().then(() => { if (inEditor) goBack(); });
+}
 </script>
 </body>
 </html>
