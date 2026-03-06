@@ -181,6 +181,12 @@
       </div>
     </div>
     <div class="brand-right">
+      <label id="logo-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:1.5px solid var(--border);border-radius:20px;background:var(--surface);font-size:10px;font-weight:600;color:var(--faint);letter-spacing:0.5px;text-transform:uppercase;transition:border-color 0.15s,color 0.15s;flex-shrink:0;" title="Upload company logo" onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)';" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--faint)';">
+      <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
+      <img id="company-logo-img" src="" alt="" style="height:18px;width:auto;max-width:72px;object-fit:contain;display:none;border-radius:2px;">
+      <span id="company-logo-lbl" style="white-space:nowrap;">⬆ Logo</span>
+    </label>
+      <a href="/" style="font-size:11px;font-weight:600;color:var(--accent);text-decoration:none;padding:4px 12px;border:1.5px solid var(--accent);border-radius:20px;transition:all 0.15s;" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--accent)'">&#8962; Home</a>
       <span class="v-badge">v1.0</span>
       <div class="brand-desc">Hours · Rates · DKK Hedge · Cost Breakdown</div>
     </div>
@@ -214,21 +220,7 @@
 
   <!-- Project Info -->
   <div class="section">
-        <div style="margin-bottom:14px;">
-      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:8px;">Logo</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:60px;height:32px;border:1.5px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fafaf8;">
-          <img id="logo-preview" src="" style="max-height:30px;max-width:58px;object-fit:contain;display:none;" alt="Logo">
-          <span id="logo-placeholder" style="font-size:9px;color:var(--faint);text-align:center;line-height:1.3;">No<br>Logo</span>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:5px;">
-          <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="handleLogoUpload(event)">
-          <button onclick="document.getElementById('logo-upload').click()" style="font-size:10px;padding:3px 10px;cursor:pointer;border:1.5px solid var(--border);border-radius:4px;background:var(--surface);">Upload Logo</button>
-          <button onclick="clearLogo()" style="font-size:10px;padding:3px 10px;cursor:pointer;border:1.5px solid var(--border);border-radius:4px;background:var(--surface);">Remove</button>
-        </div>
-      </div>
-    </div>
-<div class="section-title">Project Information</div>
+    <div class="section-title">Project Information</div>
     <div class="fields f3">
       <label>Project Name
         <input type="text" id="proj-name" placeholder="e.g. Offshore Substation — Package 3">
@@ -927,35 +919,34 @@
     addExpense({label:'Tools & Software',        amount:3000});
   })();
 
+
   function handleLogoUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
     const reader = new FileReader();
     reader.onload = function(ev) {
-      const data = ev.target.result;
-      localStorage.setItem('companyLogo', data);
-      applyLogo(data);
+      localStorage.setItem('companyLogo', ev.target.result);
+      applyLogo(ev.target.result);
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
   }
   function clearLogo() {
     localStorage.removeItem('companyLogo');
     applyLogo('');
   }
   function applyLogo(src) {
-    const outLogo = document.getElementById('out-logo');
-    const prev = document.getElementById('logo-preview');
-    const placeholder = document.getElementById('logo-placeholder');
-    if (outLogo) { outLogo.src = src; outLogo.style.display = src ? '' : 'none'; }
-    if (prev) { prev.src = src; prev.style.display = src ? '' : 'none'; }
-    if (placeholder) placeholder.style.display = src ? 'none' : '';
+    const outEl  = document.getElementById('out-logo');
+    const outTxt = document.getElementById('out-logo-text');
+    const btnImg = document.getElementById('company-logo-img');
+    const btnLbl = document.getElementById('company-logo-lbl');
+    if (outEl)  { outEl.src = src || ''; outEl.style.display = src ? '' : 'none'; }
+    if (outTxt) outTxt.style.display = src ? 'none' : '';
+    if (btnImg) { btnImg.src = src || ''; btnImg.style.display = src ? '' : 'none'; }
+    if (btnLbl) btnLbl.style.display = src ? 'none' : '';
   }
   (function initLogo() {
     const saved = localStorage.getItem('companyLogo');
-    if (saved) { setTimeout(function(){ applyLogo(saved); }, 50); }
-    const prev = document.getElementById('logo-preview');
-    const ph = document.getElementById('logo-placeholder');
-    if (saved && prev) { prev.src = saved; prev.style.display = ''; if(ph) ph.style.display='none'; }
+    if (saved) applyLogo(saved);
   })();
 </script>
 </body>
