@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 120" width="280" height="120">
+  <!-- Background: transparent -->
+
+  <!-- ── Connections / lines ── -->
+  <!-- Left cluster -->
+  <line x1="30" y1="60" x2="70" y2="30" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="30" y1="60" x2="70" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="30" y1="60" x2="70" y2="90" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="70" y1="30" x2="110" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="70" y1="60" x2="110" y2="30" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="70" y1="60" x2="110" y2="90" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="70" y1="90" x2="110" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Mid cluster -->
+  <line x1="110" y1="30" x2="150" y2="30" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="110" y1="30" x2="150" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="110" y1="60" x2="150" y2="30" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="110" y1="60" x2="150" y2="90" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="110" y1="90" x2="150" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="110" y1="90" x2="150" y2="90" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Right cluster -->
+  <line x1="150" y1="30" x2="190" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="150" y1="60" x2="190" y2="30" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="150" y1="60" x2="190" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="150" y1="90" x2="190" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="190" y1="30" x2="250" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="190" y1="60" x2="250" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+  <line x1="190" y1="90" x2="250" y2="60" stroke="#647d98" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- ── Nodes ── -->
+  <!-- Anchor left — large navy -->
+  <circle cx="30" cy="60" r="13" fill="#3d5082"/>
+
+  <!-- Left column -->
+  <circle cx="70" cy="30" r="8" fill="#7bbfb5"/>
+  <circle cx="70" cy="60" r="8" fill="#c4b2d4"/>
+  <circle cx="70" cy="90" r="8" fill="#e8b898"/>
+
+  <!-- Mid-left column -->
+  <circle cx="110" cy="30" r="8" fill="#e8b898"/>
+  <circle cx="110" cy="60" r="11" fill="#7bbfb5"/>
+  <circle cx="110" cy="90" r="8" fill="#c4b2d4"/>
+
+  <!-- Centre column -->
+  <circle cx="150" cy="30" r="8" fill="#c4b2d4"/>
+  <circle cx="150" cy="60" r="13" fill="#7bbfb5"/>
+  <circle cx="150" cy="90" r="8" fill="#e8b898"/>
+
+  <!-- Mid-right column -->
+  <circle cx="190" cy="30" r="8" fill="#3d5082"/>
+  <circle cx="190" cy="60" r="8" fill="#c4b2d4"/>
+  <circle cx="190" cy="90" r="8" fill="#7bbfb5"/>
+
+  <!-- Anchor right — large teal -->
+  <circle cx="250" cy="60" r="13" fill="#4dbfbd"/>
+</svg>
