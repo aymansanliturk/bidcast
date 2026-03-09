@@ -32,6 +32,7 @@
 .suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); }
 .suite-nav-right { display:flex; align-items:center; gap:8px; }
 .logo-status { font-size:10px; font-weight:600; color:var(--green); }
+.suite-sync-badge { font-size:10px; font-weight:600; color:var(--accent); background:#eef2fb; border:1px solid #c8d6f0; border-radius:20px; padding:3px 10px; letter-spacing:0.2px; }
 
 /* ── EDITOR ── */
   #editor { max-width: 1280px; margin: 0 auto; padding: 24px 28px 60px; }
@@ -183,6 +184,7 @@
     <button class="pb-btn" onclick="document.getElementById('logo-input').click()" title="Upload logo &#8212; stored locally in your browser only">&#128444; Logo</button>
     <span id="logo-status" class="logo-status" style="display:none;">&#10003; Logo set</span>
     <button id="logo-clear" class="pb-btn" onclick="clearLogo()" style="display:none; color:#c0392b;">&#215; Remove</button>
+      <span id="suite-sync-badge" class="suite-sync-badge" style="display:none"></span>
   </div>
 </nav>
 
@@ -897,6 +899,7 @@ function updateLogoUI() {
     _hist=_hist.slice(0,_histIdx+1); _hist.push(s);
     if(_hist.length>50) _hist.shift(); else _histIdx++;
     _syncUndoUI();
+  suiteWrite();
   }
   function _scheduleSnap() { if(_suppHist)return; clearTimeout(_histTimer); _histTimer=setTimeout(_snapshot,800); }
   function undo() { clearTimeout(_histTimer); if(_histIdx<=0)return; _suppHist=true; _histIdx--; applyState(JSON.parse(_hist[_histIdx])); _suppHist=false; _syncUndoUI(); }
@@ -935,6 +938,81 @@ function updateLogoUI() {
 
 // Init logo UI
 document.addEventListener('DOMContentLoaded', updateLogoUI);
+
+/* ── SUITE SYNC ── */
+function _syncRoleKey(title) {
+  const t = (title||'').toLowerCase();
+  if (t.includes('bid') || t.includes('sales')) return 'bid-sales';
+  if (t.includes('contract')) return 'contract';
+  if ((t.includes('tech') || t.includes('tpm')) && (t.includes('pm') || t.includes('proj'))) return 'tpm';
+  if (t.includes('project man') || /\bpm\b/.test(t) || t.includes('proj mgr')) return 'pm';
+  if (t.includes('planner') || t.includes('planning')) return 'planner';
+  if (t.includes('cpms')) return 'cpms';
+  if (t.includes('engineer')) return 'engineering';
+  if (t.includes('procure') || t.includes('buyer') || t.includes('purchas')) return 'procurement';
+  if (t.includes('quality') || t.includes('qa')) return 'quality';
+  if (t.includes('hse') || t.includes('safety')) return 'hse';
+  if (t.includes('manag') || t.includes('director') || t.includes('head')) return 'management';
+  return 'other';
+}
+const _SYNC_COLORS = {'bid-sales':'#7b4fa6','contract':'#8a3a2a','pm':'#2c4e87','tpm':'#1a6b8a',
+  'planner':'#00695c','cpms':'#4a5568','engineering':'#3a7a52','procurement':'#b36a00',
+  'quality':'#2e7d32','hse':'#c0392b','management':'#1a1916','other':'#6b6860'};
+
+function suiteWrite() {
+  try {
+    const state = collectState();
+    const team  = (state.roles||[]).filter(r=>r.name).map(r => ({
+      syncId: 'rc_' + r.id,
+      name: '', title: r.name,
+      roleKey: _syncRoleKey(r.name),
+      company: r.company || 'ourco',
+      color: _SYNC_COLORS[_syncRoleKey(r.name)] || '#6b6860',
+    }));
+    const prev = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+    localStorage.setItem('bidcast_suite_sync', JSON.stringify({
+      ...prev,
+      projectName: state.projName || prev.projectName || '',
+      team: team.length ? team : (prev.team || []),
+      _ts: Date.now(), _from: 'resourcecast',
+    }));
+    _updateSyncBadge();
+  } catch(e) {}
+}
+function suiteRead(sync) {
+  try {
+    if (!sync || sync._from === 'resourcecast') { _updateSyncBadge(); return; }
+    if (sync.phases && sync.phases.length) {
+      const existing = new Set(getPhases().map(p => p.name.trim().toLowerCase()));
+      const toAdd = sync.phases.filter(p => p.name && !existing.has(p.name.trim().toLowerCase()));
+      toAdd.forEach(p => addPhase({ name: p.name }));
+      if (toAdd.length) updateTotals();
+    }
+    _updateSyncBadge();
+  } catch(e) {}
+}
+function _updateSyncBadge() {
+  try {
+    const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+    const el = document.getElementById('suite-sync-badge');
+    if (!el) return;
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '\u21bb Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  } catch(e) {}
+}
+window.addEventListener('storage', e => {
+  if (e.key !== 'bidcast_suite_sync') return;
+  suiteRead(e.newValue ? JSON.parse(e.newValue) : null);
+});
+document.addEventListener('DOMContentLoaded', () => {
+  _updateSyncBadge();
+  suiteRead(JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}'));
+  setTimeout(suiteWrite, 900);
+});
+
 </script>
 </body>
 </html>

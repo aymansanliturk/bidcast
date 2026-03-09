@@ -43,6 +43,7 @@
 .suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); }
 .suite-nav-right { display:flex; align-items:center; gap:8px; }
 .logo-status { font-size:10px; font-weight:600; color:var(--green); }
+.suite-sync-badge { font-size:10px; font-weight:600; color:var(--accent); background:#eef2fb; border:1px solid #c8d6f0; border-radius:20px; padding:3px 10px; letter-spacing:0.2px; }
 
 /* ══════════════════════════════════════
      EDITOR
@@ -304,6 +305,7 @@
     <button class="pb-btn" onclick="document.getElementById('logo-input').click()" title="Upload logo &#8212; stored locally in your browser only">&#128444; Logo</button>
     <span id="logo-status" class="logo-status" style="display:none;">&#10003; Logo set</span>
     <button id="logo-clear" class="pb-btn" onclick="clearLogo()" style="display:none; color:#c0392b;">&#215; Remove</button>
+      <span id="suite-sync-badge" class="suite-sync-badge" style="display:none"></span>
   </div>
 </nav>
 
@@ -1197,6 +1199,7 @@ function updateLogoUI() {
     _hist.push(s);
     if (_hist.length > 50) _hist.shift(); else _histIdx++;
     _syncUndoUI();
+    suiteWrite();
   }
   function _scheduleSnap() {
     if (_suppHist) return;
@@ -1254,6 +1257,46 @@ function updateLogoUI() {
 
 // Init logo UI
 document.addEventListener('DOMContentLoaded', updateLogoUI);
+
+/* ── SUITE SYNC ── */
+function suiteWrite() {
+  try {
+    const state = collectState();
+    const proj  = (state.projects || [])[0] || {};
+    const seen  = new Set(), phases = [];
+    [...(proj.bidTasks||[]), ...(proj.execTasks||[])].forEach(t => {
+      if (t.type === 'bar' && t.name && !seen.has(t.name)) {
+        seen.add(t.name);
+        phases.push({ id: 'tc_' + phases.length, name: t.name });
+      }
+    });
+    const prev = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+    localStorage.setItem('bidcast_suite_sync', JSON.stringify({
+      ...prev,
+      projectName: proj.title || state.chartTitle || prev.projectName || '',
+      phases: phases.length ? phases : (prev.phases || []),
+      _ts: Date.now(), _from: 'timecast',
+    }));
+    _updateSyncBadge();
+  } catch(e) {}
+}
+function _updateSyncBadge() {
+  try {
+    const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+    const el = document.getElementById('suite-sync-badge');
+    if (!el) return;
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '\u21bb Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  } catch(e) {}
+}
+window.addEventListener('storage', e => {
+  if (e.key === 'bidcast_suite_sync') _updateSyncBadge();
+});
+document.addEventListener('DOMContentLoaded', () => { _updateSyncBadge(); setTimeout(suiteWrite, 900); });
+
 </script>
 </body>
 </html>
