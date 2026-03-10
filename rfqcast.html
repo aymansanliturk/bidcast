@@ -1304,6 +1304,8 @@ function exportPDF() {
 // Init
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
+  const _saved = localStorage.getItem('bidcast_state_rfqcast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
   // If no equipment types after state restore, add a starter
   setTimeout(() => {
     if (!document.querySelector('.et-card')) addEquipType({ name: 'GIS', color: '#2c4e87' });

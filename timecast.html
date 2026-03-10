@@ -1328,7 +1328,10 @@ window.addEventListener('storage', e => {
   if (e.key !== 'bidcast_suite_sync') return;
   suiteRead(e.newValue ? JSON.parse(e.newValue) : null);
 });
-document.addEventListener('DOMContentLoaded', () => { _updateSyncBadge(); suiteRead(JSON.parse(localStorage.getItem('bidcast_suite_sync')||'{}')); setTimeout(suiteWrite, 900); });
+document.addEventListener('DOMContentLoaded', () => {
+  const _saved = localStorage.getItem('bidcast_state_timecast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  _updateSyncBadge(); suiteRead(JSON.parse(localStorage.getItem('bidcast_suite_sync')||'{}')); setTimeout(suiteWrite, 900); });
 
 </script>
 </body>

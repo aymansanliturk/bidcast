@@ -927,7 +927,11 @@ function exportPDF() {
 }
 
 // Init logo UI
-document.addEventListener('DOMContentLoaded', updateLogoUI);
+document.addEventListener('DOMContentLoaded', () => {
+  updateLogoUI();
+  const _saved = localStorage.getItem('bidcast_state_dorcast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+});
 </script>
 </body>
 </html>
