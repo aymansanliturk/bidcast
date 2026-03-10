@@ -214,3 +214,154 @@ python3 -m http.server 8080  # then visit http://localhost:8080
 ### DORCast (`dorcast.html`)
 - Has a preset modal to load standard responsibility templates
 - Supports multiple parties (columns) with free-form naming
+
+## Function Index by File
+
+Shared functions present in every tool (not repeated below):
+- `saveLogo()` / `clearLogo()` / `updateLogoUI()` — logo persistence
+- `collectState()` / `applyState()` — state serialization
+- `saveJSON()` / `loadJSON()` / `exportHTML()` — file I/O
+- `exportPDF()` — PDF via html2pdf.js
+- `setFormat()` — print page size toggle
+- `goBack()` — switch output → editor
+- `_snapshot()` / `_scheduleSnap()` / `undo()` / `redo()` / `_syncUndoUI()` — undo/redo
+- `suiteWrite()` / `suiteRead()` / `_updateSyncBadge()` — suite sync
+
+### timecast.html
+
+| Function | Description |
+|----------|-------------|
+| `monthOpts()` | Generates HTML option elements for month select dropdowns |
+| `syncTitleFromProject()` | Auto-updates chart title from single project name unless manually edited |
+| `addTask()` | Creates a new task/milestone row with drag-handle, inputs, and optional baseline row |
+| `removeTaskRow()` | Removes task row and its associated baseline row from DOM |
+| `toggleBaseline()` | Shows/hides baseline schedule row for a task |
+| `getRows()` | Extracts all task data from a tbody (name, dates, color, notes, baseline) |
+| `initDragRow()` | Attaches HTML5 drag-and-drop event listeners to task row |
+| `sameBody()` | Checks if two elements belong to the same tbody |
+| `addProject()` | Creates a new project card with bid/execution phase sections (max 3) |
+| `onProjNameChange()` | Triggers title sync when project name changes |
+| `removeProject()` | Removes project card and updates project list |
+| `updateProjColor()` | Changes project card border and color dot to selected color |
+| `onProjCountChange()` | Adjusts number of projects up/down to match input value |
+| `updateProjWarn()` | Shows warning when 4+ projects selected with non-A2 format |
+| `updateDelBtns()` | Disables delete buttons when only one project remains |
+| `updateAddProjBtn()` | Updates project count input and UI state |
+| `buildMonths()` | Generates array of `{m, y}` objects for a date range |
+| `yearBands()` | Groups consecutive months by year into band objects |
+| `el()` | Factory function to create DOM elements with optional class and HTML |
+| `colOf()` | Finds index of a month in the months array by month/year |
+| `buildSidebar()` | Renders draggable task list sidebar for chart generation |
+| `sameSbLane()` | Checks if sidebar items are in same lane (Bid/Execution) |
+| `getLaneTasks()` | Fetches tasks for a project/lane combination from state |
+| `generate()` | Collects form data and renders Gantt chart output |
+| `refreshChart()` | Re-renders chart preserving current state |
+| `renderChart()` | Builds SVG Gantt chart with timeline, tasks, baseline, and today marker |
+| `renderGroup()` | Renders individual task group (bars, milestones) in chart |
+| `togglePhase()` | Collapses/expands bid or execution phase section |
+
+### resourcecast.html
+
+| Function | Description |
+|----------|-------------|
+| `loadSETemplate()` | Replaces all roles with 17-role SE standard template |
+| `esc()` | HTML-escapes string for safe DOM insertion |
+| `fmtN()` | Formats number with locale and optional decimal places |
+| `fmtEUR()` | Formats number as EUR currency |
+| `fmtDKK()` | Formats number as DKK currency |
+| `hedgeRate()` | Gets current exchange rate from input or default 7.46 |
+| `togglePhase()` | Collapses/aggregates monthly hours into phase totals or expands |
+| `_buildCols()` | Generates month and phase-aggregate column definitions |
+| `_getRowMonthHours()` | Extracts monthly hours map from a role row's inputs |
+| `addPhase()` | Creates draggable phase chip with name input and drag handlers |
+| `removePhase()` | Deletes phase chip and rebuilds monthly grid |
+| `getPhases()` | Extracts all phase data from chips (id, name, date range) |
+| `rebuildMonthlyGrid()` | Regenerates role grid columns based on current phases |
+| `addRole()` | Creates role row with name, rate, monthly hour cells, and totals |
+| `removeRole()` | Deletes role row and recalculates totals |
+| `updateMonthlyTotals()` | Recalculates monthly and total hours/costs across all roles |
+| `addExpense()` | Creates expense row with label and amount fields |
+| `updateExpTotals()` | Recalculates expense totals and grand total cost |
+| `getRoleData()` | Extracts all role data with calculated hours and costs |
+| `generate()` | Collects state and renders output grid and Gantt chart |
+| `_buildMonths()` | Generates month array from start/end dates |
+| `_yearBands()` | Groups months by year for header spanning |
+| `renderGantt()` | Renders resource Gantt chart (calendar or phase view) |
+| `_renderCalendarGantt()` | Builds calendar-style Gantt with month columns |
+| `_renderPhaseGantt()` | Builds phase-aggregated Gantt view |
+| `importExcel()` | Parses Excel file and maps columns to roles |
+| `_parseMonthStr()` | Extracts month/year from "Jan 2025" format strings |
+| `exportExcel()` | Generates Excel workbook with role grid and cost summary |
+| `_syncRoleKey()` | Derives sync role key from title for OrgCast sync |
+
+### orgcast.html
+
+| Function | Description |
+|----------|-------------|
+| `toggleCompact()` | Toggles compact/expanded layout mode for org chart |
+| `roleLabel()` / `roleColor()` | Look up display label/color for a role key |
+| `compLabel()` / `compColor()` | Look up display label/color for a company key |
+| `roleOpts()` / `compOpts()` | Generate HTML option elements for role/company selects |
+| `addPerson()` | Creates team member row with role, title, company, parent dropdown |
+| `refreshParentDropdowns()` | Updates parent person dropdown in all rows |
+| `getPeople()` | Extracts all person data from table rows |
+| `initDrag()` | Attaches HTML5 drag-and-drop listeners to person row |
+| `buildTree()` | Constructs parent-child tree structure from flat person array |
+| `subtreeWidth()` | Recursively calculates node width needed for layout |
+| `layoutNode()` | Assigns x, y positions recursively for tree nodes |
+| `renderChart()` | Builds SVG org chart with nodes and connector lines |
+| `autoScale()` | Adjusts SVG zoom/pan to fit content in viewport |
+| `generate()` | Collects state and renders org chart output |
+| `setParentByRole()` | Sets parent-child relationship by matching role keys |
+
+### rfqcast.html
+
+| Function | Description |
+|----------|-------------|
+| `addEquipType()` | Creates equipment type section with vendor list and strategy notes |
+| `removeEquipType()` | Deletes equipment type section and syncs dropdowns |
+| `updateEtColor()` | Changes equipment type section background color |
+| `getEquipTypes()` | Extracts all equipment type data from DOM |
+| `syncTypeDropdowns()` | Updates item type select options from current equipment types |
+| `vendorStatus()` | Returns status label for a vendor |
+| `statusClass()` / `statusLabel()` | Returns CSS class / readable label for a status code |
+| `validityWarn()` | Checks if vendor quote validity has expired |
+| `addItem()` | Creates RFQ item row with type, description, qty, and vendor detail row |
+| `buildDetailPanel()` | Renders detailed fields for an item (tech resp., procurement strategy, vendors) |
+| `buildVendorBlock()` | Creates vendor input block (NDA, enquiry/offer dates, etc.) |
+| `getVendorsFromPanel()` | Extracts vendor data from detail panel inputs |
+| `saveDetailToRow()` | Persists detail panel data to item row data attributes |
+| `updateVendorPills()` | Renders vendor status pills for item row |
+| `toggleDetail()` | Shows/hides detail panel for an item |
+| `deleteRow()` | Removes item and its detail row |
+| `initDrag()` | Attaches HTML5 drag-and-drop listeners to item row |
+| `getItems()` | Extracts all item data from table |
+| `generate()` | Collects state and renders procurement dashboard output |
+| `renderTypeTable()` | Renders item rows grouped by equipment type |
+| `loadPreset()` | Loads preset equipment types and suppliers |
+| `importExcel()` | Parses Excel file and loads items/equipment types |
+| `exportExcel()` | Generates Excel workbook with full RFQ data |
+| `esc()` | HTML-escapes string for safe DOM insertion |
+
+### dorcast.html
+
+| Function | Description |
+|----------|-------------|
+| `addParty()` | Creates party/column chip with color picker and name input |
+| `getParties()` | Extracts all party data from chips (id, name, color) |
+| `rebuildTableHead()` | Regenerates table header with party columns and syncs mark cells |
+| `syncMarkCells()` | Creates DORI marker cells for a row across all parties |
+| `cycleVal()` | Cycles cell value through D → O → R → S → I → blank |
+| `insertRowAfter()` | Inserts a new row after a reference row |
+| `addRow()` | Creates DOR matrix data row with item inputs |
+| `addRowAt()` | Creates section/header row or reorders existing rows |
+| `deleteRow()` | Removes a row from the matrix |
+| `createInsertRow()` | Creates temporary insert-after row UI |
+| `esc()` | HTML-escapes string for safe DOM insertion |
+| `initRowDrag()` | Attaches HTML5 drag-and-drop listeners to matrix row |
+| `getRows()` | Extracts all row data (type, item, markers by party) |
+| `generate()` | Collects state and renders responsibility matrix output |
+| `openModal()` / `closeModal()` | Shows/hides preset template modal |
+| `loadPreset()` | Loads a responsibility template into the matrix |
+| `importExcel()` | Parses Excel file and loads rows/parties |
+| `exportExcel()` | Generates Excel workbook with matrix data |
