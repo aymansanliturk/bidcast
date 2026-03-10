@@ -233,10 +233,12 @@
   .mg-agg-col { font-size:9px; font-weight:600; min-width:60px; }
   /* Input cells */
   .mg-cell { padding:1px 1px; }
-  .mg-inp { font-family:'DM Mono',monospace; font-size:11px; width:44px; text-align:right; padding:4px 4px; background:#fafaf8; border:1px solid transparent; border-radius:3px; outline:none; transition:border-color 0.12s; }
+  .mg-inp { font-family:'DM Mono',monospace; font-size:11px; width:52px; min-width:52px; text-align:right; padding:4px 4px; background:#fafaf8; border:1px solid transparent; border-radius:3px; outline:none; transition:border-color 0.12s; -moz-appearance:textfield; }
   .mg-inp:focus { border-color:var(--accent); background:#fff; }
   .mg-inp:not(:placeholder-shown) { border-color:#e8e3dc; }
-  .mg-agg-inp { width:58px; font-weight:600; }
+  .mg-inp::-webkit-inner-spin-button,
+  .mg-inp::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
+  .mg-agg-inp { width:68px; min-width:68px; font-weight:600; }
   /* Totals */
   .mg-tot-cell { font-family:'DM Mono',monospace; font-size:10px; text-align:right; padding:4px 3px; color:var(--muted); white-space:nowrap; min-width:44px; }
   .mg-tot-cell.phase-tot { font-weight:700; color:var(--accent); }
@@ -1426,12 +1428,23 @@ function updateLogoUI() {
   }
 
   // ── Save / Load / Export ──
+  function _suiteBundle(ownState) {
+    const suite = { _suite:true, _version:1, _savedAt:new Date().toISOString(), _savedFrom:'resourcecast' };
+    ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+      const raw = localStorage.getItem('bidcast_state_' + k);
+      suite[k] = raw ? JSON.parse(raw) : null;
+    });
+    suite.resourcecast = ownState;
+    return suite;
+  }
+
   function saveJSON() {
     const state = collectState();
+    localStorage.setItem('bidcast_state_resourcecast', JSON.stringify(state));
     const name  = (state.projName||'resourcecast').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
-    const blob  = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+    const blob  = new Blob([JSON.stringify(_suiteBundle(state),null,2)],{type:'application/json'});
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = name+'_resourcecast.json'; a.click();
+    a.href = URL.createObjectURL(blob); a.download = name+'_suite.json'; a.click();
     URL.revokeObjectURL(a.href);
     const c = document.getElementById('save-confirm');
     c.style.display='inline'; setTimeout(()=>c.style.display='none',2000);
@@ -1440,7 +1453,18 @@ function updateLogoUI() {
   function loadJSON(input) {
     const file=input.files[0]; if(!file) return;
     const reader=new FileReader();
-    reader.onload=e=>{try{applyState(JSON.parse(e.target.result));}catch(err){alert('Invalid RESOURCECAST .json file.');}};
+    reader.onload=e=>{
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data._suite) {
+          ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+            if (k !== 'resourcecast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
+          });
+          if (data.resourcecast) applyState(data.resourcecast);
+          else alert('No ResourceCast data found in this suite file.');
+        } else { applyState(data); }
+      } catch(err) { alert('Invalid .json file.'); }
+    };
     reader.readAsText(file); input.value='';
   }
 
@@ -1665,6 +1689,7 @@ function updateLogoUI() {
     _hist=_hist.slice(0,_histIdx+1); _hist.push(s);
     if(_hist.length>50) _hist.shift(); else _histIdx++;
     _syncUndoUI();
+    localStorage.setItem('bidcast_state_resourcecast', s);
   suiteWrite();
   }
   function _scheduleSnap() { if(_suppHist)return; clearTimeout(_histTimer); _histTimer=setTimeout(_snapshot,800); }

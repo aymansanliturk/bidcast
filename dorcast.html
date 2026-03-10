@@ -717,12 +717,23 @@ function loadPreset(type) {
 }
 
 // ── Save / Load / Export ──
+function _suiteBundle(ownState) {
+  const suite = { _suite:true, _version:1, _savedAt:new Date().toISOString(), _savedFrom:'dorcast' };
+  ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+    const raw = localStorage.getItem('bidcast_state_' + k);
+    suite[k] = raw ? JSON.parse(raw) : null;
+  });
+  suite.dorcast = ownState;
+  return suite;
+}
+
 function saveJSON() {
   const state = collectState();
+  localStorage.setItem('bidcast_state_dorcast', JSON.stringify(state));
   const name  = (state.title||'dor').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
-  const blob  = new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const blob  = new Blob([JSON.stringify(_suiteBundle(state),null,2)],{type:'application/json'});
   const a     = document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download=name+'_dorcast.json'; a.click();
+  a.href=URL.createObjectURL(blob); a.download=name+'_suite.json'; a.click();
   URL.revokeObjectURL(a.href);
   const c=document.getElementById('save-confirm');
   c.style.display='inline'; setTimeout(()=>c.style.display='none',2000);
@@ -731,7 +742,18 @@ function saveJSON() {
 function loadJSON(input) {
   const file=input.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=e=>{try{applyState(JSON.parse(e.target.result));}catch(err){alert('Invalid DORCAST .json file.');}};
+  reader.onload=e=>{
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data._suite) {
+        ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+          if (k !== 'dorcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
+        });
+        if (data.dorcast) applyState(data.dorcast);
+        else alert('No DORCast data found in this suite file.');
+      } else { applyState(data); }
+    } catch(err) { alert('Invalid .json file.'); }
+  };
   reader.readAsText(file); input.value='';
 }
 
@@ -854,6 +876,7 @@ function _snapshot() {
   _hist.push(s);
   if (_hist.length > 50) _hist.shift(); else _histIdx++;
   _syncUndoUI();
+  localStorage.setItem('bidcast_state_dorcast', s);
 }
 function _scheduleSnap() {
   if (_suppHist) return;
