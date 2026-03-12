@@ -236,6 +236,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     <span class="suite-tool-name">RFQCast</span>
   </div>
   <div class="suite-nav-right">
+    <span id="suite-sync-badge" style="display:none;font-size:11px;color:var(--muted,#888);margin-right:8px;"></span>
     <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="saveLogo(this)">
     <button class="pb-btn" onclick="document.getElementById('logo-input').click()" title="Upload logo &#8212; stored locally in your browser only">&#128444; Logo</button>
     <span id="logo-status" class="logo-status" style="display:none;">&#10003; Logo set</span>
@@ -292,8 +293,8 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
   <div class="section">
     <div class="section-title">Project Information</div>
     <div class="fields f2">
-      <label>Project Name <input type="text" id="proj-name" value="" placeholder="e.g. Bidstrup 132kV Substation"></label>
-      <label>Project ID / SF Reference <input type="text" id="proj-id" value="" placeholder="e.g. SE-DK-2026-001"></label>
+      <label>Project Name <input type="text" id="proj-name" value="" placeholder="e.g. Bidstrup 132kV Substation" oninput="SuiteManager.write({ projectName: this.value }, 'rfqcast')"></label>
+      <label>Project ID / SF Reference <input type="text" id="proj-id" value="" placeholder="e.g. SE-DK-2026-001" oninput="SuiteManager.write({ projectId: this.value }, 'rfqcast')"></label>
     </div>
     <div class="fields f4" style="margin-top:12px;">
       <label>Offer Due Date <input type="date" id="offer-due"></label>
@@ -377,28 +378,78 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 </div>
 
 <script>
-/* ── LOGO VAULT (localStorage, never sent to server) ── */
+/* ── SUITE MANAGER ── */
+const SuiteManager = (() => {
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
+  function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
+  function write(patch, source) {
+    try {
+      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
+      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
+      return next;
+    } catch { return {}; }
+  }
+  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
+  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
+  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
+  function onUpdate(cb) {
+    window.addEventListener('storage', e => {
+      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
+    });
+  }
+  function updateBadge(el) {
+    if (!el) return;
+    const sync = read();
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  }
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
+})();
+
+/* ── LOGO VAULT ── */
 function saveLogo(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => { localStorage.setItem('bidcast_logo', e.target.result); updateLogoUI(); };
+  reader.onload = e => { SuiteManager.setLogo(e.target.result); updateLogoUI(); };
   reader.readAsDataURL(file);
 }
 function clearLogo() {
-  localStorage.removeItem('bidcast_logo');
+  SuiteManager.removeLogo();
   const inp = document.getElementById('logo-input');
   if (inp) inp.value = '';
   updateLogoUI();
 }
 function updateLogoUI() {
-  const has = !!localStorage.getItem('bidcast_logo');
+  const logo = SuiteManager.getLogo();
   const st = document.getElementById('logo-status');
   const cl = document.getElementById('logo-clear');
-  if (st) st.style.display = has ? 'inline' : 'none';
-  if (cl) cl.style.display = has ? 'inline-flex' : 'none';
+  if (st) st.style.display = logo ? 'inline' : 'none';
+  if (cl) cl.style.display = logo ? 'inline-flex' : 'none';
   const pl = document.getElementById('print-logo');
-  if (pl) pl.innerHTML = has ? `<img src="${localStorage.getItem('bidcast_logo')}" style="height:36px;max-width:150px;object-fit:contain;display:block;">` : '';
+  if (pl) pl.innerHTML = logo ? `<img src="${logo}" style="height:36px;max-width:150px;object-fit:contain;display:block;">` : '';
+}
+
+/* ── SUITE SYNC ── */
+function suiteWrite() {
+  const prev = SuiteManager.read();
+  SuiteManager.write({
+    projectName: document.getElementById('proj-name')?.value || prev.projectName || '',
+    projectId:   document.getElementById('proj-id')?.value   || prev.projectId   || '',
+  }, 'rfqcast');
+}
+function suiteRead(sync) {
+  if (!sync || sync._src === 'rfqcast') return;
+  const pn = document.getElementById('proj-name');
+  const pi = document.getElementById('proj-id');
+  if (pn && !pn.value && sync.projectName) pn.value = sync.projectName;
+  if (pi && !pi.value && sync.projectId)   pi.value = sync.projectId;
+  updateLogoUI();
+  SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
 }
 
 const PRESET_RFQ={"items":[{"type":"HV Equipment","desc":"132kV AIS Circuit Breakers","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Power Transformer","desc":"220/132kV 300 MVA Power Transformers","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Shunt Reactor","desc":"132kV 100 MVAr Shunt Reactor","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Aux Transformer","desc":"132kV/0,4kV 600 kVA Auxiliary Transformer","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Equipment","desc":"132kV Post Insulators","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Equipment","desc":"132kV Disconnectors","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Cables","desc":"132kV Cable","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"GIS","desc":"220kV GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"GIS","desc":"66kV GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Harmonic Filter","desc":"132kV 20 MVAr","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"STATCOM","desc":"132kV 75 MVAr","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Civil Works (Construction)","desc":"Civil Works Contractor  (Soil Works, Foundations & Buildings)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Electrical Installation","desc":"Installation Contractor for HV Equipment","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"LV Systems","desc":"LV Aux System, Distribution Boards & UPS / Battery","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Control & Protection","desc":"C&P System incl. Protection (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"SCADA","desc":"SCADA System incl. HMI (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Network&Telecoms","desc":"Network System incl. HMI (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Cybersecurity","desc":"Cybersecurity Implementations","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Logistics","desc":"Transport of Equipment to Site (Local DK Transport)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"LV Cables","desc":"LV Power & Control Cable scope","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Lighting","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Access Control","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Mgmt. System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"CCTV System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Perimeter Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"HVAC System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Fire Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Earthing","desc":"Earthing & Bonding, Lightning Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"ICMN","desc":"Condition Monitoring System for TR, SHR & GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""}]};
@@ -1310,6 +1361,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (!document.querySelector('.et-card')) addEquipType({ name: 'GIS', color: '#2c4e87' });
   }, 100);
+  suiteRead(SuiteManager.read());
+  setTimeout(suiteWrite, 900);
+  SuiteManager.onUpdate((sync, key) => {
+    if (key === 'bidcast_logo') { updateLogoUI(); return; }
+    suiteRead(sync);
+  });
 });
 </script>
 </body>

@@ -215,11 +215,13 @@
   <div class="section">
     <div class="section-title">Chart Information</div>
     <div class="fields f2">
-      <label>Chart Title   <input type="text" id="chart-title" value="Project Organisation Chart"></label>
+      <label>Chart Title   <input type="text" id="chart-title" value="Project Organisation Chart"
+        oninput="SuiteManager.write({ projectName: this.value }, 'orgcast')"></label>
       <label>Subtitle      <input type="text" id="chart-sub"   value="Bid &amp; Execution Team Structure"></label>
     </div>
     <div class="fields f3" style="margin-top:12px;">
-      <label>Project Reference <input type="text" id="chart-ref"  value=""></label>
+      <label>Project Reference <input type="text" id="chart-ref"  value=""
+        oninput="SuiteManager.write({ projectId: this.value }, 'orgcast')"></label>
       <label>Revision          <input type="text" id="chart-rev"  value="Rev. 1.0"></label>
       <label>Date              <input type="text" id="chart-date" value=""></label>
     </div>
@@ -280,28 +282,66 @@
 </div>
 
 <script>
-/* ── LOGO VAULT (localStorage, never sent to server) ── */
+/* ══ SuiteManager ══════════════════════════════════════════════════
+   Central synchronisation utility for the Bid Forecast Suite.
+   Manages bidcast_suite_sync (project meta, phases, team) and
+   bidcast_logo (company logo as base64 dataURL).
+═══════════════════════════════════════════════════════════════════ */
+const SuiteManager = (() => {
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
+  function read() {
+    try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; }
+  }
+  function write(patch, source) {
+    try {
+      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
+      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
+      return next;
+    } catch { return {}; }
+  }
+  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
+  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
+  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
+  function onUpdate(cb) {
+    window.addEventListener('storage', e => {
+      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
+    });
+  }
+  function updateBadge(el) {
+    if (!el) return;
+    const sync = read();
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  }
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
+})();
+
+/* ── Logo (stored in bidcast_logo, shared across all tools) ── */
 function saveLogo(input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = e => { localStorage.setItem('bidcast_logo', e.target.result); updateLogoUI(); };
+  reader.onload = e => { SuiteManager.setLogo(e.target.result); updateLogoUI(); };
   reader.readAsDataURL(file);
 }
 function clearLogo() {
-  localStorage.removeItem('bidcast_logo');
+  SuiteManager.removeLogo();
   const inp = document.getElementById('logo-input');
   if (inp) inp.value = '';
   updateLogoUI();
 }
 function updateLogoUI() {
-  const has = !!localStorage.getItem('bidcast_logo');
+  const logo = SuiteManager.getLogo();
   const st = document.getElementById('logo-status');
   const cl = document.getElementById('logo-clear');
-  if (st) st.style.display = has ? 'inline' : 'none';
-  if (cl) cl.style.display = has ? 'inline-flex' : 'none';
+  if (st) st.style.display = logo ? 'inline' : 'none';
+  if (cl) cl.style.display = logo ? 'inline-flex' : 'none';
   const pl = document.getElementById('print-logo');
-  if (pl) pl.innerHTML = has ? `<img src="${localStorage.getItem('bidcast_logo')}" style="height:36px;max-width:150px;object-fit:contain;display:block;">` : '';
+  if (pl) pl.innerHTML = logo ? `<img src="${logo}" style="height:36px;max-width:150px;object-fit:contain;display:block;">` : '';
 }
 
 
@@ -887,33 +927,45 @@ function updateLogoUI() {
     }).from(document.getElementById('output')).save();
   }
 
-// Init logo UI
-document.addEventListener('DOMContentLoaded', updateLogoUI);
-
 /* ── SUITE SYNC ── */
+
+/**
+ * Write OrgCast data to the shared sync store.
+ * Publishes: team (non-vacant people), projectName (from chart title).
+ */
 function suiteWrite() {
   try {
     const people = getPeople();
-    const team = people.filter(p => !p.vacancy && p.name).map(p => ({
-      syncId: 'oc_' + p.id,
-      name: p.name, title: p.title,
+    const team   = people.filter(p => !p.vacancy && p.name).map(p => ({
+      syncId:  'oc_' + p.id,
+      name:    p.name, title: p.title,
       roleKey: p.role, company: p.company, color: p.color,
     }));
-    const prev = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
-    localStorage.setItem('bidcast_suite_sync', JSON.stringify({
-      ...prev,
+    const prev = SuiteManager.read();
+    SuiteManager.write({
+      projectName: document.getElementById('chart-title')?.value || prev.projectName || '',
+      projectId:   document.getElementById('chart-ref')?.value   || prev.projectId   || '',
       team: team.length ? team : (prev.team || []),
-      _ts: Date.now(), _from: 'orgcast',
-    }));
-    _updateSyncBadge();
+    }, 'orgcast');
+    SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
   } catch(e) {}
 }
+
+/**
+ * React to sync updates from other tools.
+ * - Adds team members from ResourceCast that aren't already present.
+ * - Reads projectName/projectId if local fields are empty.
+ */
 function suiteRead(sync) {
   try {
-    if (!sync || sync._from === 'orgcast') { _updateSyncBadge(); return; }
+    if (!sync || sync._src === 'orgcast') {
+      SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
+      return;
+    }
+    // Add new team members received from ResourceCast (deduplication by title/name)
     if (sync.team && sync.team.length) {
       const existingTitles = new Set(getPeople().map(p => (p.title||'').trim().toLowerCase()));
-      const existingNames  = new Set(getPeople().map(p => (p.name||'').trim().toLowerCase()).filter(Boolean));
+      const existingNames  = new Set(getPeople().map(p => (p.name ||'').trim().toLowerCase()).filter(Boolean));
       sync.team.forEach(t => {
         const byTitle = t.title && existingTitles.has(t.title.trim().toLowerCase());
         const byName  = t.name  && existingNames.has(t.name.trim().toLowerCase());
@@ -923,30 +975,26 @@ function suiteRead(sync) {
         }
       });
     }
-    _updateSyncBadge();
+    // Populate chart title / ref if currently empty
+    const titleEl = document.getElementById('chart-title');
+    const refEl   = document.getElementById('chart-ref');
+    if (titleEl && !titleEl.value.trim() && sync.projectName) titleEl.value = sync.projectName;
+    if (refEl   && !refEl.value.trim()   && sync.projectId)   refEl.value   = sync.projectId;
+    SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
   } catch(e) {}
 }
-function _updateSyncBadge() {
-  try {
-    const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
-    const el = document.getElementById('suite-sync-badge');
-    if (!el) return;
-    if (sync._ts) {
-      const s = Math.round((Date.now() - sync._ts) / 1000);
-      el.textContent = '\u21bb Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago');
-      el.style.display = 'inline';
-    }
-  } catch(e) {}
-}
-window.addEventListener('storage', e => {
-  if (e.key !== 'bidcast_suite_sync') return;
-  suiteRead(e.newValue ? JSON.parse(e.newValue) : null);
+
+// Cross-tab listener — reacts to any tool updating the shared store or logo.
+SuiteManager.onUpdate((sync, key) => {
+  if (key === 'bidcast_logo') { updateLogoUI(); return; }
+  suiteRead(sync);
 });
+
 document.addEventListener('DOMContentLoaded', () => {
+  updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_orgcast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
-  _updateSyncBadge();
-  suiteRead(JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}'));
+  suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });
 

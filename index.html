@@ -160,6 +160,57 @@
   .group-label-line { flex:1; height:1px; background:var(--border); }
   .group-label-sub { font-size:9.5px; color:var(--faint); letter-spacing:0; font-weight:400; white-space:nowrap; }
 
+  /* ── Active Project Panel ── */
+  .project-panel {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 48px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .project-panel-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--faint);
+    white-space: nowrap; padding-top: 1px;
+  }
+  .project-panel-fields {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;
+  }
+  .pp-input {
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; background: var(--bg); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .pp-input:focus { border-color: var(--accent); background: #fff; }
+  .pp-input.name  { width: 220px; font-weight: 600; }
+  .pp-input.id    { width: 140px; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .pp-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+  .pp-logo-wrap { display: flex; align-items: center; gap: 8px; }
+  .pp-logo-preview {
+    height: 32px; max-width: 120px; object-fit: contain;
+    border-radius: 4px; display: none;
+  }
+  .pp-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+    padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .pp-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
+  .pp-btn.danger:hover { border-color: #c0392b; color: #c0392b; }
+  .pp-sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #22c55e; flex-shrink: 0;
+    box-shadow: 0 0 0 2px #dcfce7;
+    display: none;
+  }
+  .pp-sync-dot.active { display: inline-block; }
+  @media (max-width: 900px) { .project-panel { padding: 16px 24px; } }
+  @media (max-width: 560px) { .pp-input.name { width: 100%; } }
+
   /* ── Footer ── */
   footer {
     margin-top: auto;
@@ -190,6 +241,25 @@
     100% Private · Local Execution
   </div>
 </header>
+
+<!-- ── Active Project Panel ── -->
+<div class="project-panel" id="project-panel">
+  <span class="project-panel-label">Active Project</span>
+  <div class="project-panel-fields">
+    <input id="pp-name" class="pp-input name" type="text" placeholder="Project name…" title="Project name — syncs to all tools instantly">
+    <input id="pp-id"   class="pp-input id"   type="text" placeholder="ID / Ref…"     title="Project ID or reference number">
+    <div class="pp-sep"></div>
+    <div class="pp-logo-wrap">
+      <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
+      <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
+      <button class="pp-btn" id="pp-logo-btn" onclick="document.getElementById('pp-logo-input').click()">⊕ Logo</button>
+      <button class="pp-btn danger" id="pp-logo-clear" onclick="ppClearLogo()" style="display:none">✕</button>
+    </div>
+    <div class="pp-sep"></div>
+    <span class="pp-sync-dot" id="pp-sync-dot" title="Changes synced to all open tools"></span>
+    <span id="pp-sync-label" style="font-size:10px;color:var(--faint);display:none;">Synced</span>
+  </div>
+</div>
 
 <div class="hero">
   <div class="hero-inner">
@@ -240,9 +310,9 @@
     </div>
     <div class="card-name">ResourceCast</div>
     <div class="card-tagline">Cost Intelligence</div>
-    <div class="card-desc">Plan team hours and calculate DKK/EUR costs with hedge rates. Phases in, team roles out to Orgcast.</div>
+    <div class="card-desc">Plan team hours and calculate EUR costs per phase. Phases sync in from Timecast, team roles flow out to Orgcast.</div>
     <div class="card-footer">
-      <span class="feat-tag">Rates · Multi-Currency</span>
+      <span class="feat-tag">Rates · Cost Planning</span>
       <span class="sync-pill">↻ Suite</span>
       <span class="card-arrow">→</span>
     </div>
@@ -320,6 +390,167 @@
   <span>Made with ♥ @ CPH</span>
   <span>Local Processing — Your data never leaves your browser</span>
 </footer>
+
+<script>
+/* ══ SuiteManager ══════════════════════════════════════════════════
+   Central synchronisation utility for the Bid Forecast Suite.
+   Manages bidcast_suite_sync (project meta, phases, team) and
+   bidcast_logo (company logo as base64 dataURL).
+   All tools embed this same utility.
+═══════════════════════════════════════════════════════════════════ */
+const SuiteManager = (() => {
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
+
+  /** Read the current sync object from localStorage. */
+  function read() {
+    try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); }
+    catch { return {}; }
+  }
+
+  /** Merge a patch into the sync object and broadcast to other tabs. */
+  function write(patch, source) {
+    try {
+      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
+      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
+      return next;
+    } catch { return {}; }
+  }
+
+  /** Get the stored logo dataURL, or null. */
+  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
+
+  /** Save a logo dataURL and signal other tabs via _logoTs. */
+  function setLogo(dataUrl) {
+    localStorage.setItem(LOGO_KEY, dataUrl);
+    write({ _logoTs: Date.now() }, 'logo');
+  }
+
+  /** Remove the stored logo and signal other tabs. */
+  function removeLogo() {
+    localStorage.removeItem(LOGO_KEY);
+    write({ _logoTs: Date.now() }, 'logo');
+  }
+
+  /**
+   * Register a callback for any cross-tab sync update.
+   * Called when either the sync object OR the logo key changes.
+   */
+  function onUpdate(cb) {
+    window.addEventListener('storage', e => {
+      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
+    });
+  }
+
+  /** Update a badge element with a human-readable "synced N ago" label. */
+  function updateBadge(el) {
+    if (!el) return;
+    const sync = read();
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  }
+
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
+})();
+
+/* ── Index page project panel ── */
+
+/** Populate the project panel from the sync store on load. */
+function ppLoad() {
+  const sync = SuiteManager.read();
+  const nameEl = document.getElementById('pp-name');
+  const idEl   = document.getElementById('pp-id');
+  if (nameEl && sync.projectName) nameEl.value = sync.projectName;
+  if (idEl   && sync.projectId)   idEl.value   = sync.projectId;
+  ppUpdateLogo();
+}
+
+/** Show/hide the logo preview based on what is stored. */
+function ppUpdateLogo() {
+  const logo    = SuiteManager.getLogo();
+  const preview = document.getElementById('pp-logo-preview');
+  const clearEl = document.getElementById('pp-logo-clear');
+  const btnEl   = document.getElementById('pp-logo-btn');
+  if (preview) {
+    preview.src          = logo || '';
+    preview.style.display = logo ? 'block' : 'none';
+  }
+  if (clearEl) clearEl.style.display = logo ? 'inline-flex' : 'none';
+  if (btnEl)   btnEl.textContent      = logo ? '⟳ Logo' : '⊕ Logo';
+}
+
+/** Write project name to sync whenever the input changes. */
+function ppOnName() {
+  const v = document.getElementById('pp-name')?.value || '';
+  SuiteManager.write({ projectName: v }, 'index');
+  ppFlashSync();
+}
+
+/** Write project ID to sync whenever the input changes. */
+function ppOnId() {
+  const v = document.getElementById('pp-id')?.value || '';
+  SuiteManager.write({ projectId: v }, 'index');
+  ppFlashSync();
+}
+
+/** Save logo from the file picker. */
+function ppSaveLogo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { SuiteManager.setLogo(e.target.result); ppUpdateLogo(); ppFlashSync(); };
+  reader.readAsDataURL(file);
+}
+
+/** Remove the stored logo. */
+function ppClearLogo() {
+  SuiteManager.removeLogo();
+  const inp = document.getElementById('pp-logo-input');
+  if (inp) inp.value = '';
+  ppUpdateLogo();
+  ppFlashSync();
+}
+
+/** Briefly show the "synced" indicator. */
+let _ppSyncTimer;
+function ppFlashSync() {
+  const dot   = document.getElementById('pp-sync-dot');
+  const label = document.getElementById('pp-sync-label');
+  if (dot) dot.classList.add('active');
+  if (label) label.style.display = 'inline';
+  clearTimeout(_ppSyncTimer);
+  _ppSyncTimer = setTimeout(() => {
+    if (dot) dot.classList.remove('active');
+    if (label) label.style.display = 'none';
+  }, 2000);
+}
+
+/* Wire up inputs and cross-tab listener on load. */
+document.addEventListener('DOMContentLoaded', () => {
+  ppLoad();
+
+  const nameEl = document.getElementById('pp-name');
+  const idEl   = document.getElementById('pp-id');
+  if (nameEl) nameEl.addEventListener('input', ppOnName);
+  if (idEl)   idEl.addEventListener('input',   ppOnId);
+
+  /* React to changes made in other tools or tabs. */
+  SuiteManager.onUpdate((sync, changedKey) => {
+    if (changedKey === 'bidcast_logo') { ppUpdateLogo(); return; }
+    // Update panel inputs only if the user is not currently focused on them
+    const nameInput = document.getElementById('pp-name');
+    const idInput   = document.getElementById('pp-id');
+    if (nameInput && document.activeElement !== nameInput && sync.projectName != null)
+      nameInput.value = sync.projectName;
+    if (idInput   && document.activeElement !== idInput   && sync.projectId   != null)
+      idInput.value   = sync.projectId;
+    ppFlashSync();
+  });
+});
+</script>
 
 </body>
 </html>
