@@ -224,6 +224,17 @@
   .mg-sticky-name .drag-handle { cursor:grab; color:#ccc; font-size:13px; margin-right:3px; display:inline-block; }
   /* FTE indicator beneath month input */
   .mg-fte-bar { height:2px; background:var(--accent); border-radius:1px; margin-top:1px; opacity:0.4; transition:width 0.15s; }
+
+  /* Heatmap tiers for monthly hour inputs */
+  .mg-inp.hm-faint  { background:#eef2fb; border-color:#c8d6f0; }
+  .mg-inp.hm-light  { background:#c8d6f0; border-color:#8ca8d8; color:var(--accent2); }
+  .mg-inp.hm-accent { background:var(--accent); border-color:var(--accent2); color:#fff; }
+  .mg-inp.hm-accent:focus { background:var(--accent2); }
+  /* FTE footer row */
+  .fte-row td { background:#f5f7fc; border-top:1px dashed #c8d6f0; }
+  .fte-row .fte-label { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; color:#8ca8d8; padding:3px 8px; font-style:italic; }
+  .fte-row .mg-tot-cell { font-size:9px; color:#8ca8d8; font-style:italic; }
+  .fte-row .mg-tot-cell.phase-tot { color:var(--accent); font-weight:700; font-style:normal; }
 </style>
 </head>
 <body>
@@ -855,6 +866,15 @@ function updateLogoUI() {
       return `<td class="mg-tot-cell mg-pct-cell${isTot?' phase-tot':''}">${pct}</td>`;
     }).join('');
 
+    const FTE_BASE = 160;
+    const colFteCells = cols.map(col => {
+      const v     = colTotals[col.key];
+      const isTot = col.type === 'agg';
+      const fte   = v ? (v / FTE_BASE).toFixed(1) : null;
+      return `<td class="mg-tot-cell${isTot?' phase-tot':''}">${fte ? fte + ' FTE' : '—'}</td>`;
+    }).join('');
+    const grandFte = grandH ? (grandH / FTE_BASE).toFixed(1) + ' FTE' : '—';
+
     document.getElementById('res-tfoot').innerHTML = `
       <tr class="totals-row">
         <td class="totals-label mg-sticky-name">Total h</td>
@@ -871,10 +891,30 @@ function updateLogoUI() {
         <td class="calc-cell" style="color:var(--muted);font-size:10px;">100%</td>
         <td></td>
         <td></td>
+      </tr>
+      <tr class="fte-row">
+        <td class="fte-label mg-sticky-name">Total FTE <span style="font-size:8px;opacity:0.7;">(÷160h)</span></td>
+        <td class="mg-sticky-rate"></td>
+        ${colFteCells}
+        <td class="calc-cell" style="color:var(--accent);font-weight:700;font-size:10px;">${grandFte}</td>
+        <td></td>
+        <td></td>
       </tr>`;
 
+    applyHeatmap();
     updateExpTotals();
     updateIndexation();
+  }
+
+  // ── Heatmap ──
+  function applyHeatmap() {
+    document.querySelectorAll('.month-inp:not(.mg-agg-inp)').forEach(inp => {
+      const v = parseFloat(inp.value) || 0;
+      inp.classList.remove('hm-faint', 'hm-light', 'hm-accent');
+      if      (v >= 120) inp.classList.add('hm-accent');
+      else if (v >= 40)  inp.classList.add('hm-light');
+      else if (v > 0)    inp.classList.add('hm-faint');
+    });
   }
 
   // Alias for compatibility
