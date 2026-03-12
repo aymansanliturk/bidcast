@@ -394,6 +394,12 @@
       <label>End Month   <select id="end-month"></select></label>
       <label>End Year    <input type="number" id="end-year" value="2028" min="2000" max="2099"></label>
     </div>
+    <div style="margin-top:8px;">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
+        <input type="checkbox" id="show-today" checked style="accent-color:var(--accent);width:14px;height:14px;">
+        Show today marker on chart
+      </label>
+    </div>
   </div>
 
   <!-- Projects -->
@@ -713,6 +719,8 @@ function updateLogoUI() {
 
     if (data.bidTasks)  data.bidTasks.forEach(t  => addTask(`bid-body-${id}`,  t.type, t));
     if (data.execTasks) data.execTasks.forEach(t => addTask(`exec-body-${id}`, t.type, t));
+    if (data.bidHidden)  { const s=document.getElementById(`bid-section-${id}`);  const b=s?.querySelector('.phase-toggle'); if(s&&b){s.classList.add('collapsed');b.textContent='Show';b.classList.add('off');} }
+    if (data.execHidden) { const s=document.getElementById(`exec-section-${id}`); const b=s?.querySelector('.phase-toggle'); if(s&&b){s.classList.add('collapsed');b.textContent='Show';b.classList.add('off');} }
 
     // Seed title for first project
     if (projIds.length === 1 && name) {
@@ -902,7 +910,8 @@ function updateLogoUI() {
       execTasks: document.getElementById(`exec-section-${id}`)?.classList.contains('collapsed') ? [] : getRows(`exec-body-${id}`),
     }));
 
-    chartState = { title, sub, rev, status, sColor, sm, sy, em, ey, projects };
+    const showToday = document.getElementById('show-today')?.checked ?? true;
+    chartState = { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday };
     renderChart();
 
     document.getElementById('editor').style.display = 'none';
@@ -917,12 +926,12 @@ function updateLogoUI() {
   }
 
   function renderChart() {
-    const { title, sub, rev, status, sColor, sm, sy, em, ey, projects } = chartState;
+    const { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday = true } = chartState;
     const months = buildMonths(sm, sy, em, ey);
     const n      = months.length;
     const bands  = yearBands(months);
     const now    = new Date();
-    const todayIdx   = months.findIndex(mo => mo.m===now.getMonth() && mo.y===now.getFullYear());
+    const todayIdx   = showToday ? months.findIndex(mo => mo.m===now.getMonth() && mo.y===now.getFullYear()) : -1;
     const multiProj  = projects.length > 1;
     const allTasks   = projects.flatMap(p => [...p.bidTasks, ...p.execTasks]);
     const hasNotes   = allTasks.some(t => t.notes);
@@ -964,21 +973,23 @@ function updateLogoUI() {
     });
 
     // Render group
-    function renderGroup(tasks, isBid) {
+    function renderGroup(tasks, isBid, showHeader) {
       if (tasks.length === 0) return;
-      const hColor = isBid ? '#2c4e87' : '#3a7a52';
-      const hBg    = isBid ? '#e8eef7' : '#e8f4ed';
-      const hLabel = isBid ? '▸  BID PHASE  ·  PM20–PM80' : '▸  EXECUTION PHASE  ·  PM100–PM650';
-      const divLbl = el('div','sec-div-lbl');
-      divLbl.style.background = hBg; divLbl.style.color = hColor; divLbl.style.borderLeft = `3px solid ${hColor}`;
-      divLbl.textContent = hLabel;
-      gantt.appendChild(divLbl);
-      if (hasNotes) gantt.appendChild(el('div','sec-div-notes'));
-      for (let c=0; c<n; c++) {
-        const d = el('div','sec-div-cell');
-        d.style.background = hBg+'55';
-        if (c===todayIdx) d.appendChild(el('div','today-line'));
-        gantt.appendChild(d);
+      if (showHeader) {
+        const hColor = isBid ? '#2c4e87' : '#3a7a52';
+        const hBg    = isBid ? '#e8eef7' : '#e8f4ed';
+        const hLabel = isBid ? '▸  BID PHASE  ·  PM20–PM80' : '▸  EXECUTION PHASE  ·  PM100–PM650';
+        const divLbl = el('div','sec-div-lbl');
+        divLbl.style.background = hBg; divLbl.style.color = hColor; divLbl.style.borderLeft = `3px solid ${hColor}`;
+        divLbl.textContent = hLabel;
+        gantt.appendChild(divLbl);
+        if (hasNotes) gantt.appendChild(el('div','sec-div-notes'));
+        for (let c=0; c<n; c++) {
+          const d = el('div','sec-div-cell');
+          d.style.background = hBg+'55';
+          if (c===todayIdx) d.appendChild(el('div','today-line'));
+          gantt.appendChild(d);
+        }
       }
       tasks.forEach((t,i) => {
         const alt=i%2===1, bgCls=isBid?' bid':'', altCls=alt?' alt':'';
@@ -1026,8 +1037,9 @@ function updateLogoUI() {
           gantt.appendChild(hc);
         }
       }
-      renderGroup(proj.bidTasks,  true);
-      renderGroup(proj.execTasks, false);
+      const showPhaseHeaders = proj.bidTasks.length > 0 && proj.execTasks.length > 0;
+      renderGroup(proj.bidTasks,  true,  showPhaseHeaders);
+      renderGroup(proj.execTasks, false, showPhaseHeaders);
     });
 
     // Legend
@@ -1073,6 +1085,8 @@ function updateLogoUI() {
         title:     titleEl?.value || '',
         bidTasks:  getRows(`bid-body-${id}`),
         execTasks: getRows(`exec-body-${id}`),
+        bidHidden:  document.getElementById(`bid-section-${id}`)?.classList.contains('collapsed')  || false,
+        execHidden: document.getElementById(`exec-section-${id}`)?.classList.contains('collapsed') || false,
       };
     }).filter(Boolean);
 
@@ -1085,6 +1099,7 @@ function updateLogoUI() {
       offerDate:  document.getElementById('offer-date')?.value  || '',
       rev:        document.getElementById('doc-rev')?.value     || '',
       docDate:    document.getElementById('doc-date')?.value    || '',
+      showToday:  document.getElementById('show-today')?.checked ?? true,
       projects,
     };
   }
@@ -1096,6 +1111,7 @@ function updateLogoUI() {
     if (s.offerDate)     { const el = document.getElementById('offer-date');     if(el) el.value = s.offerDate; }
     if (s.rev)           { const el = document.getElementById('doc-rev');        if(el) el.value = s.rev; }
     if (s.docDate)       { const el = document.getElementById('doc-date');       if(el) el.value = s.docDate; }
+    { const el = document.getElementById('show-today'); if(el) el.checked = s.showToday !== false; }
 
     // Remove all existing projects
     [...projIds].forEach(id => {
