@@ -668,7 +668,7 @@ function updateLogoUI() {
     const id    = projCount++;
     projIds.push(id);
     const color = data.color || PROJ_COLORS[(projIds.length-1) % 3];
-    const name  = data.name  || (projIds.length === 1 ? '' : `Project ${projIds.length}`);
+    const name  = data.name || data.title || (projIds.length === 1 ? '' : `Project ${projIds.length}`);
 
     const card = document.createElement('div');
     card.className = 'section project-card';
@@ -1091,26 +1091,34 @@ function updateLogoUI() {
     }).filter(Boolean);
 
     return {
-      version:    '4.3',
-      format:     currentFormat,
-      projCount:  projIds.length,
-      chartTitle: document.getElementById('chart-title')?.value || '',
-      chartSubtitle: document.getElementById('chart-subtitle')?.value || '',
-      offerDate:  document.getElementById('offer-date')?.value  || '',
-      rev:        document.getElementById('doc-rev')?.value     || '',
-      docDate:    document.getElementById('doc-date')?.value    || '',
-      showToday:  document.getElementById('show-today')?.checked ?? true,
+      version:      '4.3',
+      format:       currentFormat,
+      projCount:    projIds.length,
+      chartTitle:   document.getElementById('proj-title')?.value    || '',
+      chartSubtitle:document.getElementById('proj-sub')?.value      || '',
+      status:       document.getElementById('bid-status')?.value    || '',
+      statusColor:  document.getElementById('status-color')?.value  || '#2c4e87',
+      rev:          document.getElementById('proj-rev')?.value      || '',
+      startMonth:   parseInt(document.getElementById('start-month')?.value) || 0,
+      startYear:    parseInt(document.getElementById('start-year')?.value)  || 2025,
+      endMonth:     parseInt(document.getElementById('end-month')?.value)   || 11,
+      endYear:      parseInt(document.getElementById('end-year')?.value)    || 2028,
+      showToday:    document.getElementById('show-today')?.checked ?? true,
       projects,
     };
   }
 
   function applyState(s) {
     if (s.format) setFormat(s.format);
-    if (s.chartTitle)    { const el = document.getElementById('chart-title');    if(el) el.value = s.chartTitle; }
-    if (s.chartSubtitle) { const el = document.getElementById('chart-subtitle'); if(el) el.value = s.chartSubtitle; }
-    if (s.offerDate)     { const el = document.getElementById('offer-date');     if(el) el.value = s.offerDate; }
-    if (s.rev)           { const el = document.getElementById('doc-rev');        if(el) el.value = s.rev; }
-    if (s.docDate)       { const el = document.getElementById('doc-date');       if(el) el.value = s.docDate; }
+    if (s.chartTitle)      { const el = document.getElementById('proj-title');   if(el) { el.value = s.chartTitle; el._manuallyEdited = true; } }
+    if (s.chartSubtitle)   { const el = document.getElementById('proj-sub');     if(el) el.value = s.chartSubtitle; }
+    if (s.status)          { const el = document.getElementById('bid-status');   if(el) el.value = s.status; }
+    if (s.statusColor)     { const el = document.getElementById('status-color'); if(el) el.value = s.statusColor; }
+    if (s.rev)             { const el = document.getElementById('proj-rev');     if(el) el.value = s.rev; }
+    if (s.startMonth != null) { const el = document.getElementById('start-month'); if(el) el.value = s.startMonth; }
+    if (s.startYear)       { const el = document.getElementById('start-year');   if(el) el.value = s.startYear; }
+    if (s.endMonth != null)   { const el = document.getElementById('end-month');   if(el) el.value = s.endMonth; }
+    if (s.endYear)         { const el = document.getElementById('end-year');     if(el) el.value = s.endYear; }
     { const el = document.getElementById('show-today'); if(el) el.checked = s.showToday !== false; }
 
     // Remove all existing projects
@@ -1168,7 +1176,7 @@ function updateLogoUI() {
         } else {
           applyState(data);
         }
-      } catch(err) { alert('Invalid .json file.'); }
+      } catch(err) { console.error('loadJSON error:', err); alert('Invalid .json file: ' + err.message); }
     };
     reader.readAsText(file);
     input.value = '';
