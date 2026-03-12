@@ -67,15 +67,82 @@
     text-transform: uppercase; letter-spacing: 0.5px;
   }
 
+  /* ── Workspace Bar ── */
+  .workspace-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+  }
+  .wb-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    flex-wrap: wrap;
+  }
+  .wb-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--faint);
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .wb-fields {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;
+  }
+  .pp-select {
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; background: var(--bg); color: var(--muted);
+    outline: none; cursor: pointer; max-width: 190px;
+    transition: border-color 0.15s;
+  }
+  .pp-select:focus { border-color: var(--accent); background: #fff; color: var(--text); }
+  .pp-input {
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; background: var(--bg); color: var(--text);
+    outline: none; transition: border-color 0.15s;
+  }
+  .pp-input:focus { border-color: var(--accent); background: #fff; }
+  .pp-input.name  { width: 200px; font-weight: 600; }
+  .pp-input.id    { width: 130px; font-family: 'DM Mono', monospace; font-size: 12px; }
+  .pp-sep { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
+  .pp-logo-wrap { display: flex; align-items: center; gap: 8px; }
+  .pp-logo-preview {
+    height: 30px; max-width: 90px; object-fit: contain;
+    border-radius: 4px; display: none;
+  }
+  .pp-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+    padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
+    background: var(--bg); color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: all 0.15s;
+  }
+  .pp-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: #fff; }
+  .pp-btn.danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; background: #fff; }
+  .pp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .pp-proj-count {
+    font-family: 'DM Mono', monospace; font-size: 9px; color: var(--faint);
+    white-space: nowrap;
+  }
+  .pp-sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #22c55e; flex-shrink: 0;
+    box-shadow: 0 0 0 2px #dcfce7;
+    display: none;
+  }
+  .pp-sync-dot.active { display: inline-block; }
+
   /* ── Hero ── */
   .hero {
     background-color: var(--surface);
     background-image: radial-gradient(var(--border) 0.75px, transparent 0.75px);
     background-size: 24px 24px;
     border-bottom: 1px solid var(--border);
-    padding: 80px 48px 140px;
+    padding: 72px 48px 96px;
   }
-  .hero-inner { max-width: 860px; margin: 0 auto; }
+  .hero-inner { max-width: 1400px; margin: 0 auto; }
   .hero-eyebrow {
     font-size: 10px; font-weight: 700; letter-spacing: 2px;
     text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
@@ -85,12 +152,51 @@
     line-height: 1; color: var(--text); margin-bottom: 24px;
   }
   .hero-title span { color: var(--accent); opacity: 0.8; }
-  .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 540px; }
+  .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 500px; }
+
+  /* ── Dashboard Stats ── */
+  .dash-wrap {
+    padding: 0 48px 48px;
+    margin-top: -48px;
+    position: relative;
+    z-index: 10;
+  }
+  .dash-inner { max-width: 1400px; margin: 0 auto; }
+  .dash-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 200px);
+    gap: 12px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  }
+  .stat-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-bottom: 4px;
+  }
+  .stat-icon svg { width: 13px; height: 13px; }
+  .stat-label {
+    font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .stat-value {
+    font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 700;
+    color: var(--faint); letter-spacing: -0.5px; line-height: 1.1;
+  }
+  .stat-value.has-data { color: var(--text); }
+  .stat-source { font-size: 8px; color: var(--faint); margin-top: 2px; }
 
   /* ── Cards ── */
   .cards-wrap {
     padding: 0 48px 80px;
-    margin-top: -80px;
     position: relative;
     z-index: 10;
   }
@@ -104,15 +210,20 @@
 
   @media (max-width: 900px) {
     header { padding: 14px 24px; }
-    .hero { padding: 60px 24px 120px; }
+    .hero { padding: 60px 24px 80px; }
+    .workspace-bar { padding: 0 24px; }
+    .dash-wrap { padding: 0 24px 40px; margin-top: -40px; }
     .cards-wrap { padding: 0 24px 48px; }
     .cards { grid-template-columns: repeat(2, 1fr); }
     .hero-title { font-size: 42px; letter-spacing: -2px; }
+    .dash-stats { grid-template-columns: repeat(3, 1fr); }
   }
   @media (max-width: 560px) {
     .cards { grid-template-columns: 1fr; }
     .cards-wrap { padding: 0 16px 32px; }
     .hero-title { font-size: 36px; }
+    .dash-stats { grid-template-columns: 1fr; }
+    .pp-input.name { width: 160px; }
   }
 
   .card {
@@ -160,57 +271,6 @@
   .group-label-line { flex:1; height:1px; background:var(--border); }
   .group-label-sub { font-size:9.5px; color:var(--faint); letter-spacing:0; font-weight:400; white-space:nowrap; }
 
-  /* ── Active Project Panel ── */
-  .project-panel {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 20px 48px;
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
-  .project-panel-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--faint);
-    white-space: nowrap; padding-top: 1px;
-  }
-  .project-panel-fields {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1;
-  }
-  .pp-input {
-    font-family: 'DM Sans', sans-serif; font-size: 13px;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    padding: 7px 12px; background: var(--bg); color: var(--text);
-    outline: none; transition: border-color 0.15s;
-  }
-  .pp-input:focus { border-color: var(--accent); background: #fff; }
-  .pp-input.name  { width: 220px; font-weight: 600; }
-  .pp-input.id    { width: 140px; font-family: 'DM Mono', monospace; font-size: 12px; }
-  .pp-sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
-  .pp-logo-wrap { display: flex; align-items: center; gap: 8px; }
-  .pp-logo-preview {
-    height: 32px; max-width: 120px; object-fit: contain;
-    border-radius: 4px; display: none;
-  }
-  .pp-btn {
-    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
-    padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
-    background: var(--bg); color: var(--muted); cursor: pointer;
-    white-space: nowrap; transition: all 0.15s;
-  }
-  .pp-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
-  .pp-btn.danger:hover { border-color: #c0392b; color: #c0392b; }
-  .pp-sync-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #22c55e; flex-shrink: 0;
-    box-shadow: 0 0 0 2px #dcfce7;
-    display: none;
-  }
-  .pp-sync-dot.active { display: inline-block; }
-  @media (max-width: 900px) { .project-panel { padding: 16px 24px; } }
-  @media (max-width: 560px) { .pp-input.name { width: 100%; } }
-
   /* ── Footer ── */
   footer {
     margin-top: auto;
@@ -242,33 +302,94 @@
   </div>
 </header>
 
-<!-- ── Active Project Panel ── -->
-<div class="project-panel" id="project-panel">
-  <span class="project-panel-label">Active Project</span>
-  <div class="project-panel-fields">
-    <input id="pp-name" class="pp-input name" type="text" placeholder="Project name…" title="Project name — syncs to all tools instantly">
-    <input id="pp-id"   class="pp-input id"   type="text" placeholder="ID / Ref…"     title="Project ID or reference number">
-    <div class="pp-sep"></div>
-    <div class="pp-logo-wrap">
-      <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
-      <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
-      <button class="pp-btn" id="pp-logo-btn" onclick="document.getElementById('pp-logo-input').click()">⊕ Logo</button>
-      <button class="pp-btn danger" id="pp-logo-clear" onclick="ppClearLogo()" style="display:none">✕</button>
+<!-- ── Workspace Bar ── -->
+<div class="workspace-bar" id="workspace-bar">
+  <div class="wb-inner">
+    <span class="wb-label">Workspace</span>
+    <div class="wb-fields">
+      <select id="pp-select" class="pp-select" onchange="ppSelectChange()" title="Switch saved project"></select>
+      <div class="pp-sep"></div>
+      <input id="pp-name" class="pp-input name" type="text" placeholder="Project name…" title="Project name — syncs to all tools instantly">
+      <input id="pp-id"   class="pp-input id"   type="text" placeholder="ID / Ref…"     title="Project ID or reference number">
+      <div class="pp-sep"></div>
+      <button class="pp-btn" onclick="ppSave()" title="Save current project">Save</button>
+      <button class="pp-btn" onclick="ppNew()"  title="Create new blank project">New</button>
+      <button class="pp-btn danger" id="pp-del-btn" onclick="ppDelete()" title="Delete active project" disabled>Delete</button>
+      <span class="pp-proj-count" id="pp-proj-count">0/5</span>
+      <div class="pp-sep"></div>
+      <div class="pp-logo-wrap">
+        <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
+        <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
+        <button class="pp-btn" id="pp-logo-btn" onclick="document.getElementById('pp-logo-input').click()">⊕ Logo</button>
+        <button class="pp-btn danger" id="pp-logo-clear" onclick="ppClearLogo()" style="display:none">✕</button>
+      </div>
+      <div class="pp-sep"></div>
+      <span class="pp-sync-dot" id="pp-sync-dot" title="Changes synced to all open tools"></span>
+      <span id="pp-sync-label" style="font-size:10px;color:var(--faint);display:none;">Synced</span>
     </div>
-    <div class="pp-sep"></div>
-    <span class="pp-sync-dot" id="pp-sync-dot" title="Changes synced to all open tools"></span>
-    <span id="pp-sync-label" style="font-size:10px;color:var(--faint);display:none;">Synced</span>
   </div>
 </div>
 
+<!-- ── Hero ── -->
 <div class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">Bid Project Intelligence Suite</div>
-    <div class="hero-title">Tools built for <span>bid teams.</span></div>
-    <div class="hero-sub">Streamlined, browser-based project tools. No installation required, all data is processed locally for maximum privacy.</div>
+    <div class="hero-title">Bid management, <span>simplified.</span></div>
+    <div class="hero-sub">The essential toolkit for complex projects. Runs locally in your browser.</div>
   </div>
 </div>
 
+<!-- ── Dashboard Stats ── -->
+<div class="dash-wrap">
+  <div class="dash-inner">
+    <div class="dash-stats">
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f0fdf8;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-label">Total Budget</div>
+        <div class="stat-value" id="stat-budget">—</div>
+        <div class="stat-source">ResourceCast</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f0f4ff;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+            <path d="M16 3.13a4 4 0 010 7.75"/>
+          </svg>
+        </div>
+        <div class="stat-label">Team Size</div>
+        <div class="stat-value" id="stat-team">—</div>
+        <div class="stat-source">ResourceCast → OrgCast</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#fff8f0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="15" rx="2"/>
+            <line x1="2" y1="10" x2="22" y2="10"/>
+            <line x1="7" y1="5" x2="7" y2="10"/>
+            <line x1="17" y1="5" x2="17" y2="10"/>
+            <line x1="6" y1="14" x2="14" y2="14"/>
+          </svg>
+        </div>
+        <div class="stat-label">Key Phases</div>
+        <div class="stat-value" id="stat-phases">—</div>
+        <div class="stat-source">TimeCast</div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Tool Cards ── -->
 <div class="cards-wrap">
 <div class="cards">
 
@@ -402,13 +523,11 @@ const SuiteManager = (() => {
   const SYNC_KEY = 'bidcast_suite_sync';
   const LOGO_KEY = 'bidcast_logo';
 
-  /** Read the current sync object from localStorage. */
   function read() {
     try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); }
     catch { return {}; }
   }
 
-  /** Merge a patch into the sync object and broadcast to other tabs. */
   function write(patch, source) {
     try {
       const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
@@ -417,32 +536,24 @@ const SuiteManager = (() => {
     } catch { return {}; }
   }
 
-  /** Get the stored logo dataURL, or null. */
   function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
 
-  /** Save a logo dataURL and signal other tabs via _logoTs. */
   function setLogo(dataUrl) {
     localStorage.setItem(LOGO_KEY, dataUrl);
     write({ _logoTs: Date.now() }, 'logo');
   }
 
-  /** Remove the stored logo and signal other tabs. */
   function removeLogo() {
     localStorage.removeItem(LOGO_KEY);
     write({ _logoTs: Date.now() }, 'logo');
   }
 
-  /**
-   * Register a callback for any cross-tab sync update.
-   * Called when either the sync object OR the logo key changes.
-   */
   function onUpdate(cb) {
     window.addEventListener('storage', e => {
       if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
     });
   }
 
-  /** Update a badge element with a human-readable "synced N ago" label. */
   function updateBadge(el) {
     if (!el) return;
     const sync = read();
@@ -456,47 +567,163 @@ const SuiteManager = (() => {
   return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
 })();
 
-/* ── Index page project panel ── */
+/* ══ Project Management ══════════════════════════════════════════ */
+const PROJECTS_KEY    = 'bidcast_projects';
+const ACTIVE_PROJ_KEY = 'bidcast_active_project';
+const MAX_PROJECTS    = 5;
 
-/** Populate the project panel from the sync store on load. */
-function ppLoad() {
-  const sync = SuiteManager.read();
-  const nameEl = document.getElementById('pp-name');
-  const idEl   = document.getElementById('pp-id');
-  if (nameEl && sync.projectName) nameEl.value = sync.projectName;
-  if (idEl   && sync.projectId)   idEl.value   = sync.projectId;
-  ppUpdateLogo();
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-/** Show/hide the logo preview based on what is stored. */
+function ppGetProjects() {
+  try { return JSON.parse(localStorage.getItem(PROJECTS_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function ppPutProjects(arr) {
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(arr));
+}
+
+function ppGetActiveId() {
+  return localStorage.getItem(ACTIVE_PROJ_KEY) || '';
+}
+
+function ppSetActiveId(id) {
+  if (id) localStorage.setItem(ACTIVE_PROJ_KEY, id);
+  else localStorage.removeItem(ACTIVE_PROJ_KEY);
+}
+
+/** Rebuild the project dropdown and update the count badge. */
+function ppPopulateSelect() {
+  const sel = document.getElementById('pp-select');
+  if (!sel) return;
+  const projects = ppGetProjects();
+  const activeId = ppGetActiveId();
+  sel.innerHTML =
+    '<option value="">— unsaved —</option>' +
+    projects.map(p =>
+      `<option value="${esc(p.id)}"${p.id === activeId ? ' selected' : ''}>${esc(p.name)}</option>`
+    ).join('');
+  const countEl = document.getElementById('pp-proj-count');
+  if (countEl) countEl.textContent = `${projects.length}/${MAX_PROJECTS}`;
+  const delBtn = document.getElementById('pp-del-btn');
+  if (delBtn) delBtn.disabled = !activeId;
+}
+
+/** Called when user picks a different project from the dropdown. */
+function ppSelectChange() {
+  const id = document.getElementById('pp-select')?.value || '';
+  ppSetActiveId(id);
+  if (!id) { ppPopulateSelect(); return; }
+  const proj = ppGetProjects().find(p => p.id === id);
+  if (!proj) return;
+  const nameEl = document.getElementById('pp-name');
+  const idEl   = document.getElementById('pp-id');
+  if (nameEl) nameEl.value = proj.name;
+  if (idEl)   idEl.value   = proj.projectId || '';
+  if (proj.syncSnapshot) {
+    try {
+      const next = { ...proj.syncSnapshot, _ts: Date.now(), _src: 'index' };
+      localStorage.setItem('bidcast_suite_sync', JSON.stringify(next));
+    } catch {}
+  }
+  SuiteManager.write({ projectName: proj.name }, 'index');
+  ppPopulateSelect();
+  ppFlashSync();
+  refreshStats();
+}
+
+/** Save current workspace under the active project slot, or create new. */
+function ppSave() {
+  const name = (document.getElementById('pp-name')?.value || '').trim();
+  if (!name) {
+    alert('Please enter a project name before saving.');
+    document.getElementById('pp-name')?.focus();
+    return;
+  }
+  const projects   = ppGetProjects();
+  const activeId   = ppGetActiveId();
+  const projectId  = document.getElementById('pp-id')?.value.trim() || '';
+  const syncSnapshot = SuiteManager.read();
+
+  if (activeId) {
+    const idx = projects.findIndex(p => p.id === activeId);
+    if (idx >= 0) {
+      projects[idx] = { ...projects[idx], name, projectId, savedAt: Date.now(), syncSnapshot };
+      ppPutProjects(projects);
+      ppPopulateSelect();
+      ppFlashSync();
+      return;
+    }
+  }
+
+  if (projects.length >= MAX_PROJECTS) {
+    alert(`Maximum ${MAX_PROJECTS} projects reached. Delete a project to make room.`);
+    return;
+  }
+  const id = 'proj_' + Date.now();
+  projects.push({ id, name, projectId, savedAt: Date.now(), syncSnapshot });
+  ppPutProjects(projects);
+  ppSetActiveId(id);
+  ppPopulateSelect();
+  ppFlashSync();
+}
+
+/** Create a new blank project workspace. */
+function ppNew() {
+  if (ppGetProjects().length >= MAX_PROJECTS) {
+    alert(`Maximum ${MAX_PROJECTS} projects reached. Delete a project to make room.`);
+    return;
+  }
+  ppSetActiveId('');
+  const nameEl = document.getElementById('pp-name');
+  const idEl   = document.getElementById('pp-id');
+  if (nameEl) nameEl.value = '';
+  if (idEl)   idEl.value   = '';
+  SuiteManager.write({ projectName: '', projectId: '', phases: [], team: [] }, 'index');
+  ppPopulateSelect();
+  ppFlashSync();
+  refreshStats();
+}
+
+/** Delete the active project. */
+function ppDelete() {
+  const activeId = ppGetActiveId();
+  if (!activeId) return;
+  const projects = ppGetProjects();
+  const proj     = projects.find(p => p.id === activeId);
+  if (!proj || !confirm(`Delete project "${proj.name}"?`)) return;
+  const remaining = projects.filter(p => p.id !== activeId);
+  ppPutProjects(remaining);
+  if (remaining.length) {
+    ppSetActiveId(remaining[0].id);
+    const nameEl = document.getElementById('pp-name');
+    const idEl   = document.getElementById('pp-id');
+    if (nameEl) nameEl.value = remaining[0].name;
+    if (idEl)   idEl.value   = remaining[0].projectId || '';
+    if (remaining[0].syncSnapshot) SuiteManager.write(remaining[0].syncSnapshot, 'index');
+  } else {
+    ppSetActiveId('');
+    const nameEl = document.getElementById('pp-name');
+    if (nameEl) nameEl.value = '';
+  }
+  ppPopulateSelect();
+  ppFlashSync();
+  refreshStats();
+}
+
+/* ── Logo helpers ── */
 function ppUpdateLogo() {
   const logo    = SuiteManager.getLogo();
   const preview = document.getElementById('pp-logo-preview');
   const clearEl = document.getElementById('pp-logo-clear');
   const btnEl   = document.getElementById('pp-logo-btn');
-  if (preview) {
-    preview.src          = logo || '';
-    preview.style.display = logo ? 'block' : 'none';
-  }
+  if (preview) { preview.src = logo || ''; preview.style.display = logo ? 'block' : 'none'; }
   if (clearEl) clearEl.style.display = logo ? 'inline-flex' : 'none';
-  if (btnEl)   btnEl.textContent      = logo ? '⟳ Logo' : '⊕ Logo';
+  if (btnEl)   btnEl.textContent     = logo ? '⟳ Logo' : '⊕ Logo';
 }
 
-/** Write project name to sync whenever the input changes. */
-function ppOnName() {
-  const v = document.getElementById('pp-name')?.value || '';
-  SuiteManager.write({ projectName: v }, 'index');
-  ppFlashSync();
-}
-
-/** Write project ID to sync whenever the input changes. */
-function ppOnId() {
-  const v = document.getElementById('pp-id')?.value || '';
-  SuiteManager.write({ projectId: v }, 'index');
-  ppFlashSync();
-}
-
-/** Save logo from the file picker. */
 function ppSaveLogo(input) {
   const file = input.files[0];
   if (!file) return;
@@ -505,7 +732,6 @@ function ppSaveLogo(input) {
   reader.readAsDataURL(file);
 }
 
-/** Remove the stored logo. */
 function ppClearLogo() {
   SuiteManager.removeLogo();
   const inp = document.getElementById('pp-logo-input');
@@ -514,7 +740,7 @@ function ppClearLogo() {
   ppFlashSync();
 }
 
-/** Briefly show the "synced" indicator. */
+/* ── Sync feedback dot ── */
 let _ppSyncTimer;
 function ppFlashSync() {
   const dot   = document.getElementById('pp-sync-dot');
@@ -528,9 +754,82 @@ function ppFlashSync() {
   }, 2000);
 }
 
-/* Wire up inputs and cross-tab listener on load. */
+/* ── Name / ID instant sync ── */
+function ppOnName() {
+  const v = document.getElementById('pp-name')?.value || '';
+  SuiteManager.write({ projectName: v }, 'index');
+  ppFlashSync();
+}
+
+function ppOnId() {
+  const v = document.getElementById('pp-id')?.value || '';
+  SuiteManager.write({ projectId: v }, 'index');
+  ppFlashSync();
+}
+
+/* ── Dashboard stats ── */
+function _fmtEUR(n) {
+  return '€' + Math.round(n).toLocaleString('de-DE');
+}
+
+function refreshStats() {
+  // Total Budget: computed from ResourceCast tool state
+  let budget = null;
+  try {
+    const raw = localStorage.getItem('bidcast_state_resourcecast');
+    if (raw) {
+      const state = JSON.parse(raw);
+      let total = 0;
+      (state.roles || []).forEach(r => {
+        const hours = Object.values(r.monthHours || {}).reduce((a, b) => a + (b || 0), 0);
+        total += (r.rate || 0) * hours;
+      });
+      (state.expenses || []).forEach(e => { total += (e.amount || 0); });
+      budget = total;
+    }
+  } catch {}
+
+  // Team Size and Key Phases: from suite sync
+  const sync   = SuiteManager.read();
+  const team   = (sync.team   || []).length;
+  const phases = (sync.phases || []).length;
+
+  const budgetEl = document.getElementById('stat-budget');
+  const teamEl   = document.getElementById('stat-team');
+  const phasesEl = document.getElementById('stat-phases');
+
+  if (budgetEl) {
+    const hasBudget = budget !== null && budget > 0;
+    budgetEl.textContent = hasBudget ? _fmtEUR(budget) : '—';
+    budgetEl.classList.toggle('has-data', hasBudget);
+  }
+  if (teamEl) {
+    teamEl.textContent = team > 0 ? team + (team === 1 ? ' role' : ' roles') : '—';
+    teamEl.classList.toggle('has-data', team > 0);
+  }
+  if (phasesEl) {
+    phasesEl.textContent = phases > 0 ? phases + (phases === 1 ? ' phase' : ' phases') : '—';
+    phasesEl.classList.toggle('has-data', phases > 0);
+  }
+}
+
+/* ── Load panel state on start ── */
+function ppLoad() {
+  const sync     = SuiteManager.read();
+  const activeId = ppGetActiveId();
+  const proj     = activeId ? ppGetProjects().find(p => p.id === activeId) : null;
+  const nameEl   = document.getElementById('pp-name');
+  const idEl     = document.getElementById('pp-id');
+  if (nameEl) nameEl.value = proj?.name      ?? sync.projectName ?? '';
+  if (idEl)   idEl.value   = proj?.projectId ?? sync.projectId   ?? '';
+  ppUpdateLogo();
+}
+
+/* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
   ppLoad();
+  ppPopulateSelect();
+  refreshStats();
 
   const nameEl = document.getElementById('pp-name');
   const idEl   = document.getElementById('pp-id');
@@ -540,14 +839,19 @@ document.addEventListener('DOMContentLoaded', () => {
   /* React to changes made in other tools or tabs. */
   SuiteManager.onUpdate((sync, changedKey) => {
     if (changedKey === 'bidcast_logo') { ppUpdateLogo(); return; }
-    // Update panel inputs only if the user is not currently focused on them
     const nameInput = document.getElementById('pp-name');
     const idInput   = document.getElementById('pp-id');
     if (nameInput && document.activeElement !== nameInput && sync.projectName != null)
       nameInput.value = sync.projectName;
-    if (idInput   && document.activeElement !== idInput   && sync.projectId   != null)
-      idInput.value   = sync.projectId;
+    if (idInput && document.activeElement !== idInput && sync.projectId != null)
+      idInput.value = sync.projectId;
     ppFlashSync();
+    refreshStats();
+  });
+
+  /* Refresh stats when ResourceCast data changes in another tab. */
+  window.addEventListener('storage', e => {
+    if (e.key === 'bidcast_state_resourcecast') refreshStats();
   });
 });
 </script>
