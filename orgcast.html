@@ -955,7 +955,6 @@ function suiteWrite() {
     }));
     const prev = SuiteManager.read();
     SuiteManager.write({
-      projectName: document.getElementById('chart-title')?.value || prev.projectName || '',
       team: team.length ? team : (prev.team || []),
     }, 'orgcast');
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));

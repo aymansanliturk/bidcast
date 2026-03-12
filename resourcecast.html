@@ -1774,7 +1774,6 @@ function suiteWrite() {
     }));
     const prev = SuiteManager.read();
     SuiteManager.write({
-      projectName: state.projName || prev.projectName || '',
       team: team.length ? team : (prev.team || []),
     }, 'resourcecast');
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));

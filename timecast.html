@@ -1577,7 +1577,6 @@ function suiteWrite() {
 
     const prev = SuiteManager.read();
     SuiteManager.write({
-      projectName: proj.title || state.chartTitle || prev.projectName || '',
       phases: phases.length ? phases : (prev.phases || []),
     }, 'timecast');
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
@@ -1586,7 +1585,7 @@ function suiteWrite() {
 
 /**
  * React to sync updates from other tools.
- * Populates projectName into the title field if it is currently empty.
+ * Forces project name from the master dashboard (index.html) into the title field.
  * Always updates the sync badge.
  */
 function suiteRead(sync) {

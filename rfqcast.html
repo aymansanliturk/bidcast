@@ -435,10 +435,8 @@ function updateLogoUI() {
 
 /* ── SUITE SYNC ── */
 function suiteWrite() {
-  const prev = SuiteManager.read();
-  SuiteManager.write({
-    projectName: document.getElementById('proj-name')?.value || prev.projectName || '',
-  }, 'rfqcast');
+  // RFQCast contributes no unique data to the shared sync store.
+  // projectName is written only on user input via the oninput handler.
 }
 function suiteRead(sync) {
   if (!sync || sync._src === 'rfqcast') return;
