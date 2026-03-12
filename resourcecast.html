@@ -375,8 +375,8 @@
 
   <!-- Price Indexation -->
   <div class="section">
-    <div class="section-title">Price Indexation
-      <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;">— compound inflation applied to grand total over the project timeline</span>
+    <div class="section-title">Price Escalation
+      <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;">— fiscal year escalation · Oct–Sep FY · Year 1 = 0%, Year 2 = rate%, Year 3 = 2×rate%, …</span>
     </div>
     <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
       <label style="display:flex;flex-direction:column;gap:5px;">
@@ -388,7 +388,7 @@
         </div>
       </label>
       <div class="idx-stat">
-        <div class="idx-stat-label">Timeline Span</div>
+        <div class="idx-stat-label">Fiscal Years Span</div>
         <div class="idx-stat-val" id="idx-years">—</div>
       </div>
       <div class="idx-stat">
@@ -909,40 +909,109 @@ function updateLogoUI() {
     updateIndexation();
   }
 
-  // ── Price Indexation ──
+  // ── Price Escalation (fiscal year Oct–Sep based) ──
+
+  // Oct(m0=9)/Nov(10)/Dec(11) belong to the NEXT calendar year's FY
+  function _fiscalYearOf(m0, y) { return m0 >= 9 ? y + 1 : y; }
+
+  // Compute escalated cost with linear per-FY escalation:
+  // FY containing project start = 0%, next FY = rate%, next = 2×rate%, …
+  // Returns { startFY, numFYs, baseEur, indexedEur, fyData } or null if no phase dates.
+  function _computeEscalation(idxRate) {
+    if (!idxRate) return null;
+    const phases = getPhases();
+    const cols   = _buildCols(phases);
+    const roles  = getRoleData();
+
+    // Find project start FY from earliest phase start date
+    let minM0 = 0, minY = 9999, hasStart = false;
+    phases.forEach(p => {
+      if (p.sy > 0 && p.sm > 0) {
+        const sm0 = p.sm - 1;
+        if (!hasStart || p.sy < minY || (p.sy === minY && sm0 < minM0)) {
+          minY = p.sy; minM0 = sm0; hasStart = true;
+        }
+      }
+    });
+    if (!hasStart) return null;
+    const startFY = _fiscalYearOf(minM0, minY);
+
+    // Accumulate costs grouped by FY index (0 = first FY = escalation-free)
+    const fyData = {}; // fyIdx → { base, indexed }
+    let maxFyIdx = 0;
+
+    cols.forEach(col => {
+      let m0, y;
+      if (col.type === 'month') {
+        m0 = col.m; y = col.y;
+      } else {
+        // Collapsed phase agg: use phase start date for FY attribution
+        const ph = phases.find(p => p.id === col.phaseId);
+        if (!ph || !ph.sy || !ph.sm) return;
+        m0 = ph.sm - 1; y = ph.sy;
+      }
+      const fyIdx = Math.max(0, _fiscalYearOf(m0, y) - startFY);
+      maxFyIdx = Math.max(maxFyIdx, fyIdx);
+      const mult = 1 + fyIdx * idxRate / 100;
+      if (!fyData[fyIdx]) fyData[fyIdx] = { base: 0, indexed: 0 };
+      roles.forEach(r => {
+        const h    = r.monthHours[col.key] || 0;
+        const cost = h * r.rate;
+        fyData[fyIdx].base    += cost;
+        fyData[fyIdx].indexed += cost * mult;
+      });
+    });
+
+    // Expenses have no monthly breakdown — assign to FY0 (escalation-free)
+    let expEur = 0;
+    document.querySelectorAll('.exp-inp-amt').forEach(inp => { expEur += parseFloat(inp.value) || 0; });
+    if (!fyData[0]) fyData[0] = { base: 0, indexed: 0 };
+    fyData[0].base    += expEur;
+    fyData[0].indexed += expEur;
+
+    const numFYs     = maxFyIdx + 1;
+    const baseEur    = Object.values(fyData).reduce((s, d) => s + d.base, 0);
+    const indexedEur = Object.values(fyData).reduce((s, d) => s + d.indexed, 0);
+    return { startFY, numFYs, baseEur, indexedEur, fyData, idxRate };
+  }
+
   function updateIndexation() {
     const rateEl = document.getElementById('idx-rate');
     if (!rateEl) return;
     const idxRate = parseFloat(rateEl.value) || 0;
-    const phases  = getPhases();
+    const hr = hedgeRate();
 
-    // Timeline span: max end year − min start year (integer, per user spec)
-    let minY = Infinity, maxY = -Infinity;
-    phases.forEach(p => {
-      if (p.sy > 0) minY = Math.min(minY, p.sy);
-      if (p.ey > 0) maxY = Math.max(maxY, p.ey);
-    });
-    const years = (minY < Infinity && maxY > -Infinity) ? Math.max(0, maxY - minY) : 0;
+    // Always compute base total (labor + expenses)
+    const roles  = getRoleData();
+    let baseEur  = roles.reduce((s, r) => s + r.totalEur, 0);
+    document.querySelectorAll('.exp-inp-amt').forEach(inp => { baseEur += parseFloat(inp.value) || 0; });
 
-    // Base cost = labor + expenses
-    const roles   = getRoleData();
-    const laborEur = roles.reduce((s, r) => s + r.totalEur, 0);
-    let   expEur   = 0;
-    document.querySelectorAll('.exp-inp-amt').forEach(inp => { expEur += parseFloat(inp.value) || 0; });
-    const baseEur = laborEur + expEur;
-    const hr      = hedgeRate();
+    if (!idxRate) {
+      document.getElementById('idx-years').textContent     = '—';
+      document.getElementById('idx-premium').textContent   = '—';
+      document.getElementById('idx-total').textContent     = baseEur > 0 ? fmtEUR(baseEur) : '—';
+      document.getElementById('idx-total-dkk').textContent = baseEur > 0 ? fmtDKK(baseEur * hr) : '—';
+      return;
+    }
 
-    const indexedEur = idxRate > 0 && years > 0 ? baseEur * Math.pow(1 + idxRate / 100, years) : baseEur;
+    const escData = _computeEscalation(idxRate);
+    if (!escData) {
+      document.getElementById('idx-years').textContent     = 'No phase dates set';
+      document.getElementById('idx-premium').textContent   = '—';
+      document.getElementById('idx-total').textContent     = baseEur > 0 ? fmtEUR(baseEur) : '—';
+      document.getElementById('idx-total-dkk').textContent = baseEur > 0 ? fmtDKK(baseEur * hr) : '—';
+      return;
+    }
+
+    const { startFY, numFYs, indexedEur } = escData;
     const premiumEur = indexedEur - baseEur;
+    const fyLabel = Array.from({ length: numFYs }, (_, i) =>
+      `FY${startFY + i}: +${(i * idxRate).toFixed(1)}%`).join(' · ');
 
-    document.getElementById('idx-years').textContent =
-      years > 0 ? `${years} year${years !== 1 ? 's' : ''}` : '—';
-    document.getElementById('idx-premium').textContent =
-      (idxRate > 0 && years > 0 && premiumEur > 0) ? `+ ${fmtEUR(premiumEur)}` : '—';
-    document.getElementById('idx-total').textContent =
-      indexedEur > 0 ? fmtEUR(indexedEur) : '—';
-    document.getElementById('idx-total-dkk').textContent =
-      indexedEur > 0 ? fmtDKK(indexedEur * hr) : '—';
+    document.getElementById('idx-years').textContent     = `${numFYs} FY · ${fyLabel}`;
+    document.getElementById('idx-premium').textContent   = premiumEur > 0 ? `+ ${fmtEUR(premiumEur)}` : '—';
+    document.getElementById('idx-total').textContent     = fmtEUR(indexedEur);
+    document.getElementById('idx-total-dkk').textContent = fmtDKK(indexedEur * hr);
   }
 
   // ── Generate ──
@@ -1086,29 +1155,28 @@ function updateLogoUI() {
       <td class="num">100%</td>
     </tr>`;
 
-    // Price indexation rows
-    const idxRate = parseFloat(document.getElementById('idx-rate').value) || 0;
-    let idxYears = 0;
-    { let minY = Infinity, maxY = -Infinity;
-      phases.forEach(p => { if (p.sy>0) minY=Math.min(minY,p.sy); if (p.ey>0) maxY=Math.max(maxY,p.ey); });
-      idxYears = (minY<Infinity && maxY>-Infinity) ? Math.max(0, maxY-minY) : 0; }
-    if (idxRate > 0 && idxYears > 0) {
-      const indexedEur  = grandEur * Math.pow(1 + idxRate / 100, idxYears);
-      const premiumEur  = indexedEur - grandEur;
-      const totalCols   = 3 + nPhases + xCols + 1;
+    // Price escalation rows (fiscal year Oct–Sep based)
+    const idxRate  = parseFloat(document.getElementById('idx-rate').value) || 0;
+    const escData  = idxRate > 0 ? _computeEscalation(idxRate) : null;
+    if (escData && (escData.indexedEur - escData.baseEur) > 0.01) {
+      const { startFY, numFYs, indexedEur, baseEur: escBase } = escData;
+      const premiumEur = indexedEur - escBase;
+      const totalCols  = 3 + nPhases + xCols + 1;
+      const fyBreakdown = Array.from({ length: numFYs }, (_, i) =>
+        `FY${startFY + i}: +${(i * idxRate).toFixed(1)}%`).join(' → ');
       html += `<tr class="sep-row"><td colspan="${totalCols}"></td></tr>`;
       html += `<tr class="idx-row">
         <td colspan="2" style="font-style:italic;padding-left:10px;">
-          Price Indexation <span style="font-weight:400;font-size:9px;color:#aaa;">${idxRate}% / yr × ${idxYears} yr${idxYears!==1?'s':''} · compound</span>
+          Price Escalation <span style="font-weight:400;font-size:9px;color:#aaa;">${fyBreakdown} · Oct–Sep FY</span>
         </td>
         <td colspan="${nPhases}"></td>
         <td></td>
         ${showEur ? `<td class="num">+ ${fmtEUR(premiumEur)}</td>` : ''}
         ${showDkk ? `<td class="num">+ ${fmtDKK(premiumEur * rate)}</td>` : ''}
-        <td class="num">+${((premiumEur/grandEur)*100).toFixed(1)}%</td>
+        <td class="num">+${((premiumEur / escBase) * 100).toFixed(1)}%</td>
       </tr>`;
       html += `<tr class="idx-grand-row">
-        <td colspan="2">INDEXED GRAND TOTAL</td>
+        <td colspan="2">ESCALATED GRAND TOTAL</td>
         <td colspan="${nPhases}"></td>
         <td class="num">${totalH ? fmtN(totalH) + ' h' : '—'}</td>
         ${showEur ? `<td class="num">${fmtEUR(indexedEur)}</td>` : ''}
@@ -1121,17 +1189,22 @@ function updateLogoUI() {
     document.getElementById('out-table').innerHTML = html;
 
     // Monthly distribution table
-    const cols     = _buildCols(phases);
+    const cols      = _buildCols(phases);
     const monthCols = cols.filter(c => c.type === 'month');
     if (monthCols.length > 0) {
       const MN_S = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      // Sum hours per month across all roles
-      const moTotals = {};
-      monthCols.forEach(c => { moTotals[c.key] = 0; });
+      // Sum hours and cost per month across all roles
+      const moTotals = {}, moCosts = {};
+      monthCols.forEach(c => { moTotals[c.key] = 0; moCosts[c.key] = 0; });
       roles.forEach(r => {
-        monthCols.forEach(c => { moTotals[c.key] += r.monthHours[c.key] || 0; });
+        monthCols.forEach(c => {
+          const h = r.monthHours[c.key] || 0;
+          moTotals[c.key] += h;
+          moCosts[c.key]  += h * r.rate;
+        });
       });
-      const moGrandH = Object.values(moTotals).reduce((s,v) => s+v, 0);
+      const moGrandH   = Object.values(moTotals).reduce((s,v) => s+v, 0);
+      const moGrandEur = Object.values(moCosts).reduce((s,v) => s+v, 0);
 
       let mHtml = `<table class="out-table out-mo-table" style="margin-top:10mm;font-size:9px;">
         <thead><tr>
@@ -1141,7 +1214,7 @@ function updateLogoUI() {
       });
       mHtml += `<th>Total</th></tr></thead><tbody>`;
 
-      // Hours row
+      // Total hours row
       mHtml += `<tr><td style="font-weight:600;">Total hours</td>`;
       monthCols.forEach(c => {
         const v = moTotals[c.key];
@@ -1149,7 +1222,7 @@ function updateLogoUI() {
       });
       mHtml += `<td class="num">${moGrandH ? fmtN(moGrandH)+' h' : '—'}</td></tr>`;
 
-      // % row
+      // % weight row
       mHtml += `<tr style="background:#faf9f7;"><td style="color:var(--muted);font-style:italic;">% weight</td>`;
       monthCols.forEach(c => {
         const v   = moTotals[c.key];
@@ -1157,6 +1230,26 @@ function updateLogoUI() {
         mHtml += `<td class="num" style="color:#aaa;font-size:8px;">${pct}</td>`;
       });
       mHtml += `<td class="num" style="color:var(--muted);">100%</td></tr>`;
+
+      // Total cost EUR row
+      if (showEur) {
+        mHtml += `<tr><td style="font-weight:600;color:var(--accent);">Total cost (EUR)</td>`;
+        monthCols.forEach(c => {
+          const v = moCosts[c.key];
+          mHtml += `<td class="num" style="color:var(--accent);">${v ? fmtEUR(v) : '—'}</td>`;
+        });
+        mHtml += `<td class="num" style="color:var(--accent);font-weight:700;">${moGrandEur ? fmtEUR(moGrandEur) : '—'}</td></tr>`;
+      }
+
+      // Total cost DKK row
+      if (showDkk) {
+        mHtml += `<tr style="background:#faf9f7;"><td style="font-weight:600;color:var(--muted);">Total cost (DKK)</td>`;
+        monthCols.forEach(c => {
+          const v = moCosts[c.key];
+          mHtml += `<td class="num" style="color:var(--muted);">${v ? fmtDKK(v * rate) : '—'}</td>`;
+        });
+        mHtml += `<td class="num" style="color:var(--muted);font-weight:700;">${moGrandEur ? fmtDKK(moGrandEur * rate) : '—'}</td></tr>`;
+      }
 
       mHtml += `</tbody></table>`;
       document.getElementById('out-table').insertAdjacentHTML('afterend', mHtml);
@@ -1357,7 +1450,10 @@ function updateLogoUI() {
           const name = String(row[0] || '').trim();
           if (!name) continue;
           const lc = name.toLowerCase();
-          if (lc.includes('total') || lc.includes('phase') || lc.includes('sum') || lc === '') continue;
+          if (lc.includes('total') || lc.includes('phase') || lc.includes('sum') || lc === '' ||
+              lc.startsWith('%') || lc.includes('weight') || lc.includes('monthly cost') ||
+              lc.includes('escalat') || lc.includes('indexed') || lc.startsWith('fy') ||
+              lc.includes('grand') || lc.includes('price escal')) continue;
 
           const rate       = rateCol >= 0 ? (parseFloat(row[rateCol]) || 0) : 0;
           const monthHours = {};
@@ -1486,6 +1582,72 @@ function updateLogoUI() {
       totRow[c] = { t:'n', f:`SUM(${col}${dataStart}:${col}${dataEnd})` };
     }
     wsData.push(totRow);
+
+    // Pre-compute per-month totals for % weight and monthly cost rows
+    const moTotH = {}; // key → total hours across all roles
+    const moTotC = {}; // key → total cost EUR across all roles
+    months.forEach(mo => { moTotH[mo.key] = 0; moTotC[mo.key] = 0; });
+    roles.forEach(r => {
+      months.forEach(mo => {
+        const h = r.monthHours[mo.key] || 0;
+        moTotH[mo.key] += h;
+        moTotC[mo.key] += h * r.rate;
+      });
+    });
+    const grandH   = roles.reduce((s, r) => s + r.totalH, 0);
+    const grandEur = roles.reduce((s, r) => s + r.totalEur, 0);
+
+    // % weight row
+    const pctRow = new Array(totalCols).fill('');
+    pctRow[0] = '% weight';
+    months.forEach(mo => {
+      const h = moTotH[mo.key];
+      pctRow[monthColIdx[mo.key]] = grandH > 0 ? Math.round(h / grandH * 1000) / 10 : 0;
+    });
+    pctRow[totalHCol]  = 100;
+    wsData.push(pctRow);
+
+    // Monthly Cost EUR row
+    const moCostEurRow = new Array(totalCols).fill('');
+    moCostEurRow[0] = 'Monthly Cost (EUR)';
+    months.forEach(mo => { moCostEurRow[monthColIdx[mo.key]] = Math.round(moTotC[mo.key] * 100) / 100; });
+    moCostEurRow[costEurCol] = grandEur;
+    wsData.push(moCostEurRow);
+
+    // Monthly Cost DKK row
+    const moCostDkkRow = new Array(totalCols).fill('');
+    moCostDkkRow[0] = 'Monthly Cost (DKK)';
+    months.forEach(mo => { moCostDkkRow[monthColIdx[mo.key]] = Math.round(moTotC[mo.key] * hedgeR); });
+    moCostDkkRow[costDkkCol] = Math.round(grandEur * hedgeR);
+    wsData.push(moCostDkkRow);
+
+    // Escalation rows (if rate set)
+    const idxRate  = parseFloat(document.getElementById('idx-rate').value) || 0;
+    const escData  = idxRate > 0 ? _computeEscalation(idxRate) : null;
+    if (escData) {
+      const { startFY, numFYs, indexedEur } = escData;
+      const premiumEur = indexedEur - escData.baseEur;
+      wsData.push([]); // separator
+      const escHdrRow = new Array(totalCols).fill('');
+      escHdrRow[0] = `Price Escalation (${idxRate}% / yr · Oct–Sep FY · Year 1 = 0%)`;
+      escHdrRow[costEurCol] = `+${fmtEUR(premiumEur)}`;
+      escHdrRow[costDkkCol] = `+${fmtDKK(premiumEur * hedgeR)}`;
+      wsData.push(escHdrRow);
+      // Per-FY breakdown
+      Array.from({ length: numFYs }, (_, i) => {
+        const fyRow = new Array(totalCols).fill('');
+        fyRow[0] = `  FY${startFY + i} (Oct ${startFY + i - 1}–Sep ${startFY + i})`;
+        fyRow[1] = `+${(i * idxRate).toFixed(1)}%`;
+        wsData.push(fyRow);
+      });
+      // Escalated grand total row
+      const escTotRow = new Array(totalCols).fill('');
+      escTotRow[0] = 'ESCALATED GRAND TOTAL';
+      escTotRow[totalHCol]  = grandH;
+      escTotRow[costEurCol] = Math.round(indexedEur * 100) / 100;
+      escTotRow[costDkkCol] = Math.round(indexedEur * hedgeR);
+      wsData.push(escTotRow);
+    }
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(wsData);
