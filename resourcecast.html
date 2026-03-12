@@ -565,6 +565,7 @@ function updateLogoUI() {
   // ── Build column list ──
   function _buildCols(phases) {
     const cols = [];
+    const seenKeys = new Set(); // deduplicate: each calendar month appears only once
     phases.forEach(ph => {
       const hasDates = ph.sm > 0 && ph.sy > 0 && ph.em > 0 && ph.ey > 0;
       const isCollapsed = !!phaseCollapsed[ph.id];
@@ -572,7 +573,10 @@ function updateLogoUI() {
         let m = ph.sm - 1, y = ph.sy, em0 = ph.em - 1, ey = ph.ey;
         while (y < ey || (y === ey && m <= em0)) {
           const key = `${y}-${String(m+1).padStart(2,'0')}`;
-          cols.push({ type:'month', key, m, y, phaseId: ph.id });
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            cols.push({ type:'month', key, m, y, phaseId: ph.id });
+          }
           m++; if (m > 11) { m = 0; y++; }
         }
       } else {
@@ -895,21 +899,18 @@ function updateLogoUI() {
   // ── Generate ──
   function getRoleData() {
     const phases = getPhases();
+    const cols   = _buildCols(phases); // deduplicated: each month belongs to exactly one phase
+
     return [...document.querySelectorAll('.role-row')].map(tr => {
       const rRate      = parseFloat(tr.querySelector('.role-rate').value) || 0;
       const monthHours = _getRowMonthHours(tr);
 
-      // Aggregate per phase (sum monthly keys + agg key)
+      // Sum hours per phase using only the columns assigned to each phase (no double-counting)
       const phaseHours = {};
       phases.forEach(ph => {
-        let sum = monthHours[`ph:${ph.id}`] || 0;
-        if (ph.sm > 0 && ph.sy > 0 && ph.em > 0 && ph.ey > 0) {
-          let m = ph.sm - 1, y = ph.sy, em0 = ph.em - 1, ey = ph.ey;
-          while (y < ey || (y === ey && m <= em0)) {
-            sum += monthHours[`${y}-${String(m+1).padStart(2,'0')}`] || 0;
-            m++; if (m > 11) { m = 0; y++; }
-          }
-        }
+        let sum = monthHours[`ph:${ph.id}`] || 0; // collapsed agg cell
+        cols.filter(c => c.phaseId === ph.id && c.type === 'month')
+            .forEach(c => { sum += monthHours[c.key] || 0; });
         phaseHours[ph.id] = sum;
       });
 
