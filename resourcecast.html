@@ -1260,7 +1260,6 @@ function updateLogoUI() {
 
     const gantt  = document.getElementById('rc-gantt');
     const legend = document.getElementById('gantt-legend');
-    gantt.style.gridTemplateColumns = ''; // reset stale value before rebuild
     gantt.innerHTML  = '';
     legend.innerHTML = '';
 
@@ -1281,17 +1280,17 @@ function updateLogoUI() {
     document.getElementById('gantt-print-logo').innerHTML = logoSrc
       ? `<img src="${logoSrc}" style="height:36px;max-width:150px;object-fit:contain;">` : '';
 
-    // Make page visible BEFORE rendering so 1fr columns calculate against real layout width
-    document.getElementById('gantt-page').style.display = '';
-
-    // Check if phases have calendar dates
+    // Render while hidden — grid-template-columns is set inside the render
+    // functions and must be in place before the element becomes visible
     const hasDates = phases.some(p => p.sm > 0 && p.sy > 0 && p.em > 0 && p.ey > 0);
-
     if (hasDates) {
       _renderCalendarGantt(phases, roles, gantt, legend);
     } else {
       _renderPhaseGantt(phases, roles, gantt, legend);
     }
+
+    // Make visible only after grid template columns are set
+    document.getElementById('gantt-page').style.display = '';
   }
 
   // Calendar-based Gantt (when phases have date ranges from TimeCast sync)
