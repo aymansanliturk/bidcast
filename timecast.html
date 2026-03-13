@@ -332,11 +332,15 @@
   @media print {
     #editor             { display: none !important; }
     #output             { display: block !important; }
-    .output-shell       { display: block; }
+    /* Collapse sidebar and rebalance: chart fills full print width */
+    .output-shell       { display: block !important; }
+    .no-print           { display: none !important; }
     .reorder-sidebar    { display: none !important; }
-    .chart-area         { padding: 0; }
     .sidebar-actions    { display: none !important; }
     #time-window-ctrl   { display: none !important; }
+    /* Chart area fills 100% once sidebar is gone */
+    .chart-area         { width: 100% !important; padding: 0 !important; }
+    .gantt-outer        { page-break-inside: avoid; }
     body { background: #fff; }
   }
 </style>
@@ -467,7 +471,7 @@
   <div class="output-shell">
 
     <!-- Reorder sidebar -->
-    <div class="reorder-sidebar">
+    <div class="reorder-sidebar no-print">
       <div class="sidebar-brand">
         <div class="sb-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
@@ -1695,7 +1699,21 @@ function updateLogoUI() {
     html2pdf().set({
       margin: 0, filename: name + '.pdf',
       image: { type: 'jpeg', quality: 0.97 },
-      html2canvas: { scale: 2, useCORS: true, onclone: d => d.querySelectorAll('.print-bar,.persist-bar').forEach(el => el.remove()) },
+      html2canvas: {
+        scale: 2, useCORS: true,
+        onclone: d => {
+          // Remove every interactive / non-data element from the cloned DOM
+          d.querySelectorAll(
+            '.no-print, .print-bar, .persist-bar, .suite-nav, .config-bar, ' +
+            '.reorder-sidebar, .sidebar-actions, #time-window-ctrl'
+          ).forEach(el => el.remove());
+          // Rebalance layout: make the chart fill the full page width
+          const shell = d.querySelector('.output-shell');
+          if (shell) { shell.style.display = 'block'; shell.style.flexDirection = 'unset'; }
+          const area  = d.querySelector('.chart-area');
+          if (area)  { area.style.width = '100%'; area.style.padding = '10mm 12mm'; }
+        },
+      },
       jsPDF: { unit: 'mm', format: fmt === 'A2' ? 'a2' : fmt === 'A4' ? 'a4' : 'a3', orientation: 'landscape' }
     }).from(document.getElementById('output')).save();
   }

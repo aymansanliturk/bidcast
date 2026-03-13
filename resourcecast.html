@@ -143,11 +143,24 @@
   .btn-pdf:hover { background: #9b2d22; }
 
   .out-page { padding: 10mm 12mm; }
-  .out-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6mm; padding-bottom: 4mm; border-bottom: 2px solid var(--text); }
-  .out-title-wrap { flex: 1; padding: 0 20px; }
-  .out-doc-title { font-size: 20px; font-weight: 700; color: var(--text); }
-  .out-doc-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-  .out-meta { text-align: right; font-size: 11px; color: var(--muted); line-height: 1.7; font-family: 'DM Mono', monospace; }
+  /* Output document header — matches premium suite header language */
+  .out-header {
+    display: flex; align-items: center; gap: 16px;
+    padding-bottom: 4mm; margin-bottom: 6mm;
+    border-bottom: 2px solid var(--text);
+  }
+  .out-title-block { flex: 1; }
+  .out-doc-title {
+    font-size: 18px; font-weight: 700; letter-spacing: -0.3px; color: var(--text);
+  }
+  .out-header-right {
+    text-align: right; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  }
+  .out-meta {
+    font-family: 'DM Mono', monospace; font-size: 9.5px;
+    color: var(--faint); line-height: 1.8;
+  }
   .out-meta strong { color: var(--text); }
 
   /* Output table */
@@ -182,10 +195,11 @@
 
   /* Print */
   @media print {
-    #editor { display: none !important; }
-    #output { display: block !important; }
+    #editor    { display: none !important; }
+    #output    { display: block !important; }
     .print-bar { display: none !important; }
-    .out-page { padding: 0; }
+    .no-print  { display: none !important; }
+    .out-page  { padding: 0; }
   }
 
   /* ── Monthly Grid ── */
@@ -409,7 +423,7 @@
 
 <!-- ═══════════════ OUTPUT ═══════════════ -->
 <div id="output" style="display:none">
-  <div class="print-bar">
+  <div class="print-bar no-print">
     <button class="btn-secondary" onclick="goBack()">← Edit Data</button>
     <button class="btn-print" onclick="window.print()">🖨 Print</button>
     <button class="btn-pdf"   onclick="exportPDF()">⬇ Export PDF</button>
@@ -417,14 +431,13 @@
 
   <div class="out-page" id="out-page">
     <div class="out-header">
-    <div id="print-logo" style="flex-shrink:0;"></div>
-      <div>
-      </div>
-      <div class="out-title-wrap">
+      <div id="print-logo" style="flex-shrink:0;"></div>
+      <div class="out-title-block">
         <div class="out-doc-title" id="out-title">Resource Cost Breakdown</div>
-        <div class="out-doc-sub"  id="out-sub"></div>
       </div>
-      <div class="out-meta" id="out-meta"></div>
+      <div class="out-header-right">
+        <div class="out-meta" id="out-meta"></div>
+      </div>
     </div>
 
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
@@ -1133,7 +1146,6 @@ function updateLogoUI() {
 
     // Header
     document.getElementById('out-title').textContent = projName || 'Resource Cost Breakdown';
-    document.getElementById('out-sub').textContent   = '';
     document.getElementById('out-meta').innerHTML =
       `${rev ? `<strong>${rev}</strong><br>` : ''}${date||''}`;
     document.getElementById('out-hedge').textContent = '';
@@ -1420,7 +1432,13 @@ function updateLogoUI() {
       image: { type: 'jpeg', quality: 0.97 },
       html2canvas: {
         scale: 2, useCORS: true,
-        onclone: d => d.querySelectorAll('.print-bar').forEach(el => el.remove()),
+        onclone: d => {
+          d.querySelectorAll(
+            '.no-print, .print-bar, .persist-bar, .suite-nav, .config-bar'
+          ).forEach(el => el.remove());
+          const page = d.querySelector('.out-page');
+          if (page) { page.style.padding = '10mm 12mm'; page.style.width = '100%'; }
+        },
       },
       jsPDF: { unit: 'mm', format: 'a3', orientation: 'landscape' },
     }).from(document.getElementById('output')).save();

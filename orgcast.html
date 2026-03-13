@@ -144,6 +144,7 @@
     #editor    { display:none !important; visibility:hidden !important; }
     #output    { display:block !important; visibility:visible !important; }
     .print-bar { display:none !important; }
+    .no-print  { display:none !important; }
     body { background:#fff; }
     .org-node { box-shadow:none; }
   }
@@ -258,7 +259,7 @@
 
 <!-- ══════════════════ OUTPUT ══════════════════ -->
 <div id="output">
-  <div class="print-bar">
+  <div class="print-bar no-print">
     <button class="btn-secondary" onclick="goBack()">← Edit Data</button>
     <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;" onclick="window.print()">🖨 Print</button>
     <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;background:#c0392b;" onclick="exportPDF()">⬇ PDF</button>
@@ -938,7 +939,17 @@ function updateLogoUI() {
     html2pdf().set({
       margin: 0, filename: name + '.pdf',
       image: { type: 'jpeg', quality: 0.97 },
-      html2canvas: { scale: 2, useCORS: true, onclone: d => d.querySelectorAll('.print-bar,.persist-bar').forEach(el => el.remove()) },
+      html2canvas: {
+        scale: 2, useCORS: true,
+        onclone: d => {
+          d.querySelectorAll(
+            '.no-print, .print-bar, .persist-bar, .suite-nav, .config-bar'
+          ).forEach(el => el.remove());
+          // Ensure org chart SVG fills the full page width
+          const wrap = d.querySelector('#output');
+          if (wrap) { wrap.style.width = '100%'; wrap.style.padding = '10mm 12mm'; }
+        },
+      },
       jsPDF: { unit: 'mm', format: fmt === 'A3' ? 'a3' : 'a4', orientation: 'landscape' }
     }).from(document.getElementById('output')).save();
   }
