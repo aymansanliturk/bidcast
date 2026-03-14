@@ -545,6 +545,7 @@ function updateEtColor(tid, color) {
   const card = document.querySelector(`.et-card[data-tid="${tid}"]`);
   if (!card) return;
   card.querySelector('.et-color-dot').style.background = color;
+  _scheduleSnap(); // color change mutates inline style, not an input — persist explicitly
 }
 
 function getEquipTypes() {
@@ -733,12 +734,11 @@ function buildDetailPanel(tr, vendors, requiredMonths) {
 }
 
 function buildVendorBlock(v, i, requiredMonths) {
-  const suppliers = getSuppliers();
-  const labels = suppliers.map((s,i) => s.name || `Supplier ${i+1}`);
+  const label = `Supplier ${i + 1}`;
   const warn = validityWarn(v, requiredMonths);
   return `
     <div class="vendor-block">
-      <div class="vendor-title" data-vi="${i}"><span>${labels[i]}</span>
+      <div class="vendor-title" data-vi="${i}"><span>${label}</span>
         ${warn ? `<span class="validity-warn">${warn}</span>` : ''}
       </div>
       <div class="vendor-fields">
@@ -1332,8 +1332,16 @@ document.addEventListener('keydown', e => {
     new MutationObserver(() => {
       if (_suppHist) return;
       clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, { childList: true, subtree: true });
-    ed.addEventListener('input', _scheduleSnap);
+    }).observe(ed, {
+      childList: true, subtree: true,
+      // attributes: true catches inline-style mutations (e.g. color-picker changes)
+      attributes: true, attributeFilter: ['style'],
+      // characterData: true catches text-node edits in contenteditable elements
+      characterData: true, characterDataSubtree: true,
+    });
+    // 'input' covers text inputs / textareas; 'change' covers selects and checkboxes
+    ed.addEventListener('input',  _scheduleSnap);
+    ed.addEventListener('change', _scheduleSnap);
   }
   setTimeout(_snapshot, 300);
 })();
