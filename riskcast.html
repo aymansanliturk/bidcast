@@ -841,12 +841,17 @@ function suiteWrite() {
 }
 
 function suiteRead(sync) {
-  if (!sync || sync._src === 'riskcast') return;
-  const el = document.getElementById('doc-title');
-  if (el && sync.projectName && sync.projectName !== 'Project Name'
-      && sync.projectName !== 'Risk Register' && document.activeElement !== el)
-    el.value = sync.projectName;
-  SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
+  try {
+    if (!sync || sync._src === 'riskcast') {
+      SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
+      return;
+    }
+    const el = document.getElementById('doc-title');
+    if (el && sync.projectName && sync.projectName !== 'Project Name'
+        && document.activeElement !== el)
+      el.value = sync.projectName;
+    SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
+  } catch(e) {}
 }
 
 /* ══ Undo / Redo ════════════════════════════════════════════════════ */
