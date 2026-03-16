@@ -159,7 +159,7 @@
     line-height: 1; color: var(--text); margin-bottom: 24px;
   }
   .hero-title span { color: var(--accent); opacity: 0.8; }
-  .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 500px; }
+  .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 600px; }
 
   /* ── Dashboard Stats ── */
   .dash-wrap {
@@ -205,32 +205,50 @@
 
   /* ── Progress Bar ── */
   .progress-wrap {
-    margin-top: 18px; max-width: 624px;
-    background: var(--surface); border: 1.5px solid var(--border);
-    border-radius: 12px; padding: 14px 18px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+  margin-top: 18px;
+  width: 624px; 
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
   }
   .progress-header {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 6px; margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px; 
   }
   .progress-hd-edge {
-    font-family: 'DM Mono', monospace; font-size: 9px;
-    color: var(--faint); text-transform: uppercase; letter-spacing: 0.5px;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 160px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap; 
   }
   .progress-hd-pct {
-    font-family: 'DM Mono', monospace; font-size: 10px;
-    font-weight: 700; color: var(--accent);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0; 
+  }
   }
   .progress-track {
-    height: 6px; background: var(--border);
-    border-radius: 99px; overflow: hidden; position: relative;
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  position: relative;
   }
   .progress-fill {
-    height: 100%; background: var(--accent);
-    border-radius: 99px; transition: width 0.4s ease;
-    min-width: 4px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+  min-width: 4px;
   }
   .progress-fill.warn { background: #d97706; }
   .progress-fill.alert { background: #c0392b; }
@@ -438,18 +456,18 @@
   <div class="dash-inner">
     <div class="dash-stats">
 
-      <div class="stat-card" id="stat-card-budget">
-        <div class="stat-icon" style="background:#f0fdf8;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23"/>
-            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-          </svg>
-        </div>
-        <div class="stat-label">Total Budget</div>
-        <div class="stat-value" id="stat-budget">—</div>
-        <div class="stat-source">ResourceCast</div>
-        <div class="stat-chip hidden" id="chip-budget"></div>
-      </div>
+<div class="stat-card">
+  <div class="stat-icon" style="background:#f0fdf8;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 10h12"/>
+      <path d="M4 14h9"/>
+      <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
+    </svg>
+  </div>
+  <div class="stat-label">Total Budget</div>
+  <div class="stat-value" id="stat-budget">—</div>
+  <div class="stat-source">ResourceCast</div>
+</div>
 
       <div class="stat-card">
         <div class="stat-icon" style="background:#f0f4ff;">
@@ -611,7 +629,7 @@
         <line x1="6" y1="17" x2="10" y2="17"/>
       </svg>
     </div>
-    <div class="card-name">Timecast</div>
+    <div class="card-name">TimeCast</div>
     <div class="card-tagline">Timeline Intelligence</div>
     <div class="card-desc">Multi-project Gantt charts with baseline tracking and A3-ready PDF output. Start here — phases flow to ResourceCast automatically.</div>
     <div class="card-footer">
@@ -654,7 +672,7 @@
         <rect x="16.5" y="15.5" width="5" height="3.5" rx="1"/>
       </svg>
     </div>
-    <div class="card-name">Orgcast</div>
+    <div class="card-name">OrgCast</div>
     <div class="card-tagline">Org Charts</div>
     <div class="card-desc">Dynamic project organisation charts with SVG connectors. Team roles sync in from ResourceCast.</div>
     <div class="card-footer">
@@ -678,7 +696,7 @@
         <line x1="9" y1="3" x2="9" y2="21"/>
       </svg>
     </div>
-    <div class="card-name">DORcast</div>
+    <div class="card-name">DORCast</div>
     <div class="card-tagline">Responsibility Matrix</div>
     <div class="card-desc">Build multi-party responsibility matrices (DOR/RAC) for complex project scopes.</div>
     <div class="card-footer">
