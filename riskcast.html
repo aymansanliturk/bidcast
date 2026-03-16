@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiskCast — Risk Register</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style id="page-size-style">@page { size: A3 landscape; margin: 10mm; }</style>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f4f0; --surface: #fff; --border: #e0ddd6;
+  --text: #1a1916; --muted: #6b6860; --faint: #a8a49e;
+  --accent: #2c4e87; --accent2: #1e3a6b; --green: #107c41; --red: #c0392b;
+  --risk-low:       #107c41; --risk-low-bg:      #dcfce7;
+  --risk-medium:    #92400e; --risk-medium-bg:   #fef3c7;
+  --risk-high:      #c05600; --risk-high-bg:     #ffedd5;
+  --risk-critical:  #991b1b; --risk-critical-bg: #fee2e2;
+}
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+
+/* ── Suite Nav ── */
+.suite-nav {
+  position:sticky; top:0; z-index:100;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 32px;
+  background:rgba(255,255,255,0.9); backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.suite-home { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); }
+.suite-logo-icon { width:28px; height:28px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.suite-logo-icon svg { width:16px; height:16px; }
+.suite-wordmark { font-size:14px; font-weight:700; letter-spacing:0.5px; }
+.suite-sep { color:var(--border); font-size:20px; font-weight:300; margin:0 4px; }
+.suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); }
+.suite-nav-right { display:flex; align-items:center; gap:8px; }
+.logo-status { font-size:10px; font-weight:600; color:var(--green); }
+
+/* ── Editor ── */
+#editor { max-width:1200px; margin:0 auto; padding:24px 28px 60px; }
+.section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:14px; }
+.section-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--faint); margin-bottom:14px; }
+.fields { display:grid; gap:12px; }
+.f3 { grid-template-columns:1fr 1fr 1fr; }
+label { display:flex; flex-direction:column; gap:5px; font-size:11px; font-weight:500; color:var(--muted); }
+input[type="text"] { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text); background:#faf9f7; border:1px solid var(--border); border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.15s; width:100%; }
+input[type="text"]:focus { border-color:var(--accent); background:#fff; }
+
+/* ── Config bar ── */
+.config-bar { display:flex; align-items:center; gap:10px; margin-bottom:14px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 18px; flex-wrap:wrap; }
+.format-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.15s; }
+.format-btn:hover { border-color:var(--accent); color:var(--accent); }
+.format-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+.format-sep { width:1px; height:24px; background:var(--border); margin:0 4px; }
+
+/* ── Persist bar ── */
+.persist-bar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+.pb-btn { display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; border:1.5px solid var(--border); background:var(--surface); color:var(--muted); }
+.pb-btn:hover { border-color:var(--accent); color:var(--accent); background:#f0f4fa; }
+.pb-btn.export { background:var(--accent); color:#fff; border-color:var(--accent); }
+.pb-btn.export:hover { background:var(--accent2); }
+.pb-btn.xl { background:#217346; color:#fff; border-color:#1a5c38; }
+.pb-btn.xl:hover { background:#1a5c38; }
+.pb-sep { width:1px; height:28px; background:var(--border); }
+.pb-label { font-size:10px; color:var(--faint); font-weight:500; letter-spacing:0.5px; text-transform:uppercase; }
+.save-confirm { font-size:10px; color:var(--green); display:none; font-weight:600; }
+
+/* ── Risk summary bar ── */
+.risk-summary {
+  display:flex; align-items:center; gap:12px; margin-bottom:14px;
+  padding:10px 16px; background:var(--surface); border:1px solid var(--border);
+  border-radius:8px; flex-wrap:wrap;
+}
+.risk-count-pill { font-size:11px; font-weight:600; color:var(--muted); }
+.risk-level-pills { display:flex; gap:6px; flex-wrap:wrap; }
+.rlp {
+  font-size:9px; font-weight:700; border-radius:99px;
+  padding:3px 10px; letter-spacing:0.3px; text-transform:uppercase;
+}
+.rlp.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
+.rlp.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
+.rlp.high     { background:var(--risk-high-bg);     color:var(--risk-high);     }
+.rlp.critical { background:var(--risk-critical-bg); color:var(--risk-critical); }
+
+/* ── Risk table ── */
+.risk-table-wrap { overflow-x:auto; margin-bottom:12px; }
+.risk-table { width:100%; border-collapse:collapse; font-size:12px; }
+.risk-table th {
+  font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+  color:var(--faint); padding:8px 10px; text-align:left;
+  border-bottom:2px solid var(--border); white-space:nowrap;
+  background:var(--surface); position:sticky; top:0; z-index:2;
+}
+.risk-table th.th-num   { width:38px; text-align:center; }
+.risk-table th.th-lh    { width:84px; text-align:center; }
+.risk-table th.th-im    { width:84px; text-align:center; }
+.risk-table th.th-score { width:80px; text-align:center; }
+.risk-table th.th-del   { width:36px; }
+.risk-table th.th-drag  { width:22px; }
+
+.risk-row td { padding:5px 8px; border-bottom:1px solid #f0ede8; vertical-align:middle; }
+.risk-row.dragging  { opacity:0.3; }
+.risk-row.drag-over { border-top:2px solid var(--accent); }
+.drag-handle { cursor:grab; color:#ccc; font-size:14px; user-select:none; text-align:center; }
+.drag-handle:active { cursor:grabbing; }
+
+.td-num { text-align:center; font-family:'DM Mono',monospace; font-size:10px; color:var(--faint); }
+.td-score { text-align:center; }
+
+.risk-input {
+  width:100%; padding:5px 8px; font-family:'DM Sans',sans-serif; font-size:12px;
+  color:var(--text); background:transparent; border:1px solid transparent;
+  border-radius:5px; outline:none; transition:all 0.12s;
+}
+.risk-input:hover { border-color:var(--border); background:#faf9f7; }
+.risk-input:focus { border-color:var(--accent); background:#fff; }
+
+.risk-sel {
+  width:100%; padding:5px 7px; font-family:'DM Sans',sans-serif; font-size:12px;
+  color:var(--text); background:#faf9f7; border:1px solid var(--border);
+  border-radius:5px; outline:none; cursor:pointer;
+}
+.risk-sel:focus { border-color:var(--accent); }
+.risk-sel.sel-lh, .risk-sel.sel-im { text-align:center; }
+
+/* ── Score badge ── */
+.score-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:56px; padding:3px 9px; border-radius:20px;
+  font-family:'DM Mono',monospace; font-size:11px; font-weight:700; white-space:nowrap;
+}
+.score-badge.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
+.score-badge.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
+.score-badge.high     { background:var(--risk-high-bg);     color:var(--risk-high);     }
+.score-badge.critical { background:var(--risk-critical-bg); color:var(--risk-critical); }
+.score-badge.empty    { background:#f5f4f0; color:var(--faint); }
+
+.btn-del-row {
+  background:none; border:1px solid var(--border); border-radius:3px;
+  width:22px; height:22px; cursor:pointer; color:#ccc; font-size:12px;
+  display:flex; align-items:center; justify-content:center; transition:all 0.15s;
+}
+.btn-del-row:hover { border-color:#e05555; color:#e05555; background:#fff5f5; }
+
+.add-row-bar { display:flex; gap:8px; margin-top:10px; }
+.btn-add-risk {
+  background:none; border:1.5px dashed var(--border); border-radius:6px;
+  padding:8px 18px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
+  color:var(--muted); cursor:pointer; transition:all 0.15s;
+}
+.btn-add-risk:hover { border-color:var(--accent); color:var(--accent); background:#f0f4fa; }
+
+.actions { display:flex; gap:12px; margin-top:8px; }
+.btn-generate {
+  flex:1; background:var(--accent); color:#fff; border:none; border-radius:7px;
+  padding:13px 24px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  cursor:pointer; transition:background 0.15s;
+}
+.btn-generate:hover { background:var(--accent2); }
+.btn-secondary {
+  background:var(--surface); color:var(--muted); border:1px solid var(--border);
+  border-radius:7px; padding:12px 18px; font-family:'DM Sans',sans-serif;
+  font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s;
+}
+.btn-secondary:hover { border-color:var(--text); color:var(--text); }
+
+/* ── Output ── */
+#output { display:none; padding:24px 32px; }
+.print-bar { display:flex; gap:10px; margin-bottom:18px; align-items:center; }
+
+.out-header {
+  display:flex; align-items:center; border-bottom:2px solid var(--text);
+  padding-bottom:10px; margin-bottom:18px; gap:16px;
+}
+.out-logo { flex-shrink:0; height:36px; }
+.out-logo img { height:36px; width:auto; }
+.out-title-block { flex:1; }
+.out-title-block h1 { font-size:16px; font-weight:600; }
+.out-title-block .sub { font-size:10px; color:var(--muted); margin-top:2px; }
+.out-meta { font-family:'DM Mono',monospace; font-size:9px; color:var(--faint); line-height:1.8; text-align:right; }
+
+/* Output table */
+.out-table-wrap { overflow-x:auto; }
+.out-risk-table { width:100%; border-collapse:collapse; }
+.out-risk-table th {
+  font-size:8px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+  color:var(--faint); padding:5px 6px; border-bottom:2px solid var(--border);
+  white-space:nowrap; background:#fff; text-align:left;
+}
+.out-risk-table th.oth-num, .out-risk-table th.oth-lh,
+.out-risk-table th.oth-im, .out-risk-table th.oth-score { text-align:center; }
+.out-risk-table th.oth-num   { width:34px; }
+.out-risk-table th.oth-lh    { width:70px; }
+.out-risk-table th.oth-im    { width:70px; }
+.out-risk-table th.oth-score { width:74px; }
+.out-risk-table td { padding:4px 6px; border-bottom:1px solid #f0ede8; vertical-align:middle; font-size:9.5px; }
+.otr-num  { text-align:center; font-family:'DM Mono',monospace; font-size:8.5px; color:var(--faint); }
+.otr-lh, .otr-im { text-align:center; font-family:'DM Mono',monospace; font-size:9px; }
+.otr-score { text-align:center; }
+.otr-cat  { font-size:8.5px; color:var(--muted); }
+.otr-badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:44px; padding:2px 6px; border-radius:12px;
+  font-family:'DM Mono',monospace; font-size:8.5px; font-weight:700;
+}
+.otr-badge.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
+.otr-badge.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
+.otr-badge.high     { background:var(--risk-high-bg);     color:var(--risk-high);     }
+.otr-badge.critical { background:var(--risk-critical-bg); color:var(--risk-critical); }
+.otr-status { font-size:8.5px; font-weight:600; }
+.otr-status.open        { color:#c05600; }
+.otr-status.mitigated   { color:var(--green); }
+.otr-status.accepted    { color:var(--faint); }
+.otr-status.closed      { color:var(--muted); text-decoration:line-through; font-weight:400; }
+.otr-status.transferred { color:var(--accent); }
+
+/* Heatmap */
+.out-bottom-row { display:flex; gap:28px; margin-top:20px; align-items:flex-start; flex-wrap:wrap; }
+.heatmap-block { flex-shrink:0; }
+.heatmap-title { font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--faint); margin-bottom:8px; }
+.hm-grid {
+  display:inline-grid;
+  grid-template-columns: 24px repeat(5, 38px);
+  grid-template-rows: 20px repeat(5, 32px);
+  gap:2px;
+}
+.hm-cell { display:flex; align-items:center; justify-content:center; }
+.hm-axis { font-size:7.5px; color:var(--faint); font-family:'DM Mono',monospace; }
+.hm-score {
+  border-radius:4px; font-family:'DM Mono',monospace;
+  font-size:9px; font-weight:600; background:#f5f4f0; color:var(--faint);
+}
+.hm-score.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
+.hm-score.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
+.hm-score.high     { background:var(--risk-high-bg);     color:var(--risk-high);     }
+.hm-score.critical { background:var(--risk-critical-bg); color:var(--risk-critical); }
+.hm-score.has-risk { outline:2px solid currentColor; outline-offset:-3px; font-weight:800; }
+
+/* Legend & watermark */
+.out-legend { margin-top:12px; display:flex; flex-wrap:wrap; gap:6px 18px; }
+.out-li { display:flex; align-items:center; gap:5px; font-size:9px; color:var(--muted); }
+.out-ld {
+  width:30px; height:14px; border-radius:3px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:8px; font-weight:700; font-family:'DM Mono',monospace;
+}
+.chart-watermark { text-align:right; margin-top:10px; font-family:'DM Mono',monospace; font-size:7.5px; color:#d0cdc8; letter-spacing:1px; text-transform:uppercase; }
+
+@media print {
+  .suite-nav  { display:none !important; }
+  #editor     { display:none !important; }
+  #output     { display:block !important; padding:0; }
+  .print-bar  { display:none !important; }
+  .no-print   { display:none !important; }
+  body        { background:#fff; }
+  .out-header { position:fixed; top:0; left:0; right:0; background:#fff; z-index:100;
+                padding:6px 0 10px; border-bottom:2px solid var(--text); }
+  #output     { padding-top:72px !important; }
+  .out-risk-table thead { display:table-header-group; }
+}
+</style>
+</head>
+<body>
+
+<nav class="suite-nav no-print">
+  <div style="display:flex;align-items:center;gap:4px;">
+    <a href="index.html" class="suite-home">
+      <div class="suite-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+      </div>
+      <span class="suite-wordmark">Bid Forecast</span>
+    </a>
+    <span class="suite-sep">/</span>
+    <span class="suite-tool-name">RiskCast</span>
+  </div>
+  <div class="suite-nav-right">
+    <span id="suite-sync-badge" style="display:none;font-size:11px;color:var(--muted,#888);margin-right:8px;"></span>
+    <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="saveLogo(this)">
+    <button class="pb-btn" onclick="document.getElementById('logo-input').click()" title="Upload logo — stored locally in your browser only">&#128444; Logo</button>
+    <span id="logo-status" class="logo-status" style="display:none;">&#10003; Logo set</span>
+    <button id="logo-clear" class="pb-btn" onclick="clearLogo()" style="display:none;color:#c0392b;">&#215; Remove</button>
+  </div>
+</nav>
+
+<!-- ══════════════════ EDITOR ══════════════════ -->
+<div id="editor">
+
+  <div class="config-bar no-print">
+    <span style="font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin-right:4px;">Format</span>
+    <button class="format-btn" onclick="setFormat('A4')" data-fmt="A4">A4 Landscape</button>
+    <button class="format-btn active" onclick="setFormat('A3')" data-fmt="A3">A3 Landscape</button>
+    <button class="format-btn" onclick="setFormat('screen')" data-fmt="screen">Screen Only</button>
+  </div>
+
+  <div class="persist-bar no-print">
+    <span class="pb-label">File</span>
+    <button class="pb-btn" onclick="saveJSON()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+      Save .json
+    </button>
+    <label class="pb-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Load .json
+      <input type="file" accept=".json" style="display:none" onchange="loadJSON(this)">
+    </label>
+    <div class="pb-sep"></div>
+    <button class="pb-btn xl" onclick="exportExcel()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Export Excel
+    </button>
+    <button class="pb-btn export" onclick="exportPDF()">Export PDF</button>
+    <div class="pb-sep"></div>
+    <button class="pb-btn" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 00-4-4H4"/></svg>
+      Undo
+    </button>
+    <button class="pb-btn" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
+      Redo
+    </button>
+    <span class="save-confirm" id="save-confirm">✓ Saved!</span>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Document Information</div>
+    <div class="fields f3">
+      <label>Project / Document Title
+        <input type="text" id="doc-title" value="Risk Register"
+          oninput="const _v=this.value.trim();if(_v&&_v!=='Project Name'&&_v!=='Risk Register')SuiteManager.write({projectName:_v},'riskcast')">
+      </label>
+      <label>Revision <input type="text" id="doc-rev" value="Rev. 0"></label>
+      <label>Date     <input type="text" id="doc-date"></label>
+    </div>
+  </div>
+
+  <div class="risk-summary no-print" id="risk-summary">
+    <span class="risk-count-pill" id="risk-count-pill">0 risks</span>
+    <div class="risk-level-pills" id="risk-level-pills"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Risk Register</div>
+    <div class="risk-table-wrap">
+      <table class="risk-table">
+        <thead>
+          <tr>
+            <th class="th-drag"></th>
+            <th class="th-num">#</th>
+            <th style="min-width:220px;">Risk Description</th>
+            <th style="min-width:130px;">Category</th>
+            <th class="th-lh" style="text-align:center;">Likelihood<br><span style="font-size:7px;font-weight:400;text-transform:none;">1 = Rare · 5 = Certain</span></th>
+            <th class="th-im" style="text-align:center;">Impact<br><span style="font-size:7px;font-weight:400;text-transform:none;">1 = Minor · 5 = Catastrophic</span></th>
+            <th class="th-score" style="text-align:center;">Score<br><span style="font-size:7px;font-weight:400;text-transform:none;">L × I</span></th>
+            <th style="min-width:220px;">Mitigation Plan</th>
+            <th style="min-width:110px;">Status</th>
+            <th class="th-del"></th>
+          </tr>
+        </thead>
+        <tbody id="risk-body"></tbody>
+      </table>
+    </div>
+    <div class="add-row-bar no-print">
+      <button class="btn-add-risk" onclick="addRisk()">+ Add Risk</button>
+    </div>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn-generate" onclick="generate()">Generate Risk Register →</button>
+  </div>
+
+</div><!-- /editor -->
+
+<!-- ══════════════════ OUTPUT ══════════════════ -->
+<div id="output">
+  <div class="print-bar no-print">
+    <button class="pb-btn" onclick="goBack()">← Edit</button>
+    <button class="pb-btn export" onclick="exportPDF()">Export PDF</button>
+    <button class="pb-btn xl" onclick="exportExcel()">Export Excel</button>
+    <button class="pb-btn" onclick="saveJSON()">Save .json</button>
+  </div>
+
+  <div class="out-header">
+    <div class="out-logo" id="out-logo" style="display:none;"><img id="out-logo-img" src="" alt=""></div>
+    <div class="out-title-block">
+      <h1 id="out-title">Risk Register</h1>
+      <div class="sub" id="out-sub"></div>
+    </div>
+    <div class="out-meta" id="out-meta"></div>
+  </div>
+
+  <div class="out-table-wrap">
+    <table class="out-risk-table">
+      <thead>
+        <tr>
+          <th class="oth-num">#</th>
+          <th style="min-width:200px;">Risk Description</th>
+          <th style="min-width:110px;">Category</th>
+          <th class="oth-lh">Likelihood</th>
+          <th class="oth-im">Impact</th>
+          <th class="oth-score">Score</th>
+          <th style="min-width:200px;">Mitigation Plan</th>
+          <th style="min-width:90px;">Status</th>
+        </tr>
+      </thead>
+      <tbody id="out-risk-body"></tbody>
+    </table>
+  </div>
+
+  <div class="out-bottom-row">
+    <div class="heatmap-block">
+      <div class="heatmap-title">Risk Heat Map — 5×5 Matrix</div>
+      <div class="hm-grid" id="out-heatmap"></div>
+      <div class="out-legend">
+        <div class="out-li"><div class="out-ld" style="background:var(--risk-low-bg);color:var(--risk-low);">1–6</div> Low</div>
+        <div class="out-li"><div class="out-ld" style="background:var(--risk-medium-bg);color:var(--risk-medium);">8–10</div> Medium</div>
+        <div class="out-li"><div class="out-ld" style="background:var(--risk-high-bg);color:var(--risk-high);">12–16</div> High</div>
+        <div class="out-li"><div class="out-ld" style="background:var(--risk-critical-bg);color:var(--risk-critical);">20–25</div> Critical</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-watermark">Generated with RiskCast · Bid Forecast Suite</div>
+</div><!-- /output -->
+
+<script>
+/* ══ SuiteManager ══════════════════════════════════════════════════
+   Central synchronisation utility — shared across all Bid Forecast tools.
+═══════════════════════════════════════════════════════════════════ */
+const SuiteManager = (() => {
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
+  function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
+  function write(patch, source) {
+    try {
+      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
+      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
+      return next;
+    } catch { return {}; }
+  }
+  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
+  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
+  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
+  function onUpdate(cb) {
+    window.addEventListener('storage', e => {
+      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
+    });
+  }
+  function updateBadge(el) {
+    if (!el) return;
+    const sync = read();
+    if (sync._ts) {
+      const s = Math.round((Date.now() - sync._ts) / 1000);
+      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago');
+      el.style.display = 'inline';
+    }
+  }
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
+})();
+
+/* ══ Logo ══════════════════════════════════════════════════════════ */
+function saveLogo(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => { SuiteManager.setLogo(e.target.result); updateLogoUI(); };
+  reader.readAsDataURL(file);
+}
+function clearLogo() {
+  SuiteManager.removeLogo();
+  const inp = document.getElementById('logo-input'); if (inp) inp.value = '';
+  updateLogoUI();
+}
+function updateLogoUI() {
+  const logo = SuiteManager.getLogo();
+  const st   = document.getElementById('logo-status');
+  const cl   = document.getElementById('logo-clear');
+  if (st) st.style.display = logo ? 'inline' : 'none';
+  if (cl) cl.style.display = logo ? 'inline-flex' : 'none';
+  const img = document.getElementById('out-logo-img');
+  const box = document.getElementById('out-logo');
+  if (img) img.src = logo || '';
+  if (box) box.style.display = logo ? 'block' : 'none';
+}
+
+/* ══ Page format ════════════════════════════════════════════════════ */
+let currentFormat = 'A3';
+function setFormat(fmt) {
+  currentFormat = fmt;
+  document.querySelectorAll('.format-btn[data-fmt]').forEach(b => b.classList.toggle('active', b.dataset.fmt === fmt));
+  const sizes = { A4: 'A4 landscape', A3: 'A3 landscape', screen: null };
+  const styleEl = document.getElementById('page-size-style');
+  if (styleEl) styleEl.textContent = sizes[fmt]
+    ? `@page { size: ${sizes[fmt]}; margin: 10mm; }`
+    : `@page { size: auto; margin: 10mm; }`;
+}
+
+/* ══ Score helpers ══════════════════════════════════════════════════ */
+function scoreLevel(s) {
+  if (s >= 20) return { cls: 'critical', label: 'Critical' };
+  if (s >= 12) return { cls: 'high',     label: 'High'     };
+  if (s >= 8)  return { cls: 'medium',   label: 'Medium'   };
+  if (s >= 1)  return { cls: 'low',      label: 'Low'      };
+  return              { cls: 'empty',    label: '—'        };
+}
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══ Risk table CRUD ════════════════════════════════════════════════ */
+let _rowIdx = 0;
+
+function addRisk(d) {
+  d = d || {};
+  const idx = _rowIdx++;
+  const l = d.likelihood || 3;
+  const i = d.impact     || 3;
+  const score = l * i;
+  const lvl   = scoreLevel(score);
+
+  function opt5(sel, val) {
+    return [1,2,3,4,5].map(n =>
+      `<option value="${n}"${n==val?' selected':''}>${n}</option>`
+    ).join('');
+  }
+  function optCat(val) {
+    const cats = ['Technical','Commercial','Schedule','Resource','External','Legal','Environmental','Contractual'];
+    return cats.map(c => `<option${c===val?' selected':''}>${esc(c)}</option>`).join('');
+  }
+  function optStatus(val) {
+    const statuses = ['Open','Mitigated','Accepted','Closed','Transferred'];
+    return statuses.map(s => `<option${s===val?' selected':''}>${esc(s)}</option>`).join('');
+  }
+
+  const tr = document.createElement('tr');
+  tr.className = 'risk-row';
+  tr.dataset.idx = idx;
+  tr.innerHTML = `
+    <td class="drag-handle" draggable="true">⋮⋮</td>
+    <td class="td-num row-num"></td>
+    <td><input class="risk-input risk-desc" type="text" placeholder="Describe the risk…" value="${esc(d.desc||'')}"></td>
+    <td><select class="risk-sel risk-cat">${optCat(d.category||'Technical')}</select></td>
+    <td><select class="risk-sel sel-lh">${opt5('sel-lh', l)}</select></td>
+    <td><select class="risk-sel sel-im">${opt5('sel-im', i)}</select></td>
+    <td class="td-score"><span class="score-badge ${lvl.cls}">${score} · ${lvl.label}</span></td>
+    <td><input class="risk-input risk-mitigation" type="text" placeholder="Mitigation plan…" value="${esc(d.mitigation||'')}"></td>
+    <td><select class="risk-sel risk-status">${optStatus(d.status||'Open')}</select></td>
+    <td><button class="btn-del-row" onclick="removeRisk(this)" title="Remove risk">✕</button></td>
+  `;
+
+  // Score auto-update on L or I change
+  tr.querySelector('.sel-lh').addEventListener('change', () => _refreshScore(tr));
+  tr.querySelector('.sel-im').addEventListener('change', () => _refreshScore(tr));
+
+  // Drag-and-drop
+  _initDragRow(tr);
+
+  document.getElementById('risk-body').appendChild(tr);
+  _renumberRows();
+  _updateSummary();
+}
+
+function _refreshScore(tr) {
+  const l = parseInt(tr.querySelector('.sel-lh').value) || 1;
+  const i = parseInt(tr.querySelector('.sel-im').value) || 1;
+  const s = l * i;
+  const lvl = scoreLevel(s);
+  const badge = tr.querySelector('.score-badge');
+  if (badge) { badge.className = 'score-badge ' + lvl.cls; badge.textContent = s + ' · ' + lvl.label; }
+  _updateSummary();
+}
+
+function removeRisk(btn) {
+  btn.closest('.risk-row').remove();
+  _renumberRows();
+  _updateSummary();
+}
+
+function _renumberRows() {
+  document.querySelectorAll('#risk-body .risk-row .row-num').forEach((cell, i) => {
+    cell.textContent = i + 1;
+  });
+}
+
+function _updateSummary() {
+  const risks = _getRisks();
+  const n = risks.length;
+  const countEl = document.getElementById('risk-count-pill');
+  if (countEl) countEl.textContent = n === 0 ? 'No risks' : n + (n===1?' risk':' risks');
+
+  const counts = { low:0, medium:0, high:0, critical:0 };
+  risks.forEach(r => { counts[scoreLevel(r.score).cls]++; });
+
+  const pillsEl = document.getElementById('risk-level-pills');
+  if (pillsEl) {
+    let html = '';
+    if (counts.critical > 0) html += `<span class="rlp critical">${counts.critical} Critical</span>`;
+    if (counts.high     > 0) html += `<span class="rlp high">${counts.high} High</span>`;
+    if (counts.medium   > 0) html += `<span class="rlp medium">${counts.medium} Medium</span>`;
+    if (counts.low      > 0) html += `<span class="rlp low">${counts.low} Low</span>`;
+    pillsEl.innerHTML = html;
+  }
+
+  suiteWrite(); // broadcast riskCount + maxRiskScore
+}
+
+function _getRisks() {
+  return Array.from(document.querySelectorAll('#risk-body .risk-row')).map(row => {
+    const l = parseInt(row.querySelector('.sel-lh').value) || 1;
+    const i = parseInt(row.querySelector('.sel-im').value) || 1;
+    return {
+      desc:       row.querySelector('.risk-desc').value,
+      category:   row.querySelector('.risk-cat').value,
+      likelihood: l,
+      impact:     i,
+      score:      l * i,
+      mitigation: row.querySelector('.risk-mitigation').value,
+      status:     row.querySelector('.risk-status').value,
+    };
+  });
+}
+
+/* ══ Drag and drop ══════════════════════════════════════════════════ */
+let _dragSrc = null;
+function _initDragRow(tr) {
+  const handle = tr.querySelector('.drag-handle');
+  handle.addEventListener('mousedown', () => { tr.setAttribute('draggable','true'); });
+  tr.addEventListener('dragstart', e => {
+    _dragSrc = tr; tr.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  tr.addEventListener('dragend', () => {
+    tr.classList.remove('dragging');
+    document.querySelectorAll('.risk-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+    _dragSrc = null; tr.setAttribute('draggable','false');
+    _renumberRows();
+  });
+  tr.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (_dragSrc && _dragSrc !== tr) {
+      document.querySelectorAll('.risk-row.drag-over').forEach(r => r.classList.remove('drag-over'));
+      tr.classList.add('drag-over');
+    }
+  });
+  tr.addEventListener('drop', e => {
+    e.preventDefault();
+    if (_dragSrc && _dragSrc !== tr) {
+      const tbody = document.getElementById('risk-body');
+      const rows  = Array.from(tbody.querySelectorAll('.risk-row'));
+      const srcIdx = rows.indexOf(_dragSrc);
+      const tgtIdx = rows.indexOf(tr);
+      if (srcIdx < tgtIdx) tbody.insertBefore(_dragSrc, tr.nextSibling);
+      else                  tbody.insertBefore(_dragSrc, tr);
+    }
+  });
+}
+
+/* ══ State ══════════════════════════════════════════════════════════ */
+function collectState() {
+  return {
+    version: '1.0',
+    format:  currentFormat,
+    title:   document.getElementById('doc-title').value,
+    rev:     document.getElementById('doc-rev').value,
+    date:    document.getElementById('doc-date').value,
+    risks:   _getRisks(),
+  };
+}
+
+function applyState(s) {
+  if (!s) return;
+  if (s.format) setFormat(s.format);
+  document.getElementById('doc-title').value = s.title || '';
+  document.getElementById('doc-rev').value   = s.rev   || '';
+  document.getElementById('doc-date').value  = s.date  || '';
+  document.getElementById('risk-body').innerHTML = '';
+  _rowIdx = 0;
+  (s.risks || []).forEach(r => addRisk(r));
+}
+
+/* ══ Persistence ════════════════════════════════════════════════════ */
+function saveJSON() {
+  const state = collectState();
+  localStorage.setItem('bidcast_state_riskcast', JSON.stringify(state));
+  const name  = (state.title || 'risk').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
+  const blob  = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = name + '_riskcast.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  const c = document.getElementById('save-confirm');
+  if (c) { c.style.display = 'inline'; setTimeout(() => c.style.display = 'none', 2000); }
+}
+
+function loadJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { applyState(JSON.parse(e.target.result)); } catch { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file); input.value = '';
+}
+
+function exportHTML() {
+  const state   = collectState();
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  const src     = document.documentElement.outerHTML;
+  const injected = src.replace('</body>',
+    `<script>try{applyState(JSON.parse(decodeURIComponent(escape(atob("${encoded}")))))}catch(e){}<\/script></body>`);
+  const blob = new Blob([injected], { type: 'text/html' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = (state.title||'risk').replace(/[^a-z0-9_-]/gi,'_').toLowerCase() + '_riskcast.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/* ══ Export ═════════════════════════════════════════════════════════ */
+function exportPDF() {
+  generate(); // ensure output is rendered
+  window.print();
+}
+
+function exportExcel() {
+  const state = collectState();
+  const wb    = XLSX.utils.book_new();
+  const rows  = [['#','Risk Description','Category','Likelihood','Impact','Score','Level','Mitigation Plan','Status']];
+  state.risks.forEach((r, i) => {
+    const lvl = scoreLevel(r.score);
+    rows.push([i+1, r.desc, r.category, r.likelihood, r.impact, r.score, lvl.label, r.mitigation, r.status]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:4},{wch:45},{wch:16},{wch:12},{wch:10},{wch:8},{wch:10},{wch:45},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Risk Register');
+
+  // Summary sheet
+  const lvlCounts = { Low:0, Medium:0, High:0, Critical:0 };
+  state.risks.forEach(r => lvlCounts[scoreLevel(r.score).label]++);
+  const summary = [
+    ['Risk Register Summary'],
+    ['Project', state.title],
+    ['Revision', state.rev],
+    ['Date', state.date],
+    [],
+    ['Level','Count'],
+    ...Object.entries(lvlCounts).map(([k,v]) => [k, v]),
+    [],
+    ['Total Risks', state.risks.length],
+    ['Max Score', state.risks.reduce((m,r) => Math.max(m,r.score), 0)],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), 'Summary');
+
+  const name = (state.title||'risk').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
+  XLSX.writeFile(wb, name + '_riskcast.xlsx');
+}
+
+/* ══ Generate output ════════════════════════════════════════════════ */
+function generate() {
+  const state = collectState();
+  // Auto-save
+  localStorage.setItem('bidcast_state_riskcast', JSON.stringify(state));
+  suiteWrite();
+
+  // Header
+  document.getElementById('out-title').textContent = state.title;
+  document.getElementById('out-sub').textContent   = '';
+  document.getElementById('out-meta').innerHTML    = `${esc(state.rev)}${state.date ? '<br>' + esc(state.date) : ''}`;
+  updateLogoUI();
+
+  // Table body
+  const tbody = document.getElementById('out-risk-body');
+  tbody.innerHTML = '';
+  state.risks.forEach((r, i) => {
+    const lvl = scoreLevel(r.score);
+    const statusCls = r.status.toLowerCase().replace(/\s+/g, '');
+    tbody.innerHTML += `
+      <tr>
+        <td class="otr-num">${i+1}</td>
+        <td>${esc(r.desc)}</td>
+        <td class="otr-cat">${esc(r.category)}</td>
+        <td class="otr-lh">${r.likelihood}</td>
+        <td class="otr-im">${r.impact}</td>
+        <td class="otr-score"><span class="otr-badge ${lvl.cls}">${r.score} · ${lvl.label}</span></td>
+        <td>${esc(r.mitigation)}</td>
+        <td><span class="otr-status ${statusCls}">${esc(r.status)}</span></td>
+      </tr>`;
+  });
+
+  // Heatmap
+  _renderHeatmap(state.risks);
+
+  // Show output
+  document.getElementById('editor').style.display = 'none';
+  document.getElementById('output').style.display  = 'block';
+}
+
+function _renderHeatmap(risks) {
+  const hm = document.getElementById('out-heatmap');
+  if (!hm) return;
+
+  // Count risks at each (likelihood, impact) cell
+  const counts = {};
+  risks.forEach(r => {
+    const k = r.likelihood + '_' + r.impact;
+    counts[k] = (counts[k] || 0) + 1;
+  });
+
+  let html = '';
+
+  // Row 0: corner + Impact headers
+  html += '<div class="hm-cell hm-axis" style="font-size:7px;color:var(--faint);">L \\ I</div>';
+  for (let i = 1; i <= 5; i++) {
+    html += `<div class="hm-cell hm-axis" style="font-size:8px;font-weight:700;">${i}</div>`;
+  }
+
+  // Rows: Likelihood 5 down to 1
+  for (let l = 5; l >= 1; l--) {
+    html += `<div class="hm-cell hm-axis" style="font-size:8px;font-weight:700;">${l}</div>`;
+    for (let i = 1; i <= 5; i++) {
+      const s = l * i;
+      const { cls } = scoreLevel(s);
+      const count = counts[l + '_' + i] || 0;
+      const hasRisk = count > 0;
+      html += `<div class="hm-cell hm-score ${cls}${hasRisk ? ' has-risk' : ''}" title="L=${l}, I=${i} → Score ${s}${hasRisk ? ' · '+count+' risk'+(count>1?'s':'') : ''}">${hasRisk ? count : s}</div>`;
+    }
+  }
+
+  hm.innerHTML = html;
+}
+
+function goBack() {
+  document.getElementById('output').style.display = 'none';
+  document.getElementById('editor').style.display = '';
+}
+
+/* ══ Suite Sync ═════════════════════════════════════════════════════ */
+function suiteWrite() {
+  const risks = _getRisks();
+  const riskCount    = risks.length;
+  const maxRiskScore = risks.reduce((m, r) => Math.max(m, r.score), 0);
+  SuiteManager.write({ riskCount, maxRiskScore }, 'riskcast');
+}
+
+function suiteRead(sync) {
+  if (!sync || sync._src === 'riskcast') return;
+  const el = document.getElementById('doc-title');
+  if (el && sync.projectName && sync.projectName !== 'Project Name'
+      && sync.projectName !== 'Risk Register' && document.activeElement !== el)
+    el.value = sync.projectName;
+  SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
+}
+
+/* ══ Undo / Redo ════════════════════════════════════════════════════ */
+let _hist = [], _histIdx = -1, _histTimer, _suppHist = false;
+function _snapshot() {
+  if (_suppHist) return;
+  const s = JSON.stringify(collectState());
+  if (_hist[_histIdx] === s) return;
+  _hist = _hist.slice(0, _histIdx + 1);
+  _hist.push(s);
+  _histIdx = _hist.length - 1;
+  _syncUndoUI();
+  // Auto-save to localStorage on every snapshot
+  localStorage.setItem('bidcast_state_riskcast', s);
+}
+function _scheduleSnap() {
+  if (_suppHist) return;
+  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 600);
+}
+function undo() {
+  clearTimeout(_histTimer);
+  if (_histIdx <= 0) return;
+  _suppHist = true; _histIdx--;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+function redo() {
+  clearTimeout(_histTimer);
+  if (_histIdx >= _hist.length - 1) return;
+  _suppHist = true; _histIdx++;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+function _syncUndoUI() {
+  const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
+  if (u) u.disabled = _histIdx <= 0;
+  if (r) r.disabled = _histIdx >= _hist.length - 1;
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z'&&e.shiftKey))) { e.preventDefault(); redo(); }
+});
+(function() {
+  const _rawApply = applyState;
+  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
+  const ed = document.getElementById('editor');
+  if (ed) {
+    new MutationObserver(() => {
+      if (_suppHist) return;
+      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
+    }).observe(ed, { childList:true, subtree:true });
+    ed.addEventListener('input',  _scheduleSnap);
+    ed.addEventListener('change', _scheduleSnap);
+  }
+  setTimeout(_snapshot, 300);
+})();
+
+/* ══ Print fix ══════════════════════════════════════════════════════ */
+let _wasInOutput = false;
+window.addEventListener('beforeprint', function() {
+  const out = document.getElementById('output'), ed = document.getElementById('editor');
+  _wasInOutput = out.style.display !== 'none';
+  ed.setAttribute('style','display:none !important');
+  out.setAttribute('style','display:block !important');
+});
+window.addEventListener('afterprint', function() {
+  const out = document.getElementById('output'), ed = document.getElementById('editor');
+  if (!_wasInOutput) { out.setAttribute('style','display:none'); ed.setAttribute('style',''); }
+  else               { out.setAttribute('style','display:block'); ed.setAttribute('style','display:none'); }
+});
+
+/* ══ Init ═══════════════════════════════════════════════════════════ */
+(function init() {
+  const today = new Date();
+  document.getElementById('doc-date').value = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  // Default sample risks
+  addRisk({ desc:'Key supplier fails to deliver on schedule', category:'Commercial', likelihood:3, impact:4, mitigation:'Dual-source strategy; contractual penalties', status:'Open' });
+  addRisk({ desc:'Scope creep from late customer requirements', category:'Contractual', likelihood:4, impact:3, mitigation:'Strict change order process; baseline scope locked', status:'Open' });
+  addRisk({ desc:'Specialist resource unavailable at execution phase', category:'Resource', likelihood:2, impact:5, mitigation:'Early mobilisation plan; identify backups', status:'Open' });
+})();
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateLogoUI();
+  const _saved = localStorage.getItem('bidcast_state_riskcast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  suiteRead(SuiteManager.read());
+  setTimeout(suiteWrite, 900);
+  SuiteManager.onUpdate((sync, key) => {
+    if (key === 'bidcast_logo') { updateLogoUI(); return; }
+    suiteRead(sync);
+  });
+});
+</script>
+</body>
+</html>

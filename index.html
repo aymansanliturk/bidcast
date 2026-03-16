@@ -171,7 +171,7 @@
   .dash-inner { max-width: 1400px; margin: 0 auto; }
   .dash-stats {
     display: grid;
-    grid-template-columns: repeat(3, 200px);
+    grid-template-columns: repeat(auto-fill, 200px);
     gap: 12px;
   }
   .stat-card {
@@ -547,6 +547,20 @@
         <div class="stat-source">OrgCast</div>
       </div>
 
+      <div class="stat-card" id="stat-card-risk">
+        <div class="stat-icon" style="background:#fff1f2;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="stat-label">Project Risks</div>
+        <div class="stat-value" id="stat-risk">—</div>
+        <div class="stat-source">RiskCast</div>
+        <div class="stat-chip hidden" id="chip-risk"></div>
+      </div>
+
     </div>
 
     <!-- ── Progress bar (shown when Timecast has data) ── -->
@@ -719,6 +733,23 @@
     <div class="card-desc">Track supplier enquiries, offer validity status, and high-volume RFQ package timelines.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-rfqcast">Alerts · Dashboard</span>
+      <span class="card-arrow">→</span>
+    </div>
+  </a>
+
+  <a href="riskcast.html" class="card" style="--card-color:#be123c;">
+    <div class="card-icon" style="background:#fff1f2;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <div class="card-name">RiskCast</div>
+    <div class="card-tagline">Risk Register</div>
+    <div class="card-desc">Identify, score, and track project risks on a 5×5 matrix. Automatic criticality scoring with heat map output.</div>
+    <div class="card-footer">
+      <span class="feat-tag" id="badge-riskcast">5×5 Matrix · Heat Map</span>
       <span class="card-arrow">→</span>
     </div>
   </a>
@@ -992,6 +1023,7 @@ function refreshStats() {
   const oc = _load('orgcast');
   const rq = _load('rfqcast');
   const dc = _load('dorcast');
+  const ri = _load('riskcast');
 
   // ── ResourceCast: budget, role count ──────────────────────────────
   let budget = null, roleCount = 0;
@@ -1058,6 +1090,20 @@ function refreshStats() {
   // ── DORcast: data-row count ───────────────────────────────────────
   const dorRows = dc ? (dc.rows || []).filter(r => r.type !== 'header').length : 0;
 
+  // ── RiskCast: risk count, max score, level breakdown ─────────────
+  let riskCount = 0, maxRiskScore = 0, riskCritical = 0, riskHigh = 0, riskMedium = 0, riskLow = 0;
+  if (ri) {
+    (ri.risks || []).forEach(r => {
+      const s = (r.score != null) ? r.score : ((+r.likelihood||1) * (+r.impact||1));
+      riskCount++;
+      if (s > maxRiskScore) maxRiskScore = s;
+      if (s >= 20)      riskCritical++;
+      else if (s >= 12) riskHigh++;
+      else if (s >= 8)  riskMedium++;
+      else              riskLow++;
+    });
+  }
+
   // ── Helpers ───────────────────────────────────────────────────────
   function _set(id, text, active) {
     const el = document.getElementById(id);
@@ -1111,6 +1157,21 @@ function refreshStats() {
       : '—',
     personCount > 0);
 
+  // Project Risks
+  function _riskStatusLabel() {
+    if (riskCritical > 0) return 'CRITICAL';
+    if (riskHigh     > 0) return 'HIGH';
+    if (riskMedium   > 0) return 'MEDIUM';
+    if (riskLow      > 0) return 'LOW';
+    return 'Safe';
+  }
+  const riskStatusLabel = _riskStatusLabel();
+  _set('stat-risk',
+    riskCount > 0
+      ? riskCount + (riskCount === 1 ? ' risk' : ' risks')
+      : '—',
+    riskCount > 0);
+
   // ── Stat card visual cues ─────────────────────────────────────────
   // Budget: Financial Health indicator (green) when budget > 0
   const budgetCard = document.getElementById('stat-card-budget');
@@ -1156,6 +1217,45 @@ function refreshStats() {
       rfqCard.classList.remove('s-warn');
     }
   }
+
+  // Risks: chip shows highest level; red when Critical, amber when High
+  const riskCard = document.getElementById('stat-card-risk');
+  const riskChip = document.getElementById('chip-risk');
+  if (riskCard && riskChip) {
+    if (riskCount === 0) {
+      riskChip.textContent = '✓ Safe';
+      riskChip.className = 'stat-chip green';
+      riskCard.classList.remove('s-warn', 's-alert', 's-healthy');
+      riskCard.classList.add('s-healthy');
+    } else if (riskCritical > 0) {
+      riskChip.textContent = '⚠ Status: CRITICAL';
+      riskChip.className = 'stat-chip red';
+      riskCard.classList.add('s-alert');
+      riskCard.classList.remove('s-warn', 's-healthy');
+    } else if (riskHigh > 0) {
+      riskChip.textContent = '⚠ Status: HIGH';
+      riskChip.className = 'stat-chip amber';
+      riskCard.classList.add('s-warn');
+      riskCard.classList.remove('s-alert', 's-healthy');
+    } else if (riskMedium > 0) {
+      riskChip.textContent = 'Status: MEDIUM';
+      riskChip.className = 'stat-chip amber';
+      riskCard.classList.add('s-warn');
+      riskCard.classList.remove('s-alert', 's-healthy');
+    } else {
+      riskChip.textContent = 'Status: LOW';
+      riskChip.className = 'stat-chip green';
+      riskCard.classList.add('s-healthy');
+      riskCard.classList.remove('s-warn', 's-alert');
+    }
+  }
+
+  // ── Tool card badge — RiskCast ────────────────────────────────────
+  _badge('badge-riskcast',
+    riskCount > 0
+      ? riskCount + (riskCount === 1 ? ' risk' : ' risks') + ' · ' + riskStatusLabel
+      : '',
+    '5×5 Matrix · Heat Map');
 
   // ── Progress bar ──────────────────────────────────────────────────
   const progressWrap = document.getElementById('progress-wrap');
@@ -1229,7 +1329,7 @@ function brandClearLogo() {
 function masterExport() {
   const archive = {};
   // Tool states
-  ['timecast', 'resourcecast', 'orgcast', 'rfqcast', 'dorcast'].forEach(k => {
+  ['timecast', 'resourcecast', 'orgcast', 'rfqcast', 'dorcast', 'riskcast'].forEach(k => {
     const v = localStorage.getItem('bidcast_state_' + k);
     if (v != null) archive['bidcast_state_' + k] = v;
   });
@@ -1319,7 +1419,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('storage', e => {
     const trackedKeys = [
       'bidcast_state_timecast', 'bidcast_state_resourcecast',
-      'bidcast_state_orgcast', 'bidcast_state_rfqcast', 'bidcast_state_dorcast',
+      'bidcast_state_orgcast', 'bidcast_state_rfqcast',
+      'bidcast_state_dorcast', 'bidcast_state_riskcast',
+      'bidcast_suite_sync',
     ];
     if (trackedKeys.includes(e.key)) refreshStats();
   });
