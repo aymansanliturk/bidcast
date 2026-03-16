@@ -39,7 +39,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 .logo-status { font-size:10px; font-weight:600; color:var(--green); }
 
 /* ── Editor ── */
-#editor { max-width:1200px; margin:0 auto; padding:24px 28px 60px; }
+#editor { max-width:1500px; margin:0 auto; padding:24px 28px 60px; }
 .section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:14px; }
 .section-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--faint); margin-bottom:14px; }
 .fields { display:grid; gap:12px; }
@@ -53,7 +53,6 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 .format-btn { padding:6px 14px; border-radius:20px; border:1.5px solid var(--border); background:none; font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500; color:var(--muted); cursor:pointer; transition:all 0.15s; }
 .format-btn:hover { border-color:var(--accent); color:var(--accent); }
 .format-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
-.format-sep { width:1px; height:24px; background:var(--border); margin:0 4px; }
 
 /* ── Persist bar ── */
 .persist-bar { display:flex; align-items:center; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
@@ -66,7 +65,6 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 .pb-btn.xl { background:#217346; color:#fff; border-color:#1a5c38; }
 .pb-btn.xl:hover { background:#1a5c38; }
 .pb-sep { width:1px; height:28px; background:var(--border); }
-.pb-label { font-size:10px; color:var(--faint); font-weight:500; letter-spacing:0.5px; text-transform:uppercase; }
 .save-confirm { font-size:10px; color:var(--green); display:none; font-weight:600; }
 
 /* ── Risk summary bar ── */
@@ -77,10 +75,7 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 }
 .risk-count-pill { font-size:11px; font-weight:600; color:var(--muted); }
 .risk-level-pills { display:flex; gap:6px; flex-wrap:wrap; }
-.rlp {
-  font-size:9px; font-weight:700; border-radius:99px;
-  padding:3px 10px; letter-spacing:0.3px; text-transform:uppercase;
-}
+.rlp { font-size:9px; font-weight:700; border-radius:99px; padding:3px 10px; letter-spacing:0.3px; text-transform:uppercase; }
 .rlp.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
 .rlp.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
 .rlp.high     { background:var(--risk-high-bg);     color:var(--risk-high);     }
@@ -88,26 +83,28 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 
 /* ── Risk table ── */
 .risk-table-wrap { overflow-x:auto; margin-bottom:12px; }
-.risk-table { width:100%; border-collapse:collapse; font-size:12px; }
+.risk-table { width:100%; border-collapse:collapse; font-size:12px; min-width:1180px; }
 .risk-table th {
   font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
   color:var(--faint); padding:8px 10px; text-align:left;
   border-bottom:2px solid var(--border); white-space:nowrap;
   background:var(--surface); position:sticky; top:0; z-index:2;
 }
-.risk-table th.th-num   { width:38px; text-align:center; }
-.risk-table th.th-lh    { width:84px; text-align:center; }
-.risk-table th.th-im    { width:84px; text-align:center; }
-.risk-table th.th-score { width:80px; text-align:center; }
-.risk-table th.th-del   { width:36px; }
-.risk-table th.th-drag  { width:22px; }
+.risk-table th.th-num   { width:36px; text-align:center; }
+.risk-table th.th-cat   { width:126px; }
+.risk-table th.th-topic { min-width:120px; }
+.risk-table th.th-cause { min-width:140px; }
+.risk-table th.th-lh    { width:80px; text-align:center; }
+.risk-table th.th-im    { width:80px; text-align:center; }
+.risk-table th.th-score { width:90px; text-align:center; }
+.risk-table th.th-del   { width:34px; }
+.risk-table th.th-drag  { width:20px; }
 
-.risk-row td { padding:5px 8px; border-bottom:1px solid #f0ede8; vertical-align:middle; }
+.risk-row td { padding:5px 7px; border-bottom:1px solid #f0ede8; vertical-align:middle; }
 .risk-row.dragging  { opacity:0.3; }
 .risk-row.drag-over { border-top:2px solid var(--accent); }
 .drag-handle { cursor:grab; color:#ccc; font-size:14px; user-select:none; text-align:center; }
 .drag-handle:active { cursor:grabbing; }
-
 .td-num { text-align:center; font-family:'DM Mono',monospace; font-size:10px; color:var(--faint); }
 .td-score { text-align:center; }
 
@@ -116,8 +113,10 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
   color:var(--text); background:transparent; border:1px solid transparent;
   border-radius:5px; outline:none; transition:all 0.12s;
 }
-.risk-input:hover { border-color:var(--border); background:#faf9f7; }
-.risk-input:focus { border-color:var(--accent); background:#fff; }
+.risk-input:hover  { border-color:var(--border); background:#faf9f7; }
+.risk-input:focus  { border-color:var(--accent); background:#fff; }
+.risk-input.cause  { font-style:italic; color:var(--muted); }
+.risk-input.cause:focus { color:var(--text); font-style:normal; }
 
 .risk-sel {
   width:100%; padding:5px 7px; font-family:'DM Sans',sans-serif; font-size:12px;
@@ -130,7 +129,7 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 /* ── Score badge ── */
 .score-badge {
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:56px; padding:3px 9px; border-radius:20px;
+  min-width:60px; padding:3px 9px; border-radius:20px;
   font-family:'DM Mono',monospace; font-size:11px; font-weight:700; white-space:nowrap;
 }
 .score-badge.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
@@ -146,7 +145,7 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 }
 .btn-del-row:hover { border-color:#e05555; color:#e05555; background:#fff5f5; }
 
-.add-row-bar { display:flex; gap:8px; margin-top:10px; }
+.add-row-bar { margin-top:10px; }
 .btn-add-risk {
   background:none; border:1.5px dashed var(--border); border-radius:6px;
   padding:8px 18px; font-family:'DM Sans',sans-serif; font-size:12px; font-weight:500;
@@ -161,12 +160,6 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
   cursor:pointer; transition:background 0.15s;
 }
 .btn-generate:hover { background:var(--accent2); }
-.btn-secondary {
-  background:var(--surface); color:var(--muted); border:1px solid var(--border);
-  border-radius:7px; padding:12px 18px; font-family:'DM Sans',sans-serif;
-  font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s;
-}
-.btn-secondary:hover { border-color:var(--text); color:var(--text); }
 
 /* ── Output ── */
 #output { display:none; padding:24px 32px; }
@@ -191,21 +184,22 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
   color:var(--faint); padding:5px 6px; border-bottom:2px solid var(--border);
   white-space:nowrap; background:#fff; text-align:left;
 }
-.out-risk-table th.oth-num, .out-risk-table th.oth-lh,
-.out-risk-table th.oth-im, .out-risk-table th.oth-score { text-align:center; }
-.out-risk-table th.oth-num   { width:34px; }
-.out-risk-table th.oth-lh    { width:70px; }
-.out-risk-table th.oth-im    { width:70px; }
-.out-risk-table th.oth-score { width:74px; }
+.out-risk-table th.oth-num   { text-align:center; width:28px; }
+.out-risk-table th.oth-lh    { text-align:center; width:38px; }
+.out-risk-table th.oth-im    { text-align:center; width:38px; }
+.out-risk-table th.oth-score { text-align:center; width:88px; }
+.out-risk-table th.oth-topic { min-width:100px; }
+.out-risk-table th.oth-cause { min-width:110px; }
 .out-risk-table td { padding:4px 6px; border-bottom:1px solid #f0ede8; vertical-align:middle; font-size:9.5px; }
 .otr-num  { text-align:center; font-family:'DM Mono',monospace; font-size:8.5px; color:var(--faint); }
-.otr-lh, .otr-im { text-align:center; font-family:'DM Mono',monospace; font-size:9px; }
+.otr-lh, .otr-im { text-align:center; font-family:'DM Mono',monospace; font-size:9px; color:var(--muted); }
 .otr-score { text-align:center; }
-.otr-cat  { font-size:8.5px; color:var(--muted); }
+.otr-topic { font-size:8.5px; color:var(--accent); font-weight:600; }
+.otr-cause { font-size:8.5px; color:var(--muted); font-style:italic; }
 .otr-badge {
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:44px; padding:2px 6px; border-radius:12px;
-  font-family:'DM Mono',monospace; font-size:8.5px; font-weight:700;
+  min-width:44px; padding:2px 7px; border-radius:12px;
+  font-family:'DM Mono',monospace; font-size:8.5px; font-weight:700; white-space:nowrap;
 }
 .otr-badge.low      { background:var(--risk-low-bg);      color:var(--risk-low);      }
 .otr-badge.medium   { background:var(--risk-medium-bg);   color:var(--risk-medium);   }
@@ -217,6 +211,17 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
 .otr-status.accepted    { color:var(--faint); }
 .otr-status.closed      { color:var(--muted); text-decoration:line-through; font-weight:400; }
 .otr-status.transferred { color:var(--accent); }
+
+/* ── Category group header row ── */
+.cat-group-hdr td {
+  padding:6px 8px; background:#f0f3f9;
+  border-top:2px solid var(--accent); border-bottom:1px solid #c8d3e8;
+}
+.cat-group-hdr-inner { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.cat-group-name {
+  font-size:8.5px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--accent);
+}
+.cat-group-meta { font-size:8px; color:var(--muted); font-weight:500; }
 
 /* Heatmap */
 .out-bottom-row { display:flex; gap:28px; margin-top:20px; align-items:flex-start; flex-wrap:wrap; }
@@ -261,6 +266,7 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
                 padding:6px 0 10px; border-bottom:2px solid var(--text); }
   #output     { padding-top:72px !important; }
   .out-risk-table thead { display:table-header-group; }
+  .cat-group-hdr { break-inside:avoid; }
 }
 </style>
 </head>
@@ -346,13 +352,15 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
           <tr>
             <th class="th-drag"></th>
             <th class="th-num">#</th>
-            <th style="min-width:220px;">Risk Description</th>
-            <th style="min-width:130px;">Category</th>
+            <th class="th-cat">Category</th>
+            <th class="th-topic">Topic <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:8px;">— Subject / area</span></th>
+            <th class="th-cause">Cause <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:8px;">— Root cause or trigger</span></th>
+            <th style="min-width:190px;">Risk Description</th>
             <th class="th-lh" style="text-align:center;">Likelihood<br><span style="font-size:7px;font-weight:400;text-transform:none;">1 = Rare · 5 = Certain</span></th>
             <th class="th-im" style="text-align:center;">Impact<br><span style="font-size:7px;font-weight:400;text-transform:none;">1 = Minor · 5 = Catastrophic</span></th>
             <th class="th-score" style="text-align:center;">Score<br><span style="font-size:7px;font-weight:400;text-transform:none;">L × I</span></th>
-            <th style="min-width:220px;">Mitigation Plan</th>
-            <th style="min-width:110px;">Status</th>
+            <th style="min-width:190px;">Mitigation Plan</th>
+            <th style="min-width:100px;">Status</th>
             <th class="th-del"></th>
           </tr>
         </thead>
@@ -393,13 +401,14 @@ input[type="text"]:focus { border-color:var(--accent); background:#fff; }
       <thead>
         <tr>
           <th class="oth-num">#</th>
-          <th style="min-width:200px;">Risk Description</th>
-          <th style="min-width:110px;">Category</th>
-          <th class="oth-lh">Likelihood</th>
-          <th class="oth-im">Impact</th>
+          <th class="oth-topic">Topic</th>
+          <th class="oth-cause">Cause</th>
+          <th style="min-width:170px;">Risk Description</th>
+          <th class="oth-lh">L</th>
+          <th class="oth-im">I</th>
           <th class="oth-score">Score</th>
-          <th style="min-width:200px;">Mitigation Plan</th>
-          <th style="min-width:90px;">Status</th>
+          <th style="min-width:160px;">Mitigation Plan</th>
+          <th style="min-width:72px;">Status</th>
         </tr>
       </thead>
       <tbody id="out-risk-body"></tbody>
@@ -494,6 +503,8 @@ function setFormat(fmt) {
 }
 
 /* ══ Score helpers ══════════════════════════════════════════════════ */
+const CAT_ORDER = ['Commercial','Technical','Contractual','Operational','External','Resource'];
+
 function scoreLevel(s) {
   if (s >= 20) return { cls: 'critical', label: 'Critical' };
   if (s >= 12) return { cls: 'high',     label: 'High'     };
@@ -516,18 +527,20 @@ function addRisk(d) {
   const score = l * i;
   const lvl   = scoreLevel(score);
 
-  function opt5(sel, val) {
+  function opt5(val) {
     return [1,2,3,4,5].map(n =>
       `<option value="${n}"${n==val?' selected':''}>${n}</option>`
     ).join('');
   }
   function optCat(val) {
-    const cats = ['Technical','Commercial','Schedule','Resource','External','Legal','Environmental','Contractual'];
+    const cats = [...CAT_ORDER];
+    // Include unknown legacy value so state is preserved on load
+    if (val && !cats.includes(val)) cats.push(val);
     return cats.map(c => `<option${c===val?' selected':''}>${esc(c)}</option>`).join('');
   }
   function optStatus(val) {
-    const statuses = ['Open','Mitigated','Accepted','Closed','Transferred'];
-    return statuses.map(s => `<option${s===val?' selected':''}>${esc(s)}</option>`).join('');
+    return ['Open','Mitigated','Accepted','Closed','Transferred']
+      .map(s => `<option${s===val?' selected':''}>${esc(s)}</option>`).join('');
   }
 
   const tr = document.createElement('tr');
@@ -536,23 +549,22 @@ function addRisk(d) {
   tr.innerHTML = `
     <td class="drag-handle" draggable="true">⋮⋮</td>
     <td class="td-num row-num"></td>
-    <td><input class="risk-input risk-desc" type="text" placeholder="Describe the risk…" value="${esc(d.desc||'')}"></td>
-    <td><select class="risk-sel risk-cat">${optCat(d.category||'Technical')}</select></td>
-    <td><select class="risk-sel sel-lh">${opt5('sel-lh', l)}</select></td>
-    <td><select class="risk-sel sel-im">${opt5('sel-im', i)}</select></td>
+    <td><select class="risk-sel risk-cat">${optCat(d.category||'Commercial')}</select></td>
+    <td><input class="risk-input risk-topic" type="text" placeholder="Subject / area…" value="${esc(d.topic||'')}"></td>
+    <td><input class="risk-input risk-cause cause" type="text" placeholder="Root cause or trigger…" value="${esc(d.cause||'')}"></td>
+    <td><input class="risk-input risk-desc" type="text" placeholder="Describe the risk event…" value="${esc(d.desc||'')}"></td>
+    <td><select class="risk-sel sel-lh">${opt5(l)}</select></td>
+    <td><select class="risk-sel sel-im">${opt5(i)}</select></td>
     <td class="td-score"><span class="score-badge ${lvl.cls}">${score} · ${lvl.label}</span></td>
     <td><input class="risk-input risk-mitigation" type="text" placeholder="Mitigation plan…" value="${esc(d.mitigation||'')}"></td>
     <td><select class="risk-sel risk-status">${optStatus(d.status||'Open')}</select></td>
     <td><button class="btn-del-row" onclick="removeRisk(this)" title="Remove risk">✕</button></td>
   `;
 
-  // Score auto-update on L or I change
   tr.querySelector('.sel-lh').addEventListener('change', () => _refreshScore(tr));
   tr.querySelector('.sel-im').addEventListener('change', () => _refreshScore(tr));
 
-  // Drag-and-drop
   _initDragRow(tr);
-
   document.getElementById('risk-body').appendChild(tr);
   _renumberRows();
   _updateSummary();
@@ -599,7 +611,7 @@ function _updateSummary() {
     pillsEl.innerHTML = html;
   }
 
-  suiteWrite(); // broadcast riskCount + maxRiskScore
+  suiteWrite();
 }
 
 function _getRisks() {
@@ -607,8 +619,10 @@ function _getRisks() {
     const l = parseInt(row.querySelector('.sel-lh').value) || 1;
     const i = parseInt(row.querySelector('.sel-im').value) || 1;
     return {
-      desc:       row.querySelector('.risk-desc').value,
       category:   row.querySelector('.risk-cat').value,
+      topic:      row.querySelector('.risk-topic').value,
+      cause:      row.querySelector('.risk-cause').value,
+      desc:       row.querySelector('.risk-desc').value,
       likelihood: l,
       impact:     i,
       score:      l * i,
@@ -656,7 +670,7 @@ function _initDragRow(tr) {
 /* ══ State ══════════════════════════════════════════════════════════ */
 function collectState() {
   return {
-    version: '1.0',
+    version: '2.0',
     format:  currentFormat,
     title:   document.getElementById('doc-title').value,
     rev:     document.getElementById('doc-rev').value,
@@ -716,33 +730,46 @@ function exportHTML() {
 
 /* ══ Export ═════════════════════════════════════════════════════════ */
 function exportPDF() {
-  generate(); // ensure output is rendered
+  generate();
   window.print();
 }
 
 function exportExcel() {
   const state = collectState();
   const wb    = XLSX.utils.book_new();
-  const rows  = [['#','Risk Description','Category','Likelihood','Impact','Score','Level','Mitigation Plan','Status']];
+
+  // Main register sheet
+  const rows = [['#','Category','Topic','Cause','Risk Description','Likelihood','Impact','Score','Level','Mitigation Plan','Status']];
   state.risks.forEach((r, i) => {
     const lvl = scoreLevel(r.score);
-    rows.push([i+1, r.desc, r.category, r.likelihood, r.impact, r.score, lvl.label, r.mitigation, r.status]);
+    rows.push([i+1, r.category, r.topic||'', r.cause||'', r.desc, r.likelihood, r.impact, r.score, lvl.label, r.mitigation, r.status]);
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:4},{wch:45},{wch:16},{wch:12},{wch:10},{wch:8},{wch:10},{wch:45},{wch:14}];
+  ws['!cols'] = [{wch:4},{wch:16},{wch:22},{wch:28},{wch:42},{wch:12},{wch:10},{wch:8},{wch:10},{wch:42},{wch:14}];
   XLSX.utils.book_append_sheet(wb, ws, 'Risk Register');
 
-  // Summary sheet
+  // Summary sheet — by level and by category
   const lvlCounts = { Low:0, Medium:0, High:0, Critical:0 };
   state.risks.forEach(r => lvlCounts[scoreLevel(r.score).label]++);
+
+  const catStats = {};
+  state.risks.forEach(r => {
+    if (!catStats[r.category]) catStats[r.category] = { count:0, maxScore:0 };
+    catStats[r.category].count++;
+    catStats[r.category].maxScore = Math.max(catStats[r.category].maxScore, r.score);
+  });
+
   const summary = [
     ['Risk Register Summary'],
     ['Project', state.title],
     ['Revision', state.rev],
     ['Date', state.date],
     [],
-    ['Level','Count'],
+    ['By Level','Count'],
     ...Object.entries(lvlCounts).map(([k,v]) => [k, v]),
+    [],
+    ['By Category','Count','Max Score','Max Level'],
+    ...Object.entries(catStats).map(([k,v]) => [k, v.count, v.maxScore, scoreLevel(v.maxScore).label]),
     [],
     ['Total Risks', state.risks.length],
     ['Max Score', state.risks.reduce((m,r) => Math.max(m,r.score), 0)],
@@ -753,10 +780,9 @@ function exportExcel() {
   XLSX.writeFile(wb, name + '_riskcast.xlsx');
 }
 
-/* ══ Generate output ════════════════════════════════════════════════ */
+/* ══ Generate output — grouped by Category ══════════════════════════ */
 function generate() {
   const state = collectState();
-  // Auto-save
   localStorage.setItem('bidcast_state_riskcast', JSON.stringify(state));
   suiteWrite();
 
@@ -766,29 +792,68 @@ function generate() {
   document.getElementById('out-meta').innerHTML    = `${esc(state.rev)}${state.date ? '<br>' + esc(state.date) : ''}`;
   updateLogoUI();
 
-  // Table body
-  const tbody = document.getElementById('out-risk-body');
-  tbody.innerHTML = '';
-  state.risks.forEach((r, i) => {
-    const lvl = scoreLevel(r.score);
-    const statusCls = r.status.toLowerCase().replace(/\s+/g, '');
-    tbody.innerHTML += `
-      <tr>
-        <td class="otr-num">${i+1}</td>
-        <td>${esc(r.desc)}</td>
-        <td class="otr-cat">${esc(r.category)}</td>
-        <td class="otr-lh">${r.likelihood}</td>
-        <td class="otr-im">${r.impact}</td>
-        <td class="otr-score"><span class="otr-badge ${lvl.cls}">${r.score} · ${lvl.label}</span></td>
-        <td>${esc(r.mitigation)}</td>
-        <td><span class="otr-status ${statusCls}">${esc(r.status)}</span></td>
-      </tr>`;
+  // Group risks by category, preserving CAT_ORDER sort
+  const groups = {};
+  state.risks.forEach(r => {
+    const cat = r.category || 'Other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(r);
+  });
+  const sortedCats = Object.keys(groups).sort((a, b) => {
+    const ai = CAT_ORDER.indexOf(a), bi = CAT_ORDER.indexOf(b);
+    if (ai === -1 && bi === -1) return a.localeCompare(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
   });
 
-  // Heatmap
+  // Render grouped rows — 9 output columns
+  const tbody = document.getElementById('out-risk-body');
+  tbody.innerHTML = '';
+  let globalIdx = 0;
+
+  sortedCats.forEach(cat => {
+    const catRisks = groups[cat];
+    const maxScore = catRisks.reduce((m, r) => Math.max(m, r.score), 0);
+    const maxLvl   = scoreLevel(maxScore);
+    const openN    = catRisks.filter(r => r.status === 'Open').length;
+    const metaParts = [
+      catRisks.length + (catRisks.length === 1 ? ' risk' : ' risks'),
+      openN > 0 ? openN + ' open' : null,
+    ].filter(Boolean).join(' · ');
+
+    tbody.innerHTML += `
+      <tr class="cat-group-hdr">
+        <td colspan="9">
+          <div class="cat-group-hdr-inner">
+            <span class="cat-group-name">${esc(cat)}</span>
+            <span class="cat-group-meta">${esc(metaParts)}</span>
+            <span class="otr-badge ${maxLvl.cls}">Max&thinsp;${maxScore} · ${maxLvl.label}</span>
+          </div>
+        </td>
+      </tr>`;
+
+    catRisks.forEach(r => {
+      globalIdx++;
+      const lvl       = scoreLevel(r.score);
+      const statusCls = r.status.toLowerCase().replace(/\s+/g, '');
+      tbody.innerHTML += `
+        <tr>
+          <td class="otr-num">${globalIdx}</td>
+          <td class="otr-topic">${esc(r.topic || '')}</td>
+          <td class="otr-cause">${esc(r.cause || '')}</td>
+          <td>${esc(r.desc)}</td>
+          <td class="otr-lh">${r.likelihood}</td>
+          <td class="otr-im">${r.impact}</td>
+          <td class="otr-score"><span class="otr-badge ${lvl.cls}">${r.score}&thinsp;·&thinsp;${lvl.label}</span></td>
+          <td>${esc(r.mitigation)}</td>
+          <td><span class="otr-status ${statusCls}">${esc(r.status)}</span></td>
+        </tr>`;
+    });
+  });
+
   _renderHeatmap(state.risks);
 
-  // Show output
   document.getElementById('editor').style.display = 'none';
   document.getElementById('output').style.display  = 'block';
 }
@@ -796,34 +861,23 @@ function generate() {
 function _renderHeatmap(risks) {
   const hm = document.getElementById('out-heatmap');
   if (!hm) return;
-
-  // Count risks at each (likelihood, impact) cell
   const counts = {};
   risks.forEach(r => {
     const k = r.likelihood + '_' + r.impact;
     counts[k] = (counts[k] || 0) + 1;
   });
-
   let html = '';
-
-  // Row 0: corner + Impact headers
-  html += '<div class="hm-cell hm-axis" style="font-size:7px;color:var(--faint);">L \\ I</div>';
-  for (let i = 1; i <= 5; i++) {
-    html += `<div class="hm-cell hm-axis" style="font-size:8px;font-weight:700;">${i}</div>`;
-  }
-
-  // Rows: Likelihood 5 down to 1
+  html += '<div class="hm-cell hm-axis" style="font-size:7px;">L \\ I</div>';
+  for (let i = 1; i <= 5; i++) html += `<div class="hm-cell hm-axis" style="font-size:8px;font-weight:700;">${i}</div>`;
   for (let l = 5; l >= 1; l--) {
     html += `<div class="hm-cell hm-axis" style="font-size:8px;font-weight:700;">${l}</div>`;
     for (let i = 1; i <= 5; i++) {
       const s = l * i;
       const { cls } = scoreLevel(s);
       const count = counts[l + '_' + i] || 0;
-      const hasRisk = count > 0;
-      html += `<div class="hm-cell hm-score ${cls}${hasRisk ? ' has-risk' : ''}" title="L=${l}, I=${i} → Score ${s}${hasRisk ? ' · '+count+' risk'+(count>1?'s':'') : ''}">${hasRisk ? count : s}</div>`;
+      html += `<div class="hm-cell hm-score ${cls}${count > 0 ? ' has-risk' : ''}" title="L=${l}, I=${i} → Score ${s}${count ? ' · '+count+' risk'+(count>1?'s':'') : ''}">${count > 0 ? count : s}</div>`;
     }
   }
-
   hm.innerHTML = html;
 }
 
@@ -860,7 +914,6 @@ function _snapshot() {
   _hist.push(s);
   _histIdx = _hist.length - 1;
   _syncUndoUI();
-  // Auto-save to localStorage on every snapshot
   localStorage.setItem('bidcast_state_riskcast', s);
 }
 function _scheduleSnap() {
@@ -923,10 +976,9 @@ window.addEventListener('afterprint', function() {
 (function init() {
   const today = new Date();
   document.getElementById('doc-date').value = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  // Default sample risks
-  addRisk({ desc:'Key supplier fails to deliver on schedule', category:'Commercial', likelihood:3, impact:4, mitigation:'Dual-source strategy; contractual penalties', status:'Open' });
-  addRisk({ desc:'Scope creep from late customer requirements', category:'Contractual', likelihood:4, impact:3, mitigation:'Strict change order process; baseline scope locked', status:'Open' });
-  addRisk({ desc:'Specialist resource unavailable at execution phase', category:'Resource', likelihood:2, impact:5, mitigation:'Early mobilisation plan; identify backups', status:'Open' });
+  addRisk({ category:'Commercial',   topic:'Supply Chain',           cause:'Single-source supplier dependency',    desc:'Key supplier fails to deliver on schedule',           likelihood:3, impact:4, mitigation:'Dual-source strategy; contractual penalties for delay',   status:'Open' });
+  addRisk({ category:'Contractual',  topic:'Scope Definition',       cause:'Late customer requirement changes',    desc:'Scope creep beyond agreed baseline',                  likelihood:4, impact:3, mitigation:'Strict change order process; baseline scope locked at contract', status:'Open' });
+  addRisk({ category:'Resource',     topic:'Specialist Availability', cause:'Limited market capacity at peak demand', desc:'Specialist resource unavailable at execution phase', likelihood:2, impact:5, mitigation:'Early mobilisation plan; identify qualified backups',      status:'Open' });
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
