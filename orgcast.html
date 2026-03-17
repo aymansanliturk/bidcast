@@ -10,9 +10,9 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg:      #f2f2f2; --surface: #ffffff; --border: #d1d5db;
-    --text:    #1B263B; --muted:   #6b6860; --faint:  #a8a49e;
-    --accent:  #415A77; --accent2: #0D1B2A; --brand:  #415A77; --green: #107c41; --red: #c0392b;
+    --bg:      #f5f4f0; --surface: #ffffff; --border: #e0ddd6;
+    --text:    #1a1916; --muted:   #6b6860; --faint:  #a8a49e;
+    --accent:  #2c4e87; --accent2: #1e3a6b; --brand:  #2c4e87; --green: #107c41; --red: #c0392b;
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
 
@@ -27,9 +27,9 @@
 .suite-home { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); }
 .suite-logo-icon { width:28px; height:28px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .suite-logo-icon svg { width:16px; height:16px; }
-.suite-wordmark { font-size:14px; font-weight:700; letter-spacing:0.5px; font-family:'DM Mono',monospace; }
+.suite-wordmark { font-size:14px; font-weight:700; letter-spacing:0.5px; }
 .suite-sep { color:var(--border); font-size:20px; font-weight:300; margin:0 4px; }
-.suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); font-family:'DM Mono',monospace; }
+.suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); }
 .suite-nav-right { display:flex; align-items:center; gap:8px; }
 .logo-status { font-size:10px; font-weight:600; color:var(--green); }
 .suite-sync-badge { font-size:10px; font-weight:600; color:var(--accent); background:#eef2fb; border:1px solid #c8d6f0; border-radius:20px; padding:3px 10px; letter-spacing:0.2px; }
@@ -157,12 +157,12 @@
   <div style="display:flex; align-items:center; gap:4px;">
     <a href="index.html" class="suite-home">
       <div class="suite-logo-icon">
-        <svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 28H30" stroke="white" stroke-width="2.5" stroke-linecap="round"/><rect x="8" y="14" width="4" height="11" fill="white" rx="0.5"/><rect x="15" y="6" width="4" height="19" fill="white" rx="0.5"/><rect x="22" y="10" width="4" height="15" fill="white" rx="0.5"/><path d="M8 14H26" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="3 2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
       </div>
       <span class="suite-wordmark">PYL0N</span>
     </a>
     <span class="suite-sep">/</span>
-    <span class="suite-tool-name">PYL0N Org</span>
+    <span class="suite-tool-name">Orgcast</span>
   </div>
   <div class="suite-nav-right">
     <input type="file" id="logo-input" accept="image/*" style="display:none" onchange="saveLogo(this)">
@@ -210,8 +210,6 @@
       Redo
     </button>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
-    <div class="pb-sep"></div>
-    <button class="pb-btn" onclick="resetState()" title="Clear all data and reset to defaults" style="color:#c0392b; border-color:#f5c6c6;">↺ Reset</button>
   </div>
 
   <!-- Chart info -->
@@ -284,12 +282,12 @@
 <script>
 /* ══ SuiteManager ══════════════════════════════════════════════════
    Central synchronisation utility for the Bid Forecast Suite.
-   Manages pyl0n_suite_sync (project meta, phases, team) and
-   pyl0n_logo (company logo as base64 dataURL).
+   Manages bidcast_suite_sync (project meta, phases, team) and
+   bidcast_logo (company logo as base64 dataURL).
 ═══════════════════════════════════════════════════════════════════ */
 const SuiteManager = (() => {
-  const SYNC_KEY = 'pyl0n_suite_sync';
-  const LOGO_KEY = 'pyl0n_logo';
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
   function read() {
     try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; }
   }
@@ -317,18 +315,10 @@ const SuiteManager = (() => {
       el.style.display = 'inline';
     }
   }
-  function migrate() {
-    Object.keys(localStorage).filter(k => k.startsWith('bidcast_')).forEach(old => {
-      const neo = 'pyl0n_' + old.slice('bidcast_'.length);
-      if (!localStorage.getItem(neo)) localStorage.setItem(neo, localStorage.getItem(old));
-      localStorage.removeItem(old);
-    });
-  }
-  migrate();
-  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge, migrate };
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
 })();
 
-/* ── Logo (stored in pyl0n_logo, shared across all tools) ── */
+/* ── Logo (stored in bidcast_logo, shared across all tools) ── */
 function saveLogo(input) {
   const file = input.files[0];
   if (!file) return;
@@ -732,12 +722,6 @@ function updateLogoUI() {
     window.scrollTo(0,0);
   }
 
-  function resetState() {
-    if (!confirm('Reset PYL0N Org to defaults? This will clear all current data.')) return;
-    ['pyl0n_state_orgcast', 'bidcast_state_orgcast'].forEach(k => localStorage.removeItem(k));
-    window.location.reload();
-  }
-
   function goBack() {
     document.getElementById('output').style.display = 'none';
     document.getElementById('editor').style.display = 'block';
@@ -757,7 +741,7 @@ function updateLogoUI() {
   function _suiteBundle(ownState) {
     const suite = { _suite:true, _version:1, _savedAt:new Date().toISOString(), _savedFrom:'orgcast' };
     ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
-      const raw = localStorage.getItem('pyl0n_state_' + k);
+      const raw = localStorage.getItem('bidcast_state_' + k);
       suite[k] = raw ? JSON.parse(raw) : null;
     });
     suite.orgcast = ownState;
@@ -766,7 +750,7 @@ function updateLogoUI() {
 
   function saveJSON() {
     const state = collectState();
-    localStorage.setItem('pyl0n_state_orgcast', JSON.stringify(state));
+    localStorage.setItem('bidcast_state_orgcast', JSON.stringify(state));
     const name  = (state.title||'orgchart').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
     const blob  = new Blob([JSON.stringify(_suiteBundle(state),null,2)], {type:'application/json'});
     const a     = document.createElement('a');
@@ -784,10 +768,10 @@ function updateLogoUI() {
         const data = JSON.parse(e.target.result);
         if (data._suite) {
           ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
-            if (k !== 'orgcast' && data[k]) localStorage.setItem('pyl0n_state_' + k, JSON.stringify(data[k]));
+            if (k !== 'orgcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
           });
           if (data.orgcast) applyState(data.orgcast);
-          else alert('No PYL0N Org data found in this suite file.');
+          else alert('No OrgCast data found in this suite file.');
         } else { applyState(data); }
       } catch(err) { alert('Invalid .json file.'); }
     };
@@ -795,7 +779,6 @@ function updateLogoUI() {
   }
 
   function applyState(s) {
-    if (s._empty) return; // fresh start — keep editor visible
     document.getElementById('chart-title').value = s.title||'';
     document.getElementById('chart-rev').value   = s.rev  ||'';
     document.getElementById('chart-date').value  = s.date ||'';
@@ -844,9 +827,7 @@ function updateLogoUI() {
     const today = new Date();
     document.getElementById('chart-date').value =
       today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-  })();
 
-  function _loadSampleData() {
     // Add all nodes first (no parents yet)
     addPerson({ name:'A. Johnson',  title:'Project Manager',       role:'pm',          company:'ourco', color:'#2c4e87' });
     addPerson({ name:'B. Müller',   title:'Technical PM',          role:'tpm',         company:'ourco', color:'#1a6b8a' });
@@ -868,7 +849,7 @@ function updateLogoUI() {
     setParentByRole('hse',         'pm');
     setParentByRole('contract',    'pm');
     setParentByRole('bid-sales',   'pm');
-  }
+  })();
 
   // ── Print fix ──
   let _wasInOutput = false;
@@ -902,7 +883,7 @@ function updateLogoUI() {
     _hist.push(s);
     if (_hist.length > 50) _hist.shift(); else _histIdx++;
     _syncUndoUI();
-    localStorage.setItem('pyl0n_state_orgcast', s);
+    localStorage.setItem('bidcast_state_orgcast', s);
   suiteWrite();
   }
   function _scheduleSnap() {
@@ -1026,18 +1007,14 @@ function suiteRead(sync) {
 
 // Cross-tab listener — reacts to any tool updating the shared store or logo.
 SuiteManager.onUpdate((sync, key) => {
-  if (key === 'pyl0n_logo') { updateLogoUI(); return; }
+  if (key === 'bidcast_logo') { updateLogoUI(); return; }
   suiteRead(sync);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
-  const _saved = localStorage.getItem('pyl0n_state_orgcast');
-  if (_saved) {
-    try { const s = JSON.parse(_saved); if (!s._empty) applyState(s); } catch(e) {}
-  } else {
-    _loadSampleData();
-  }
+  const _saved = localStorage.getItem('bidcast_state_orgcast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });

@@ -1,7 +1,12 @@
-<svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M4 28H30" stroke="#1B263B" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="8" y="14" width="4" height="11" fill="#1B263B" rx="0.5"/>
-  <rect x="15" y="6" width="4" height="19" fill="#1B263B" rx="0.5"/>
-  <rect x="22" y="10" width="4" height="15" fill="#1B263B" rx="0.5"/>
-  <path d="M8 14H26" stroke="#415A77" stroke-width="1" stroke-dasharray="3 2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Navy background with rounded corners -->
+  <rect width="32" height="32" rx="7" fill="#1e3a5f"/>
+  <!-- Top-left square -->
+  <rect x="4"  y="4"  width="11" height="11" rx="2" fill="white"/>
+  <!-- Top-right square -->
+  <rect x="17" y="4"  width="11" height="11" rx="2" fill="white"/>
+  <!-- Bottom-left square -->
+  <rect x="4"  y="17" width="11" height="11" rx="2" fill="white"/>
+  <!-- Bottom-right square (faded) -->
+  <rect x="17" y="17" width="11" height="11" rx="2" fill="white" opacity="0.4"/>
 </svg>

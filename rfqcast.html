@@ -11,12 +11,12 @@
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f2f2f2; --surface: #fff; --border: #d1d5db;
-  --text: #1B263B; --muted: #6b6860; --faint: #a8a49e;
-  --accent: #415A77; --accent2: #0D1B2A;
+  --bg: #f5f4f0; --surface: #fff; --border: #e0ddd6;
+  --text: #1a1916; --muted: #6b6860; --faint: #a8a49e;
+  --accent: #2c4e87; --accent2: #1e3a6b;
   --green: #107c41; --amber: #b36a00; --red: #c0392b; --purple: #7b4fa6;
   --s-none:    #f0ede8; --s-none-txt:    #a8a49e;
-  --s-enquiry: #dde8f7; --s-enquiry-txt: #415A77;
+  --s-enquiry: #dde8f7; --s-enquiry-txt: #2c4e87;
   --s-waiting: #fff3cd; --s-waiting-txt: #856404;
   --s-received:#d4edda; --s-received-txt:#155724;
   --s-expired: #f8d7da; --s-expired-txt: #721c24;
@@ -38,9 +38,9 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 .suite-home { display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text); }
 .suite-logo-icon { width:28px; height:28px; background:var(--accent); border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .suite-logo-icon svg { width:16px; height:16px; }
-.suite-wordmark { font-size:14px; font-weight:700; letter-spacing:0.5px; font-family:'DM Mono',monospace; }
+.suite-wordmark { font-size:14px; font-weight:700; letter-spacing:0.5px; }
 .suite-sep { color:var(--border); font-size:20px; font-weight:300; margin:0 4px; }
-.suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); font-family:'DM Mono',monospace; }
+.suite-tool-name { font-size:14px; font-weight:600; color:var(--accent); }
 .suite-nav-right { display:flex; align-items:center; gap:8px; }
 .logo-status { font-size:10px; font-weight:600; color:var(--green); }
 
@@ -235,12 +235,12 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
   <div style="display:flex; align-items:center; gap:4px;">
     <a href="index.html" class="suite-home">
       <div class="suite-logo-icon">
-        <svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 28H30" stroke="white" stroke-width="2.5" stroke-linecap="round"/><rect x="8" y="14" width="4" height="11" fill="white" rx="0.5"/><rect x="15" y="6" width="4" height="19" fill="white" rx="0.5"/><rect x="22" y="10" width="4" height="15" fill="white" rx="0.5"/><path d="M8 14H26" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-dasharray="3 2"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
       </div>
       <span class="suite-wordmark">PYL0N</span>
     </a>
     <span class="suite-sep">/</span>
-    <span class="suite-tool-name">PYL0N RFQ</span>
+    <span class="suite-tool-name">RFQCast</span>
   </div>
   <div class="suite-nav-right">
     <span id="suite-sync-badge" style="display:none;font-size:11px;color:var(--muted,#888);margin-right:8px;"></span>
@@ -290,8 +290,6 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 014-4h12"/></svg>
       Redo
     </button>
-    <div class="pb-sep"></div>
-    <button class="pb-btn" onclick="resetState()" title="Clear all data and reset to defaults" style="color:#c0392b; border-color:#f5c6c6;">↺ Reset</button>
   </div>
 
   <div class="section">
@@ -383,8 +381,8 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 <script>
 /* ── SUITE MANAGER ── */
 const SuiteManager = (() => {
-  const SYNC_KEY = 'pyl0n_suite_sync';
-  const LOGO_KEY = 'pyl0n_logo';
+  const SYNC_KEY = 'bidcast_suite_sync';
+  const LOGO_KEY = 'bidcast_logo';
   function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
   function write(patch, source) {
     try {
@@ -410,15 +408,7 @@ const SuiteManager = (() => {
       el.style.display = 'inline';
     }
   }
-  function migrate() {
-    Object.keys(localStorage).filter(k => k.startsWith('bidcast_')).forEach(old => {
-      const neo = 'pyl0n_' + old.slice('bidcast_'.length);
-      if (!localStorage.getItem(neo)) localStorage.setItem(neo, localStorage.getItem(old));
-      localStorage.removeItem(old);
-    });
-  }
-  migrate();
-  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge, migrate };
+  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
 })();
 
 /* ── LOGO VAULT ── */
@@ -908,7 +898,6 @@ function collectState() {
 }
 
 function applyState(s) {
-  if (s._empty) return; // fresh start — keep editor visible
   document.getElementById('proj-name').value       = s.projName || '';
   document.getElementById('offer-due').value       = s.offerDue || '';
   document.getElementById('validity-months').value = s.validityMonths || '3';
@@ -1106,12 +1095,6 @@ function generate() {
   window.scrollTo(0,0);
 }
 
-function resetState() {
-  if (!confirm('Reset PYL0N RFQ to defaults? This will clear all current data.')) return;
-  ['pyl0n_state_rfqcast', 'bidcast_state_rfqcast'].forEach(k => localStorage.removeItem(k));
-  window.location.reload();
-}
-
 function goBack() {
   document.getElementById('output').style.display = 'none';
   document.getElementById('editor').style.display = 'block';
@@ -1142,7 +1125,7 @@ function loadPreset() {
 function _suiteBundle(ownState) {
   const suite = { _suite:true, _version:1, _savedAt:new Date().toISOString(), _savedFrom:'rfqcast' };
   ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
-    const raw = localStorage.getItem('pyl0n_state_' + k);
+    const raw = localStorage.getItem('bidcast_state_' + k);
     suite[k] = raw ? JSON.parse(raw) : null;
   });
   suite.rfqcast = ownState;
@@ -1151,7 +1134,7 @@ function _suiteBundle(ownState) {
 
 function saveJSON() {
   const state = collectState();
-  localStorage.setItem('pyl0n_state_rfqcast', JSON.stringify(state));
+  localStorage.setItem('bidcast_state_rfqcast', JSON.stringify(state));
   const name  = (state.projName||'rfq').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
   const blob  = new Blob([JSON.stringify(_suiteBundle(state),null,2)],{type:'application/json'});
   const a = document.createElement('a');
@@ -1167,10 +1150,10 @@ function loadJSON(input) {
       const data = JSON.parse(e.target.result);
       if (data._suite) {
         ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
-          if (k !== 'rfqcast' && data[k]) localStorage.setItem('pyl0n_state_' + k, JSON.stringify(data[k]));
+          if (k !== 'rfqcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
         if (data.rfqcast) applyState(data.rfqcast);
-        else alert('No PYL0N RFQ data found in this suite file.');
+        else alert('No RFQCast data found in this suite file.');
       } else { applyState(data); }
     } catch(err) { alert('Invalid .json file.'); }
   };
@@ -1309,7 +1292,7 @@ function _snapshot() {
   _hist.push(s);
   if (_hist.length > 50) _hist.shift(); else _histIdx++;
   _syncUndoUI();
-  localStorage.setItem('pyl0n_state_rfqcast', s);
+  localStorage.setItem('bidcast_state_rfqcast', s);
 }
 function _scheduleSnap() {
   if (_suppHist) return;
@@ -1385,19 +1368,16 @@ function exportPDF() {
 // Init
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
-  const _saved = localStorage.getItem('pyl0n_state_rfqcast');
-  if (_saved) {
-    try { const s = JSON.parse(_saved); if (!s._empty) applyState(s); } catch(e) {}
-  } else {
-    // First-ever visit: add a starter equipment type
-    setTimeout(() => {
-      if (!document.querySelector('.et-card')) addEquipType({ name: 'GIS', color: '#2c4e87' });
-    }, 100);
-  }
+  const _saved = localStorage.getItem('bidcast_state_rfqcast');
+  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  // If no equipment types after state restore, add a starter
+  setTimeout(() => {
+    if (!document.querySelector('.et-card')) addEquipType({ name: 'GIS', color: '#2c4e87' });
+  }, 100);
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
   SuiteManager.onUpdate((sync, key) => {
-    if (key === 'pyl0n_logo') { updateLogoUI(); return; }
+    if (key === 'bidcast_logo') { updateLogoUI(); return; }
     suiteRead(sync);
   });
 });
