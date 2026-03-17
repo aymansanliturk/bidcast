@@ -398,6 +398,15 @@
     font-family: 'DM Mono', monospace; font-size: 9px; color: var(--faint);
     letter-spacing: 0.5px; text-transform: uppercase;
   }
+  /* ── Toast notification ── */
+  #suite-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(12px);
+    background: #1a1916; color: #fff; padding: 11px 22px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; opacity: 0; transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 9999; pointer-events: none; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.28);
+  }
+  #suite-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
 </head>
 <body>
@@ -923,12 +932,27 @@ function ppSave() {
   ppFlashSync();
 }
 
+/** Show a brief toast message at the bottom of the screen. */
+function showToast(msg, duration) {
+  const t = document.getElementById('suite-toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('visible'), duration || 4000);
+}
+
 /** Create a new blank project workspace. */
 function ppNew() {
   if (ppGetProjects().length >= MAX_PROJECTS) {
     alert(`Maximum ${MAX_PROJECTS} projects reached. Delete a project to make room.`);
     return;
   }
+  if (!confirm('Start a fresh workspace?\n\nAll tool data (Gantt, Resources, Org Chart, RFQ, Risk Register, Responsibilities) will be cleared.\n\nUse "Master Export" first if you want to save a backup.')) return;
+  // Mark every tool state as empty so each tool starts blank instead of re-showing sample data
+  ['timecast','resourcecast','orgcast','rfqcast','riskcast','dorcast'].forEach(k =>
+    localStorage.setItem('bidcast_state_' + k, JSON.stringify({_empty: true}))
+  );
   ppSetActiveId('');
   const nameEl = document.getElementById('pp-name');
   if (nameEl) nameEl.value = '';
@@ -936,6 +960,7 @@ function ppNew() {
   ppPopulateSelect();
   ppFlashSync();
   refreshStats();
+  showToast('Workspace cleared. You are starting with a blank canvas.');
 }
 
 /** Delete the active project. */
@@ -1450,5 +1475,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<div id="suite-toast"></div>
 </body>
 </html>

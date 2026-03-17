@@ -827,7 +827,9 @@ function updateLogoUI() {
     const today = new Date();
     document.getElementById('chart-date').value =
       today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  })();
 
+  function _loadSampleData() {
     // Add all nodes first (no parents yet)
     addPerson({ name:'A. Johnson',  title:'Project Manager',       role:'pm',          company:'ourco', color:'#2c4e87' });
     addPerson({ name:'B. Müller',   title:'Technical PM',          role:'tpm',         company:'ourco', color:'#1a6b8a' });
@@ -849,7 +851,7 @@ function updateLogoUI() {
     setParentByRole('hse',         'pm');
     setParentByRole('contract',    'pm');
     setParentByRole('bid-sales',   'pm');
-  })();
+  }
 
   // ── Print fix ──
   let _wasInOutput = false;
@@ -1014,7 +1016,11 @@ SuiteManager.onUpdate((sync, key) => {
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_orgcast');
-  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  if (_saved) {
+    try { const s = JSON.parse(_saved); if (!s._empty) applyState(s); } catch(e) {}
+  } else {
+    _loadSampleData();
+  }
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });

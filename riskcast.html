@@ -976,15 +976,22 @@ window.addEventListener('afterprint', function() {
 (function init() {
   const today = new Date();
   document.getElementById('doc-date').value = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+})();
+
+function _loadSampleData() {
   addRisk({ category:'Commercial',   topic:'Supply Chain',           cause:'Single-source supplier dependency',    desc:'Key supplier fails to deliver on schedule',           likelihood:3, impact:4, mitigation:'Dual-source strategy; contractual penalties for delay',   status:'Open' });
   addRisk({ category:'Contractual',  topic:'Scope Definition',       cause:'Late customer requirement changes',    desc:'Scope creep beyond agreed baseline',                  likelihood:4, impact:3, mitigation:'Strict change order process; baseline scope locked at contract', status:'Open' });
   addRisk({ category:'Resource',     topic:'Specialist Availability', cause:'Limited market capacity at peak demand', desc:'Specialist resource unavailable at execution phase', likelihood:2, impact:5, mitigation:'Early mobilisation plan; identify qualified backups',      status:'Open' });
-})();
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_riskcast');
-  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  if (_saved) {
+    try { const s = JSON.parse(_saved); if (!s._empty) applyState(s); } catch(e) {}
+  } else {
+    _loadSampleData();
+  }
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
   SuiteManager.onUpdate((sync, key) => {
