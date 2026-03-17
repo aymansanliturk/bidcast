@@ -923,13 +923,16 @@ window.addEventListener('afterprint',function(){
 (function init(){
   const today=new Date();
   document.getElementById('doc-date').value=today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+})();
+
+function _loadSampleData() {
   addParty({name:'Client',      color:'#c0392b'});
   addParty({name:'Contractor',  color:'#2c4e87'});
   addRow({type:'section',label:'1. General'});
   addRow({type:'subsection',label:'1.1. Project Management'});
   addRow({type:'item',num:'1.1.1',label:'Overall Project Management',marks:['','X'],comment:''});
   addRow({type:'item',num:'1.1.2',label:'Provision of Progress Reports',marks:['','X'],comment:''});
-})();
+}
 
 // ── Undo / Redo ──
 let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
@@ -996,7 +999,19 @@ function exportPDF() {
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_dorcast');
-  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  if (_saved) {
+    try {
+      const s = JSON.parse(_saved);
+      if (s._empty) {
+        // Fresh start: auto-open the template modal so user can pick a starting point
+        setTimeout(openModal, 200);
+      } else {
+        applyState(s);
+      }
+    } catch(e) {}
+  } else {
+    _loadSampleData();
+  }
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
   SuiteManager.onUpdate((sync, key) => {
