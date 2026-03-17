@@ -1420,12 +1420,20 @@ function masterImport(input) {
     try {
       const archive = JSON.parse(e.target.result);
       if (!archive || typeof archive !== 'object') throw new Error('Not a valid archive file');
-      const keys = Object.keys(archive).filter(k => k.startsWith('pyl0n_'));
-      if (!keys.length) throw new Error('No PYL0N data found in file');
-      if (!confirm('Restore ' + keys.length + ' data keys from archive?\nAll current workspace data will be cleared and replaced.')) return;
+      // Accept both current pyl0n_ keys and legacy bidcast_ keys (remapped on the fly)
+      const pyl0nKeys   = Object.keys(archive).filter(k => k.startsWith('pyl0n_'));
+      const bidcastKeys = Object.keys(archive).filter(k => k.startsWith('bidcast_'));
+      const totalCount  = pyl0nKeys.length + bidcastKeys.length;
+      if (!totalCount) throw new Error('No PYL0N data found in file');
+      if (!confirm('Restore ' + totalCount + ' data keys from archive?\nAll current workspace data will be cleared and replaced.')) return;
       // Full clean-up: remove every existing pyl0n_ key before restoring
       Object.keys(localStorage).filter(k => k.startsWith('pyl0n_')).forEach(k => localStorage.removeItem(k));
-      keys.forEach(k => { if (typeof archive[k] === 'string') localStorage.setItem(k, archive[k]); });
+      pyl0nKeys.forEach(k => { if (typeof archive[k] === 'string') localStorage.setItem(k, archive[k]); });
+      // Remap legacy bidcast_ keys → pyl0n_ equivalents
+      bidcastKeys.forEach(old => {
+        const neo = 'pyl0n_' + old.slice('bidcast_'.length);
+        if (typeof archive[old] === 'string') localStorage.setItem(neo, archive[old]);
+      });
       ppLoad();
       ppPopulateSelect();
       ppUpdateLogo();

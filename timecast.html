@@ -1774,7 +1774,12 @@ SuiteManager.onUpdate((sync, key) => {
 document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('pyl0n_state_timecast');
-  if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  if (_saved) {
+    try { applyState(JSON.parse(_saved)); } catch(e) {}
+    // Keep editor visible on auto-restore — user clicks Generate when ready
+    document.getElementById('editor').style.display = 'block';
+    document.getElementById('output').style.display  = 'none';
+  }
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });
