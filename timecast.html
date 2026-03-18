@@ -445,10 +445,18 @@
       <label>End Month   <select id="end-month"></select></label>
       <label>End Year    <input type="number" id="end-year" value="2028" min="2000" max="2099" oninput="this.style.outline=(/^20[0-9]{2}$/.test(this.value.trim()))?'':'2px solid #c0392b'"></label>
     </div>
-    <div style="margin-top:8px;">
+    <div style="margin-top:12px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
       <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
         <input type="checkbox" id="show-today" checked style="accent-color:var(--accent);width:14px;height:14px;">
         Show today marker on chart
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
+        Scale
+        <select id="view-scale" style="font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;">
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="quarterly">Quarterly</option>
+        </select>
       </label>
     </div>
   </div>
@@ -604,6 +612,7 @@ function updateLogoUI() {
   let projCount  = 0;
   let projIds    = [];
   let chartState = null;
+  let viewScale  = 'monthly'; // 'monthly' | 'weekly' | 'quarterly'
   let currentFormat = 'A3';
   const FORMAT_PAGES = {
     A4:     'A4 landscape',
@@ -932,6 +941,73 @@ function updateLogoUI() {
   }
   function colOf(months, m, y) { return months.findIndex(mo => mo.m===m && mo.y===y); }
 
+  /* ── Scale-aware unit builders ─────────────────────────────────── */
+  function _buildWeekUnits(sm, sy, em, ey) {
+    const end = new Date(ey, em + 1, 0); // last day of end month
+    // Align to the Monday on or before the 1st of the start month
+    const d = new Date(sy, sm, 1);
+    const dow = d.getDay(); // 0=Sun
+    d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+    const units = [];
+    let weekNum = 1, curYear = d.getFullYear();
+    while (d <= end) {
+      const y = d.getFullYear();
+      if (y !== curYear) { weekNum = 1; curYear = y; }
+      units.push({ y, weekNum,
+        firstMonth: d.getMonth(), firstYear: d.getFullYear(),
+        startDate: new Date(d), label: 'W' + weekNum, yLabel: String(y).slice(2) });
+      d.setDate(d.getDate() + 7);
+      weekNum++;
+    }
+    return units;
+  }
+
+  function _buildQuarterUnits(sm, sy, em, ey) {
+    const units = [];
+    let q = Math.floor(sm / 3), y = sy;
+    const endQ = Math.floor(em / 3), endY = ey;
+    while (y < endY || (y === endY && q <= endQ)) {
+      units.push({ q, y, firstMonth: q * 3, firstYear: y,
+        label: 'Q' + (q + 1), yLabel: String(y).slice(2) });
+      if (++q > 3) { q = 0; y++; }
+    }
+    return units;
+  }
+
+  // Returns a unit array for the given scale. Monthly units carry extra
+  // {firstMonth, firstYear, label, yLabel} fields identical to other scales.
+  function buildUnits(sm, sy, em, ey, scale) {
+    if (scale === 'weekly')    return _buildWeekUnits(sm, sy, em, ey);
+    if (scale === 'quarterly') return _buildQuarterUnits(sm, sy, em, ey);
+    return buildMonths(sm, sy, em, ey).map(mo => ({
+      ...mo, firstMonth: mo.m, firstYear: mo.y,
+      label: MN[mo.m], yLabel: String(mo.y).slice(2)
+    }));
+  }
+
+  // Maps a task's {m, y} month dates to a column index in the units array.
+  function unitColOf(units, m, y, scale) {
+    if (scale === 'quarterly') {
+      const q = Math.floor(m / 3);
+      return units.findIndex(u => u.q === q && u.y === y);
+    }
+    if (scale === 'weekly') {
+      // Find the week whose 7-day window contains the 1st of the month
+      const monthStart = new Date(y, m, 1);
+      return units.findIndex(u => {
+        const weekEnd = new Date(u.startDate); weekEnd.setDate(weekEnd.getDate() + 6);
+        return u.startDate <= monthStart && monthStart <= weekEnd;
+      });
+    }
+    return colOf(units, m, y); // monthly: direct match
+  }
+
+  // Today's column in a units array.
+  function todayUnitIdx(units, scale) {
+    const now = new Date();
+    return unitColOf(units, now.getMonth(), now.getFullYear(), scale);
+  }
+
   // ── Sidebar drag reorder ──
   let sbDragSrc = null;
   function buildSidebar(state) {
@@ -1029,7 +1105,9 @@ function updateLogoUI() {
     }));
 
     const showToday = document.getElementById('show-today')?.checked ?? true;
-    chartState = { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday };
+    const _scale = document.getElementById('view-scale')?.value || 'monthly';
+    viewScale = _scale;
+    chartState = { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday, viewScale: _scale };
     renderChart();
 
     document.getElementById('editor').style.display = 'none';
@@ -1045,18 +1123,17 @@ function updateLogoUI() {
 
   function renderChart() {
     const { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday = true } = chartState;
-    let months = buildMonths(sm, sy, em, ey);
-    // If the stored range is invalid, fall back to a 12-month window rather than
-    // throwing or rendering a blank chart.
-    if (!months || !months.length) {
+    const scale = chartState.viewScale || viewScale || 'monthly';
+    let units = buildUnits(sm, sy, em, ey, scale);
+    // Fall back to a 12-month window if the range is invalid / empty.
+    if (!units || !units.length) {
       const _n = new Date(), _e = new Date(_n.getFullYear(), _n.getMonth() + 12, 1);
-      months = buildMonths(_n.getMonth(), _n.getFullYear(), _e.getMonth(), _e.getFullYear());
-      if (!months.length) return; // still empty — nothing to render
+      units = buildUnits(_n.getMonth(), _n.getFullYear(), _e.getMonth(), _e.getFullYear(), scale);
+      if (!units.length) return;
     }
-    const n      = months.length;
-    const bands  = yearBands(months);
-    const now    = new Date();
-    const todayIdx   = showToday ? months.findIndex(mo => mo.m===now.getMonth() && mo.y===now.getFullYear()) : -1;
+    const n      = units.length;
+    const bands  = yearBands(units);
+    const todayIdx = showToday ? todayUnitIdx(units, scale) : -1;
     _syncWindowSlider(n);
     const multiProj  = projects.length > 1;
     const allTasks   = projects.flatMap(p => [...p.bidTasks, ...p.execTasks]);
@@ -1078,7 +1155,8 @@ function updateLogoUI() {
     const gantt = document.getElementById('gantt');
     gantt.innerHTML = '';
     const notesCols = hasNotes ? ' 64px' : '';
-    gantt.style.gridTemplateColumns = `155px${notesCols} repeat(${n}, 1fr)`;
+    const colTpl = scale === 'weekly' ? `minmax(26px,1fr)` : scale === 'quarterly' ? `minmax(60px,1fr)` : '1fr';
+    gantt.style.gridTemplateColumns = `155px${notesCols} repeat(${n}, ${colTpl})`;
 
     // Year row
     const yrGap = el('div','yr-gap');
@@ -1093,10 +1171,12 @@ function updateLogoUI() {
     // Month row
     gantt.appendChild(el('div','mo-gap','Phase'));
     if (hasNotes) gantt.appendChild(el('div','mo-notes-gap','Notes'));
-    months.forEach((mo,i) => {
+    units.forEach((u,i) => {
       const isT = i===todayIdx;
-      const d = el('div',`mo-cell${isT?' today-col':''}`,`<span class="mo-txt">${MN[mo.m]}</span><span class="yr-s">'${String(mo.y).slice(2)}</span>`);
-      gantt.appendChild(d);
+      const inner = scale === 'monthly'
+        ? `<span class="mo-txt">${u.label}</span><span class="yr-s">'${u.yLabel}</span>`
+        : `<span class="mo-txt">${u.label}</span>`;
+      gantt.appendChild(el('div',`mo-cell${isT?' today-col':''}`, inner));
     });
 
     // Render group
@@ -1127,9 +1207,9 @@ function updateLogoUI() {
         gantt.appendChild(lbl);
         if (hasNotes) gantt.appendChild(el('div',`row-notes${bgCls}${altCls}`, t.notes||''));
 
-        const si=colOf(months,t.sm,t.sy), ei=colOf(months,t.em,t.ey);
-        const bsi=t.baseline?colOf(months,t.baseline.sm,t.baseline.sy):-1;
-        const bei=t.baseline?colOf(months,t.baseline.em,t.baseline.ey):-1;
+        const si=unitColOf(units,t.sm,t.sy,scale), ei=unitColOf(units,t.em,t.ey,scale);
+        const bsi=t.baseline?unitColOf(units,t.baseline.sm,t.baseline.sy,scale):-1;
+        const bei=t.baseline?unitColOf(units,t.baseline.em,t.baseline.ey,scale):-1;
         const useB=!!t.baseline;
 
         for (let c=0; c<n; c++) {
@@ -1259,13 +1339,14 @@ function updateLogoUI() {
     if (!ganttEl || !chartState) return -1;
     const rect  = ganttEl.getBoundingClientRect();
     const { sm, sy, em, ey } = chartState;
-    const months = buildMonths(sm, sy, em, ey);
+    const scale  = chartState.viewScale || viewScale || 'monthly';
+    const units  = buildUnits(sm, sy, em, ey, scale);
     const labelW = 155 + (chartState._hasNotes ? 64 : 0);
     const availW = rect.width - labelW;
-    if (availW <= 0 || months.length === 0) return -1;
-    const colW  = availW / months.length;
+    if (availW <= 0 || units.length === 0) return -1;
+    const colW  = availW / units.length;
     const relX  = clientX - rect.left - labelW;
-    return Math.max(0, Math.min(months.length - 1, Math.floor(relX / colW)));
+    return Math.max(0, Math.min(units.length - 1, Math.floor(relX / colW)));
   }
 
   function _ganttDragStart(ev, projIdx, lane, taskIdx, edge) {
@@ -1277,13 +1358,14 @@ function updateLogoUI() {
     // Milestones only support 'move'; edge handles are for tasks only
     if (task.type === 'milestone' && edge !== 'move') return;
 
-    const months   = buildMonths(chartState.sm, chartState.sy, chartState.em, chartState.ey);
-    const origSi   = colOf(months, task.sm, task.sy);
-    const origEi   = colOf(months, task.em, task.ey);
+    const scale    = chartState.viewScale || viewScale || 'monthly';
+    const units    = buildUnits(chartState.sm, chartState.sy, chartState.em, chartState.ey, scale);
+    const origSi   = unitColOf(units, task.sm, task.sy, scale);
+    const origEi   = unitColOf(units, task.em, task.ey, scale);
     const startCol = _colFromMouseX(ev.clientX);
 
-    // Cache months array so _ganttDragMove / _refreshTaskBars don't rebuild it per event.
-    _gDrag = { projIdx, lane, taskIdx, edge, lastCol: -1, origSi, origEi, startCol, months };
+    // Cache units array so _ganttDragMove / _refreshTaskBars don't rebuild it per event.
+    _gDrag = { projIdx, lane, taskIdx, edge, lastCol: -1, origSi, origEi, startCol, months: units, scale };
     document.getElementById('gantt-outer')?.classList.add('gantt-dragging');
     document.addEventListener('mousemove', _ganttDragMove);
     document.addEventListener('mouseup',   _ganttDragEnd, { once: true });
@@ -1296,20 +1378,21 @@ function updateLogoUI() {
     if (colIdx < 0 || colIdx === _gDrag.lastCol) return;
     _gDrag.lastCol = colIdx;
 
-    const months = _gDrag.months; // cached at drag-start; no rebuild per event
+    const months = _gDrag.months; // cached units array at drag-start; no rebuild per event
+    const scale  = _gDrag.scale  || 'monthly';
     const tasks  = lane === 'bid'
       ? chartState.projects[projIdx].bidTasks
       : chartState.projects[projIdx].execTasks;
     const task = tasks[taskIdx];
 
     if (edge === 'start') {
-      const eiCur   = colOf(months, task.em, task.ey);
+      const eiCur   = unitColOf(months, task.em, task.ey, scale);
       const clamped = months[Math.min(colIdx, eiCur)];
-      task.sm = clamped.m; task.sy = clamped.y;
+      task.sm = clamped.firstMonth; task.sy = clamped.firstYear;
     } else if (edge === 'end') {
-      const siCur   = colOf(months, task.sm, task.sy);
+      const siCur   = unitColOf(months, task.sm, task.sy, scale);
       const clamped = months[Math.max(colIdx, siCur)];
-      task.em = clamped.m; task.ey = clamped.y;
+      task.em = clamped.firstMonth; task.ey = clamped.firstYear;
     } else {
       // 'move' — shift the entire bar (or milestone) while preserving its duration
       const delta   = colIdx - _gDrag.startCol;
@@ -1317,8 +1400,8 @@ function updateLogoUI() {
       const maxSi   = months.length - 1 - Math.max(0, dur);
       const newSi   = Math.max(0, Math.min(maxSi, _gDrag.origSi + delta));
       const newEi   = Math.min(months.length - 1, newSi + dur);
-      task.sm = months[newSi].m; task.sy = months[newSi].y;
-      task.em = months[newEi].m; task.ey = months[newEi].y;
+      task.sm = months[newSi].firstMonth; task.sy = months[newSi].firstYear;
+      task.em = months[newEi].firstMonth; task.ey = months[newEi].firstYear;
     }
 
     // Tooltip — show full range for move, single date for resize
@@ -1369,10 +1452,11 @@ function updateLogoUI() {
       ? chartState.projects[projIdx].bidTasks
       : chartState.projects[projIdx].execTasks;
     const task   = tasks[taskIdx];
-    // Reuse cached months from drag state if available (avoids rebuild during mousemove).
-    const months = (_gDrag && _gDrag.months) || buildMonths(chartState.sm, chartState.sy, chartState.em, chartState.ey);
-    const si = colOf(months, task.sm, task.sy);
-    const ei = colOf(months, task.em, task.ey);
+    // Reuse cached units from drag state if available (avoids rebuild during mousemove).
+    const scale  = (_gDrag && _gDrag.scale) || chartState.viewScale || viewScale || 'monthly';
+    const units  = (_gDrag && _gDrag.months) || buildUnits(chartState.sm, chartState.sy, chartState.em, chartState.ey, scale);
+    const si = unitColOf(units, task.sm, task.sy, scale);
+    const ei = unitColOf(units, task.em, task.ey, scale);
     const useB = !!task.baseline;
 
     const cells = document.querySelectorAll(
@@ -1481,6 +1565,7 @@ function updateLogoUI() {
       endMonth:     parseInt(document.getElementById('end-month')?.value)   || 11,
       endYear:      parseInt(document.getElementById('end-year')?.value)    || 2028,
       showToday:    document.getElementById('show-today')?.checked ?? true,
+      viewScale:    document.getElementById('view-scale')?.value || 'monthly',
       projects,
     };
   }
@@ -1497,6 +1582,7 @@ function updateLogoUI() {
     if (s.endMonth != null)   { const el = document.getElementById('end-month');   if(el) el.value = s.endMonth; }
     if (s.endYear)         { const el = document.getElementById('end-year');     if(el) el.value = s.endYear; }
     { const el = document.getElementById('show-today'); if(el) el.checked = s.showToday !== false; }
+    if (s.viewScale) { viewScale = s.viewScale; const el = document.getElementById('view-scale'); if(el) el.value = s.viewScale; }
 
     // Remove all existing projects
     [...projIds].forEach(id => {
