@@ -424,6 +424,7 @@
     body > * { display: none !important; }
     body > #executive-report-output { display: block !important; }
     #executive-report-output { display: block !important; }
+    .no-print { display: none !important; }
     .er-page { page-break-after: always; padding: 18mm 20mm; min-height: auto; }
     .er-page:last-child { page-break-after: avoid; }
     .er-page + .er-page { border-top: none; }
@@ -1597,9 +1598,9 @@ function generateExecutiveReport() {
     });
   }
 
-  // ── TimeCast: dates + milestones ─────────────────────────────────
+  // ── TimeCast: dates + all phases (bid + exec tasks) ──────────────
   let tcStart = '', tcEnd = '';
-  const milestones = [];
+  const phases = [];
   if (tc) {
     const sm = tc.startMonth ?? 0, sy = tc.startYear ?? new Date().getFullYear();
     const em = tc.endMonth   ?? 11, ey = tc.endYear  ?? sy + 3;
@@ -1607,14 +1608,16 @@ function generateExecutiveReport() {
     tcEnd   = _MN[em] + ' ' + ey;
     (tc.projects || []).forEach(p => {
       [...(p.bidTasks || []), ...(p.execTasks || [])].forEach(t => {
-        if (t.type === 'milestone') milestones.push({
-          name: t.name, project: p.name,
-          month: t.startMonth ?? t.endMonth ?? 0,
-          year:  t.startYear  ?? t.endYear  ?? 0,
+        phases.push({
+          name:    t.name,
+          project: p.name,
+          type:    t.type || 'task',
+          sm: t.startMonth ?? 0,  sy: t.startYear  ?? sy,
+          em: t.endMonth   ?? 0,  ey: t.endYear    ?? sy,
         });
       });
     });
-    milestones.sort((a, b) => (a.year * 12 + a.month) - (b.year * 12 + b.month));
+    phases.sort((a, b) => (a.sy * 12 + a.sm) - (b.sy * 12 + b.sm));
   }
 
   // ── Top 5 risks (by score, risks only) ───────────────────────────
@@ -1676,7 +1679,7 @@ function generateExecutiveReport() {
     </div>
     <div style="background:#f5f4f0;border-radius:10px;padding:12px 18px;display:flex;justify-content:space-between;font-size:10px;color:#6b6860;">
       <span><strong>${risks.length}</strong> Risks Identified</span>
-      <span><strong>${milestones.length}</strong> Key Milestones</span>
+      <span><strong>${phases.length}</strong> Planned Tasks</span>
       <span><strong>${(rc?.roles || []).length}</strong> Resource Roles</span>
       <span style="color:#a8a49e;">Generated with PYL0N Suite</span>
     </div>
@@ -1722,30 +1725,46 @@ function generateExecutiveReport() {
   }
   html += `</div>`;
 
-  // ── Page 3: Key Milestones ────────────────────────────────────────
+  // ── Page 3: Project Schedule (all phases) ────────────────────────
   html += `<div class="er-page">
     ${pageHeader('Project Schedule')}
     <div style="margin-bottom:20px;">
       <div style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#2c4e87;margin-bottom:3px;">Project Schedule</div>
-      <div style="font-size:20px;font-weight:700;letter-spacing:-0.5px;color:#1a1916;">Key Milestones</div>
+      <div style="font-size:20px;font-weight:700;letter-spacing:-0.5px;color:#1a1916;">Timeline Overview</div>
     </div>`;
 
-  if (milestones.length === 0) {
-    html += `<div style="color:#a8a49e;font-size:13px;padding:20px 0;">No milestones found. Open TimeCast and add milestone-type tasks.</div>`;
+  if (phases.length === 0) {
+    html += `<div style="color:#a8a49e;font-size:13px;padding:20px 0;">No tasks found. Open TimeCast to add tasks and milestones.</div>`;
   } else {
-    html += `<div style="display:flex;flex-direction:column;gap:7px;">` +
-      milestones.map((m, i) => {
-        const dateStr = _MN[m.month] + ' ' + m.year;
-        return `<div style="display:flex;align-items:center;gap:16px;padding:9px 14px;background:${i % 2 === 0 ? '#f5f4f0' : '#fff'};border-radius:8px;border-left:3px solid #2c4e87;">
-          <div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:#2c4e87;min-width:68px;flex-shrink:0;">${esc(dateStr)}</div>
-          <div style="flex:1;">
-            <div style="font-weight:600;color:#1a1916;font-size:12px;">${esc(m.name || '—')}</div>
-            ${m.project ? `<div style="font-size:9px;color:#a8a49e;margin-top:1px;">${esc(m.project)}</div>` : ''}
-          </div>
-          <div style="width:7px;height:7px;border-radius:50%;background:#2c4e87;flex-shrink:0;"></div>
-        </div>`;
-      }).join('') +
-      `</div>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead>
+        <tr style="background:#1e3a6b;color:#fff;">
+          <th style="padding:9px 11px;text-align:left;font-size:8px;font-weight:700;letter-spacing:0.5px;">TASK / PHASE</th>
+          <th style="padding:9px 11px;text-align:left;font-size:8px;font-weight:700;letter-spacing:0.5px;">PROJECT</th>
+          <th style="padding:9px 11px;text-align:left;font-size:8px;font-weight:700;letter-spacing:0.5px;">START</th>
+          <th style="padding:9px 11px;text-align:left;font-size:8px;font-weight:700;letter-spacing:0.5px;">END</th>
+          <th style="padding:9px 11px;text-align:center;font-size:8px;font-weight:700;letter-spacing:0.5px;">TYPE</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${phases.map((p, i) => {
+          const isMile = p.type === 'milestone';
+          const accentColor = isMile ? '#be123c' : '#2c4e87';
+          const typeBadge = isMile
+            ? `<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700;background:#fff1f2;color:#be123c;">Milestone</span>`
+            : `<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:8px;font-weight:700;background:#f0f4ff;color:#2c4e87;">Task</span>`;
+          const startStr = _MN[p.sm] + ' ' + p.sy;
+          const endStr   = isMile ? '—' : _MN[p.em] + ' ' + p.ey;
+          return `<tr style="background:${i % 2 === 0 ? '#f5f4f0' : '#ffffff'};border-bottom:1px solid #e0ddd6;border-left:3px solid ${accentColor};">
+            <td style="padding:9px 11px;font-weight:600;color:#1a1916;font-size:11px;">${esc(p.name || '—')}</td>
+            <td style="padding:9px 11px;font-size:10px;color:#6b6860;">${esc(p.project || '—')}</td>
+            <td style="padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;color:#2c4e87;">${esc(startStr)}</td>
+            <td style="padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;color:#6b6860;">${esc(endStr)}</td>
+            <td style="padding:9px 11px;text-align:center;">${typeBadge}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
   }
   html += `</div>`;
 
@@ -1815,15 +1834,24 @@ function generateExecutiveReport() {
   html += `<div style="margin-top:auto;padding-top:20px;border-top:1px solid #e0ddd6;font-size:8px;color:#a8a49e;text-align:center;letter-spacing:0.5px;text-transform:uppercase;">Generated with PYL0N Suite · ${today}</div>
   </div></div>`;
 
-  // ── Inject + print ────────────────────────────────────────────────
+  // ── Nav bar (screen only, hidden in print) ───────────────────────
+  const navBar = `<div class="no-print" style="position:sticky;top:0;background:#fff;padding:12px 48px;border-bottom:1px solid var(--border);display:flex;gap:12px;z-index:1000;margin-bottom:24px;">
+    <button class="pp-btn" onclick="closeExecutiveReport()" style="font-weight:600;color:var(--accent);border-color:var(--accent);">← Back to Dashboard</button>
+    <button class="btn-primary" onclick="window.print()">🖨 Print Report</button>
+  </div>`;
+
+  // ── Inject + show ─────────────────────────────────────────────────
   const container = document.getElementById('executive-report-output');
-  container.innerHTML = html;
+  container.innerHTML = navBar + html;
   document.body.classList.add('printing-report');
-  window.print();
-  window.addEventListener('afterprint', function _restore() {
-    document.body.classList.remove('printing-report');
-    window.removeEventListener('afterprint', _restore);
-  });
+  container.style.display = 'block';
+  container.scrollIntoView({ behavior: 'instant', block: 'start' });
+}
+
+function closeExecutiveReport() {
+  document.body.classList.remove('printing-report');
+  const container = document.getElementById('executive-report-output');
+  if (container) container.style.display = 'none';
 }
 
 /* ── Boot ── */
