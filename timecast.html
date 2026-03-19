@@ -420,13 +420,7 @@
         <input type="text" id="proj-title" value="" placeholder="Auto-synced with project name">
       </label>
     </div>
-    <div class="fields f4" style="margin-top:12px;">
-      <label>Bid Status
-        <input type="text" id="bid-status" value="ITB Received" placeholder="e.g. Awarded">
-      </label>
-      <label>Status Color
-        <input type="color" id="status-color" value="#2c4e87" style="height:38px;width:100%;">
-      </label>
+    <div class="fields f2" style="margin-top:12px;">
       <label>Revision
         <input type="text" id="proj-rev" value="Rev. 1.0">
       </label>
@@ -515,7 +509,6 @@
         </div>
         <div class="header-right">
           <div id="print-customer-logo" style="margin-bottom: 6px;"></div>
-          <div id="out-badge" class="bid-status-badge"></div>
           <div class="chart-meta" id="out-meta"></div>
         </div>
       </div>
@@ -1086,8 +1079,6 @@ function updateLogoUI() {
     const title  = document.getElementById('proj-title').value.trim();
     const sub    = document.getElementById('proj-sub')?.value.trim() || '';
     const rev    = document.getElementById('proj-rev').value.trim();
-    const status = document.getElementById('bid-status').value.trim();
-    const sColor = document.getElementById('status-color').value;
     let sm = parseInt(document.getElementById('start-month').value);
     let sy = parseInt(document.getElementById('start-year').value);
     let em = parseInt(document.getElementById('end-month').value);
@@ -1116,7 +1107,7 @@ function updateLogoUI() {
     const showToday = document.getElementById('show-today')?.checked ?? true;
     const _scale = document.getElementById('view-scale')?.value || 'monthly';
     viewScale = _scale;
-    chartState = { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday, viewScale: _scale };
+    chartState = { title, sub, rev, sm, sy, em, ey, projects, showToday, viewScale: _scale };
     renderChart();
 
     document.getElementById('editor').style.display = 'none';
@@ -1131,7 +1122,7 @@ function updateLogoUI() {
   }
 
   function renderChart() {
-    const { title, sub, rev, status, sColor, sm, sy, em, ey, projects, showToday = true } = chartState;
+    const { title, sub, rev, sm, sy, em, ey, projects, showToday = true } = chartState;
     const scale = chartState.viewScale || viewScale || 'monthly';
     let units = buildUnits(sm, sy, em, ey, scale);
     // Fall back to a 12-month window if the range is invalid / empty.
@@ -1156,10 +1147,6 @@ function updateLogoUI() {
     document.getElementById('out-title').textContent = title;
     document.getElementById('out-sub').textContent   = sub;
     document.getElementById('out-meta').innerHTML    = `${MN[sm].toUpperCase()} ${sy} — ${MN[em].toUpperCase()} ${ey}<br>${rev}`;
-    const badge = document.getElementById('out-badge');
-    badge.textContent = status;
-    badge.style.cssText = `background:${sColor}18;color:${sColor};border:1.5px solid ${sColor}44;display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.5px;padding:3px 10px;border-radius:20px;text-transform:uppercase;`;
-
     // Grid
     const gantt = document.getElementById('gantt');
     gantt.innerHTML = '';
@@ -1565,8 +1552,6 @@ function updateLogoUI() {
       format:       currentFormat,
       projCount:    projIds.length,
       chartTitle:   document.getElementById('proj-title')?.value    || '',
-      status:       document.getElementById('bid-status')?.value    || '',
-      statusColor:  document.getElementById('status-color')?.value  || '#2c4e87',
       rev:          document.getElementById('proj-rev')?.value      || '',
       chartDate:    document.getElementById('proj-date')?.value     || '',
       startMonth:   parseInt(document.getElementById('start-month')?.value) || 0,
@@ -1582,8 +1567,6 @@ function updateLogoUI() {
   function applyState(s) {
     if (s.format) setFormat(s.format);
     if (s.chartTitle)      { const el = document.getElementById('proj-title');   if(el) { el.value = s.chartTitle; el._manuallyEdited = true; } }
-    if (s.status)          { const el = document.getElementById('bid-status');   if(el) el.value = s.status; }
-    if (s.statusColor)     { const el = document.getElementById('status-color'); if(el) el.value = s.statusColor; }
     if (s.rev)             { const el = document.getElementById('proj-rev');     if(el) el.value = s.rev; }
     if (s.chartDate)       { const el = document.getElementById('proj-date');    if(el) el.value = s.chartDate; }
     if (s.startMonth != null) { const el = document.getElementById('start-month'); if(el) el.value = s.startMonth; }
