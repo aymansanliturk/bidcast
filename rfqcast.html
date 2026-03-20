@@ -61,8 +61,7 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 .section { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:24px; margin-bottom:14px; }
 .section-title { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--faint); margin-bottom:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .fields { display:grid; gap:12px; }
-.f2 { grid-template-columns:1fr 1fr; }
-.f3 { grid-template-columns:1fr 1fr 1fr; }
+.f1 { grid-template-columns:1fr; }
 .f4 { grid-template-columns:1fr 1fr 1fr 1fr; }
 label { display:flex; flex-direction:column; gap:5px; font-size:11px; font-weight:500; color:var(--muted); }
 input[type="text"], input[type="date"], input[type="number"], select {
@@ -78,7 +77,8 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 .rfq-table { width:100%; border-collapse:collapse; font-size:12px; }
 .rfq-table th { font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--faint); padding:6px 8px; text-align:left; border-bottom:2px solid var(--border); white-space:nowrap; background:var(--surface); position:sticky; top:0; z-index:2; }
 .rfq-table th.center { text-align:center; }
-.rfq-table td { padding:4px 5px; border-bottom:1px solid #f0ede8; vertical-align:middle; }
+.rfq-table td { padding:4px 5px; border-bottom:1px solid #f0ede8; vertical-align:middle; cursor:pointer; }
+.rfq-table tbody tr.rfq-row:hover td { background:#fafaf8; }
 
 /* Vendor status pills */
 .v-pill { display:inline-flex; align-items:center; justify-content:center; padding:2px 8px; border-radius:20px; font-size:9.5px; font-weight:600; font-family:'DM Mono',monospace; white-space:nowrap; cursor:pointer; border:none; transition:opacity 0.15s; }
@@ -98,13 +98,12 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 /* Detail row */
 .detail-row { display:none; }
 .detail-row.open { display:table-row; }
-.detail-panel { padding:12px 16px; background:#faf9f7; border-radius:6px; display:grid; gap:14px; }
+.detail-panel { padding:12px 16px; background:#faf9f7; border-radius:6px; display:grid; gap:14px; cursor:default; }
 .detail-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
 .detail-grid.g4 { grid-template-columns:1fr 1fr 1fr 1fr; }
 .vendor-block { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px; }
 .vendor-title { font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--faint); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
 .vendor-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-.vf-label { font-size:9.5px; font-weight:500; color:var(--muted); margin-bottom:3px; }
 .vf-input { font-size:11px; padding:4px 7px; width:100%; }
 .validity-warn { font-size:9px; color:var(--red); font-weight:600; margin-top:3px; }
 
@@ -124,18 +123,11 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 .btn-generate:hover { background:var(--accent2); }
 .btn-secondary { background:var(--surface); color:var(--muted); border:1px solid var(--border); border-radius:7px; padding:12px 18px; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.15s; }
 .btn-secondary:hover { border-color:var(--text); color:var(--text); }
-.btn-primary { font-family:'DM Sans',sans-serif; background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
-.btn-primary:hover { background:var(--accent2); }
-.btn-green   { font-family:'DM Sans',sans-serif; background:var(--green); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:filter 0.15s; }
-.btn-green:hover { filter:brightness(0.9); }
 
 /* Drag */
 .drag-handle { cursor:grab; color:#ccc; font-size:13px; user-select:none; }
 .rfq-row.dragging  { opacity:0.3; }
 .rfq-row.drag-over { border-top:2px solid var(--accent); }
-
-/* Type tag */
-.type-tag { display:inline-block; font-size:8.5px; font-weight:700; letter-spacing:0.4px; padding:2px 7px; border-radius:10px; text-transform:uppercase; background:#eef2fb; color:var(--accent); }
 
 /* ── OUTPUT ── */
 #output { display:none; padding:20px 28px 40px; }
@@ -160,59 +152,16 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
 .out-table th { font-size:7.5px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase; color:var(--faint); padding:5px 6px; text-align:left; border-bottom:2px solid var(--border); white-space:nowrap; background:#fff; }
 .out-table th.center { text-align:center; }
 .out-table td { padding:3px 5px; border-bottom:1px solid #f0ede8; vertical-align:middle; }
-.out-type { font-size:8px; font-weight:700; color:var(--accent); text-transform:uppercase; }
-.out-desc { font-size:9px; font-weight:500; }
+.out-desc { font-size:10px; font-weight:600; color:#1a1916; }
 .out-mark { text-align:center; font-size:9px; font-weight:700; font-family:'DM Mono',monospace; }
 
 .out-v-pill { display:inline-flex; align-items:center; padding:1px 6px; border-radius:10px; font-size:7.5px; font-weight:700; font-family:'DM Mono',monospace; white-space:nowrap; }
-.validity-exp { color:var(--red); font-weight:700; font-size:8px; }
 
 .out-legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; }
 .out-li { display:flex; align-items:center; gap:5px; font-size:8.5px; color:var(--muted); }
 .out-ld { padding:1px 6px; border-radius:10px; font-size:7.5px; font-weight:700; font-family:'DM Mono',monospace; }
 
 .chart-watermark { text-align:right; margin-top:10px; font-family:'DM Mono',monospace; font-size:7.5px; color:#d0cdc8; letter-spacing:1px; text-transform:uppercase; }
-
-/* Supplier cards */
-.supplier-cards { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px; }
-.supplier-card { background:var(--surface); border:1.5px solid var(--border); border-radius:8px; padding:14px; }
-.supplier-card-hd { display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--faint); }
-.supplier-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.supplier-card label { font-size:11px; font-weight:500; color:var(--muted); display:flex; flex-direction:column; gap:4px; margin-bottom:8px; }
-.supplier-card label:last-child { margin-bottom:0; }
-.supplier-card textarea { font-family:'DM Sans',sans-serif; font-size:11px; resize:vertical; min-height:52px; padding:6px 8px; border:1px solid var(--border); border-radius:5px; background:#faf9f7; color:var(--text); outline:none; transition:border-color 0.15s; }
-.supplier-card textarea:focus { border-color:var(--accent); background:#fff; }
-.strat-notes-wrap { margin-top:14px; }
-.strat-notes-wrap label { font-size:11px; font-weight:500; color:var(--muted); display:flex; flex-direction:column; gap:4px; }
-.strat-notes-wrap textarea { font-family:'DM Sans',sans-serif; font-size:11px; resize:vertical; min-height:56px; width:100%; box-sizing:border-box; padding:7px 10px; border:1px solid var(--border); border-radius:5px; background:#faf9f7; color:var(--text); outline:none; transition:border-color 0.15s; }
-.strat-notes-wrap textarea:focus { border-color:var(--accent); background:#fff; }
-/* Equipment Type Cards */
-.et-card { border:1.5px solid var(--border); border-radius:8px; margin-bottom:12px; overflow:hidden; }
-.et-card-hd { display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--surface); border-bottom:1px solid var(--border); }
-.et-color-dot { width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 0 0 1.5px var(--border); cursor:pointer; flex-shrink:0; }
-.et-name-inp { font-size:13px; font-weight:600; flex:1; border:none; background:transparent; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; }
-.et-del { border:none; background:none; cursor:pointer; color:var(--faint); font-size:18px; line-height:1; padding:0 4px; }
-.et-del:hover { color:var(--red); }
-.et-body { padding:14px; }
-.et-suppliers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:10px; }
-.et-strat { width:100%; box-sizing:border-box; font-family:'DM Sans',sans-serif; font-size:11px; resize:vertical; min-height:44px; padding:6px 8px; border:1px solid var(--border); border-radius:5px; background:#faf9f7; color:var(--text); outline:none; }
-.et-strat:focus { border-color:var(--accent); background:#fff; }
-/* Output type sections */
-.out-type-section { margin-bottom:20px; break-inside:avoid; }
-.out-type-hd { display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:5px 0; border-bottom:2px solid var(--border); }
-.out-type-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-.out-type-name { font-size:11px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; }
-.out-type-strat { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
-
-/* Output supplier cards */
-.out-supplier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:12px 0 18px; }
-.out-supplier-card { border:1px solid var(--border); border-radius:6px; padding:10px 12px; background:#faf9f7; }
-.out-sc-name { font-size:10px; font-weight:700; color:var(--text); margin-bottom:2px; }
-.out-sc-tag { display:inline-block; font-size:7.5px; font-weight:700; font-family:'DM Mono',monospace; padding:1px 6px; border-radius:10px; letter-spacing:0.5px; margin-bottom:6px; }
-.out-sc-contact { font-size:8px; color:var(--muted); margin-bottom:4px; }
-.out-sc-scope { font-size:8px; color:var(--muted); line-height:1.4; }
-.out-strat-notes { font-size:8.5px; color:var(--muted); background:#faf9f7; border:1px solid var(--border); border-radius:5px; padding:8px 10px; margin-top:8px; white-space:pre-wrap; line-height:1.5; }
-.out-section-label { font-size:8px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; color:var(--faint); margin-bottom:6px; }
 
 @media print {
   #editor      { display:none !important; }
@@ -242,8 +191,6 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     <button class="tb-btn active" onclick="setFormat('A3')" data-fmt="A3">A3</button>
     <button class="tb-btn" onclick="setFormat('screen')" data-fmt="screen">Screen</button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" onclick="loadPreset()" style="border-color:#7b4fa6;color:#7b4fa6;">⬇ Preset</button>
-    <div class="tb-sep"></div>
     <button class="tb-btn" id="btn-undo" onclick="undo()" disabled>↩ Undo</button>
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
@@ -253,7 +200,6 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
   </div>
 </div>
 
-<!-- ══════════════════ EDITOR ══════════════════ -->
 <div id="editor">
 
   <div class="section">
@@ -270,27 +216,18 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
   </div>
 
   <div class="section">
-    <div class="section-title">Equipment Types &amp; Sourcing Strategy
-      <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;"> — define each equipment type with its own supplier strategy</span>
-    </div>
-    <div id="equip-types-wrap"></div>
-    <button class="btn-add" onclick="addEquipType({})">+ Add Equipment Type</button>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Procurement Items</div>
+    <div class="section-title">Procurement Items <span style="font-size:10px;font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;"> — Click on any row to expand details, enter prices, and select a winner.</span></div>
     <div class="rfq-table-wrap">
       <table class="rfq-table">
         <thead id="rfq-table-head">
           <tr>
             <th style="width:20px;"></th>
-            <th>Type</th>
-            <th style="min-width:160px;">Category</th>
-            <th style="min-width:220px;">Description</th>
-            <th style="width:50px;">Qty</th>
-            <th style="min-width:100px;" class="v-th">Supplier 1</th>
-            <th style="min-width:100px;" class="v-th">Supplier 2</th>
-            <th style="min-width:100px;" class="v-th">Supplier 3</th>
+            <th style="min-width:180px;">Category</th>
+            <th style="min-width:240px;">Item Description</th>
+            <th style="width:50px;text-align:center;">Qty</th>
+            <th style="min-width:140px;" class="v-th">Supplier 1</th>
+            <th style="min-width:140px;" class="v-th">Supplier 2</th>
+            <th style="min-width:140px;" class="v-th">Supplier 3</th>
             <th style="width:22px;"></th>
           </tr>
         </thead>
@@ -299,7 +236,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     </div>
     <div class="add-row-bar">
       <button class="btn-add-row" onclick="addItem({})">+ Add Item</button>
-      <button class="btn-green" onclick="pushToCalcCast()" title="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
+      <button class="btn-primary" onclick="pushToCalcCast()" style="background:var(--green);border-color:var(--green);" title="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
     </div>
   </div>
 
@@ -308,7 +245,6 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
   </div>
 </div>
 
-<!-- ══════════════════ OUTPUT ══════════════════ -->
 <div id="output">
   <div class="print-bar no-print">
     <button class="btn-secondary" onclick="goBack()">← Edit Data</button>
@@ -325,11 +261,6 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     <div class="out-meta" id="out-meta"></div>
   </div>
   <div class="summary-row" id="summary-row"></div>
-  <div id="out-strategy-section" style="display:none;margin-bottom:18px;">
-    <div class="out-section-label">Sourcing Strategy</div>
-    <div id="out-supplier-grid" class="out-supplier-grid"></div>
-    <div id="out-strat-notes" class="out-strat-notes" style="display:none;"></div>
-  </div>
   <div class="out-table-wrap">
     <table class="out-table" id="out-table"></table>
   </div>
@@ -393,39 +324,25 @@ function clearLogo() {
 }
 function updateLogoUI() {
   const logo = SuiteManager.getLogo();
-  const st = document.getElementById('logo-status');
-  const cl = document.getElementById('logo-clear');
-  if (st) st.style.display = logo ? 'inline' : 'none';
-  if (cl) cl.style.display = logo ? 'inline-flex' : 'none';
   const pl = document.getElementById('print-logo');
   if (pl) pl.innerHTML = logo ? `<img src="${logo}" style="height:36px;max-width:150px;object-fit:contain;display:block;">` : '';
 }
 
 /* ── SUITE SYNC ── */
-function suiteWrite() {
-  // RFQCast contributes no unique data to the shared sync store.
-  // projectName is written only on user input via the oninput handler.
-}
+function suiteWrite() {}
 function suiteRead(sync) {
   if (!sync || sync._src === 'rfqcast') return;
   const pn = document.getElementById('proj-name');
-  // Ignore the generic sentinel "Project Name" so it never overwrites a real value.
   if (pn && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== pn)
     pn.value = sync.projectName;
   updateLogoUI();
-  SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
 }
 
-const PRESET_RFQ={"items":[{"type":"HV Equipment","desc":"132kV AIS Circuit Breakers","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Power Transformer","desc":"220/132kV 300 MVA Power Transformers","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Shunt Reactor","desc":"132kV 100 MVAr Shunt Reactor","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Aux Transformer","desc":"132kV/0,4kV 600 kVA Auxiliary Transformer","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Equipment","desc":"132kV Post Insulators","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Equipment","desc":"132kV Disconnectors","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"HV Cables","desc":"132kV Cable","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"GIS","desc":"220kV GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"GIS","desc":"66kV GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Harmonic Filter","desc":"132kV 20 MVAr","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"STATCOM","desc":"132kV 75 MVAr","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Civil Works (Construction)","desc":"Civil Works Contractor  (Soil Works, Foundations & Buildings)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Electrical Installation","desc":"Installation Contractor for HV Equipment","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"LV Systems","desc":"LV Aux System, Distribution Boards & UPS / Battery","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Control & Protection","desc":"C&P System incl. Protection (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"SCADA","desc":"SCADA System incl. HMI (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Network&Telecoms","desc":"Network System incl. HMI (Panels & Equipment + PM/Eng.)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Cybersecurity","desc":"Cybersecurity Implementations","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Logistics","desc":"Transport of Equipment to Site (Local DK Transport)","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"LV Cables","desc":"LV Power & Control Cable scope","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Lighting","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Access Control","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Building Mgmt. System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"CCTV System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Perimeter Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"HVAC System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"MEP","desc":"Fire Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"Earthing","desc":"Earthing & Bonding, Lightning Protection System","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""},{"type":"ICMN","desc":"Condition Monitoring System for TR, SHR & GIS","qty":"","techResp":"","procResp":"","rfqDoc":"","inHouse":false,"external":false,"detDesign":false,"transport":false,"install":false,"commission":false,"vendors":[{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""},{"name":"","nda":"","enquiry":"","expOffer":"","offerRec":"","binding":"","validity":""}],"comments":""}]};
 let currentFormat = 'A3';
 let rowCount = 0;
 let dragSrc = null;
 
-const ITEM_TYPES = ['HV Equipment','Power Transformer','Shunt Reactor','Aux Transformer',
-  'GIS','HV Cables','LV Cables','LV Systems','Control & Protection','SCADA',
-  'Network & Telecoms','Cybersecurity','Civil Works','Electrical Installation',
-  'Logistics','MEP','Earthing','ICMN','Harmonic Filter','STATCOM','Other'];
-
+// The universal category list (Matched perfectly with CalcCast)
 const CATEGORIES = [
   'Transformers', 'Shunt Reactors', '400kV / 245–275kV / 66–145kV GIS',
   'Control & Protection & Telecom', 'STATCOM', 'MV Switchgear / AIS Switchgear',
@@ -444,120 +361,10 @@ function setFormat(fmt) {
     sizes[fmt] ? `@page { size:${sizes[fmt]}; margin:8mm; }` : '';
 }
 
-
-// ── Equipment Types ──────────────────────────────────────────────
-let etCount = 0;
-const ET_COLORS = ['#2c4e87','#3a7a52','#c47a1e','#7b3dbf','#c43c3c','#1e7a8c','#6a5c1e','#4e7e2c'];
-const APPROACH_OPTS = ['','Competitive','Single Source','Framework Agreement','Preferred','In-House'];
-
-function etApproachSelect(val, cls) {
-  return `<select class="${cls}" style="font-size:11px;padding:4px 5px;width:100%;">
-    ${APPROACH_OPTS.map(o => `<option value="${o}" ${o===val?'selected':''}>${o||'— Approach —'}</option>`).join('')}
-  </select>`;
-}
-
-function addEquipType(data = {}) {
-  const tid   = data.id ? (etCount = Math.max(etCount, +data.id), +data.id) : ++etCount;
-  const color = data.color || ET_COLORS[(tid - 1) % ET_COLORS.length];
-  const name  = data.name  || '';
-  const sups  = data.suppliers || [{},{},{} ];
-  while (sups.length < 3) sups.push({});
-  const strat = data.strategyNotes || '';
-
-  const card = document.createElement('div');
-  card.className  = 'et-card';
-  card.dataset.tid = tid;
-
-  const suppHtml = sups.slice(0,3).map((s, si) => `
-    <div class="supplier-card" style="padding:10px;">
-      <div class="supplier-card-hd" style="margin-bottom:8px;">
-        <div class="supplier-dot et-sup-dot-${tid}-${si}" style="background:${['#2c4e87','#3a7a52','#7b4fa6'][si]}"></div>
-        <span style="font-size:9px;">Supplier ${si+1}</span>
-      </div>
-      <label style="font-size:10.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;margin-bottom:6px;">Name
-        <input type="text" class="et-sup-name" data-si="${si}" value="${esc(s.name||'')}" placeholder="Company name" oninput="syncTypeDropdowns()">
-      </label>
-      <label style="font-size:10.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;margin-bottom:6px;">Contact
-        <input type="text" class="et-sup-contact" data-si="${si}" value="${esc(s.contact||'')}" placeholder="Name / email">
-      </label>
-      <label style="font-size:10.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;margin-bottom:6px;">Approach
-        ${etApproachSelect(s.approach||'', 'et-sup-approach')}
-      </label>
-      <label style="font-size:10.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;">Scope
-        <textarea class="et-sup-scope" data-si="${si}" style="font-family:'DM Sans',sans-serif;font-size:10.5px;resize:vertical;min-height:44px;padding:5px 7px;border:1px solid var(--border);border-radius:4px;background:#faf9f7;" placeholder="Items / scope...">${esc(s.scope||'')}</textarea>
-      </label>
-    </div>`).join('');
-
-  card.innerHTML = `
-    <div class="et-card-hd">
-      <label title="Change colour" style="cursor:pointer;display:flex;align-items:center;">
-        <div class="et-color-dot" style="background:${color};" onclick="this.nextElementSibling.click()"></div>
-        <input type="color" value="${color}" style="opacity:0;width:0;height:0;position:absolute;" oninput="updateEtColor(${tid},this.value)">
-      </label>
-      <input type="text" class="et-name-inp" value="${esc(name)}" placeholder="Equipment type name (e.g. 66kV GIS)" oninput="syncTypeDropdowns()">
-      <button class="et-del" onclick="removeEquipType(${tid})" title="Remove type">×</button>
-    </div>
-    <div class="et-body">
-      <div class="et-suppliers">${suppHtml}</div>
-      <label style="font-size:10.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:4px;">
-        Strategy Notes
-        <textarea class="et-strat" placeholder="Sourcing strategy, constraints, risks...">${esc(strat)}</textarea>
-      </label>
-    </div>`;
-
-  document.getElementById('equip-types-wrap').appendChild(card);
-  syncTypeDropdowns();
-}
-
-function removeEquipType(tid) {
-  document.querySelector(`.et-card[data-tid="${tid}"]`)?.remove();
-  syncTypeDropdowns();
-}
-
-function updateEtColor(tid, color) {
-  const card = document.querySelector(`.et-card[data-tid="${tid}"]`);
-  if (!card) return;
-  card.querySelector('.et-color-dot').style.background = color;
-  _scheduleSnap(); // color change mutates inline style, not an input — persist explicitly
-}
-
-function getEquipTypes() {
-  return [...document.querySelectorAll('.et-card')].map(card => ({
-    id:            parseInt(card.dataset.tid),
-    name:          card.querySelector('.et-name-inp').value.trim(),
-    color:         card.querySelector('.et-color-dot').style.background,
-    suppliers:     [0,1,2].map(si => ({
-      name:     card.querySelectorAll('.et-sup-name')[si]?.value.trim()    || '',
-      contact:  card.querySelectorAll('.et-sup-contact')[si]?.value.trim() || '',
-      approach: card.querySelectorAll('.et-sup-approach')[si]?.value       || '',
-      scope:    card.querySelectorAll('.et-sup-scope')[si]?.value.trim()   || '',
-    })),
-    strategyNotes: card.querySelector('.et-strat').value.trim(),
-  }));
-}
-
-function syncTypeDropdowns() {
-  const types = getEquipTypes().map(t => t.name).filter(Boolean);
-  // Update all item type selects
-  document.querySelectorAll('.item-type').forEach(sel => {
-    const cur = sel.value;
-    const allTypes = [...new Set([...types, ...ITEM_TYPES])];
-    sel.innerHTML = allTypes.map(t => `<option value="${t}" ${t===cur?'selected':''}>${t}</option>`).join('');
-    if (cur && !allTypes.includes(cur)) {
-      const opt = document.createElement('option');
-      opt.value = cur; opt.textContent = cur; opt.selected = true;
-      sel.prepend(opt);
-    }
-  });
-  // Update vendor block titles in open panels (use type's supplier names for context)
-  syncSupplierHeaders();
-}
-
 // ── Vendor status logic ──
 function vendorStatus(v) {
   if (!v.name) return 'none';
   const today = new Date(); today.setHours(0,0,0,0);
-  // Check expiry
   if (v.validity) {
     const exp = new Date(v.validity);
     if (!isNaN(exp) && exp < today) return 'expired';
@@ -575,7 +382,6 @@ function statusLabel(s) {
   return { none:'—', enquiry:'ENQ', waiting:'WAIT', received:'REC', binding:'BIND', expired:'EXP' }[s] || '—';
 }
 
-// ── Validity warning ──
 function validityWarn(v, requiredMonths) {
   if (!v.validity || !v.offerRec) return '';
   const offerDate = new Date(v.offerRec);
@@ -600,25 +406,24 @@ function addItem(data) {
   tr.draggable = true;
   initDrag(tr);
 
-  // Build type list from defined equipment types + ITEM_TYPES fallback
-  const definedTypes = getEquipTypes().map(t => t.name).filter(Boolean);
-  const allTypes = definedTypes.length ? [...new Set([...definedTypes, ...ITEM_TYPES])] : ITEM_TYPES;
-  const curType  = data.type || (definedTypes[0] || 'HV Equipment');
-  const typeOpts = allTypes.map(t =>
-    `<option value="${t}" ${t===curType?'selected':''}>${t}</option>`
-  ).join('');
   function catOpts(sel) {
+    // If it's an old file with 'type', try to map it to category if possible, else default to Other
+    const current = sel || data.type || 'Other Cost Items';
     return CATEGORIES.map(c =>
-      `<option value="${c}"${c === (sel || 'Other Cost Items') ? ' selected' : ''}>${c}</option>`
+      `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`
     ).join('');
+    // Also inject if it's a legacy type not in CATEGORIES
+    if (current && !CATEGORIES.includes(current)) {
+      return `<option value="${current}" selected>${current}</option>` + 
+             CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
   }
 
   tr.innerHTML = `
     <td><span class="drag-handle">⠿</span></td>
-    <td><select class="item-type" style="font-size:11px;padding:3px 5px;min-width:120px;">${typeOpts}</select></td>
-    <td><select class="rfq-inp-category" style="font-size:11px;padding:3px 5px;width:100%;">${catOpts(data.category)}</select></td>
-    <td><input class="item-desc" type="text" value="${esc(data.desc||'')}" placeholder="Technical description" style="width:100%;min-width:200px;"></td>
-    <td><input class="item-qty" type="text" value="${esc(data.qty||'')}" placeholder="Qty" style="width:50px;text-align:center;"></td>
+    <td><select class="rfq-inp-category" style="font-size:11px;padding:5px 7px;width:100%;border:none;background:transparent;cursor:pointer;">${catOpts(data.category)}</select></td>
+    <td><input class="item-desc" type="text" value="${esc(data.desc||'')}" placeholder="Technical description" style="width:100%;min-width:200px;border:none;background:transparent;padding:5px;"></td>
+    <td><input class="item-qty" type="text" value="${esc(data.qty||'')}" placeholder="Qty" style="width:50px;text-align:center;border:none;background:transparent;padding:5px;"></td>
     <td class="v-cell" data-vi="0"></td>
     <td class="v-cell" data-vi="1"></td>
     <td class="v-cell" data-vi="2"></td>
@@ -631,10 +436,9 @@ function addItem(data) {
   det.className = 'detail-row';
   det.dataset.parent = id;
   const requiredMonths = parseInt(document.getElementById('validity-months').value) || 3;
-  det.innerHTML = `<td colspan="9"><div class="detail-panel" id="detail-${id}"></div></td>`;
+  det.innerHTML = `<td colspan="8"><div class="detail-panel" id="detail-${id}"></div></td>`;
   tbody.appendChild(det);
 
-  // Store vendor data on tr
   tr.dataset.vendors   = JSON.stringify(v);
   tr.dataset.techResp  = data.techResp  || '';
   tr.dataset.procResp  = data.procResp  || '';
@@ -696,24 +500,17 @@ function buildDetailPanel(tr, vendors, requiredMonths) {
       ${vendors.map((v,i) => buildVendorBlock(v, i, requiredMonths, tr.dataset.rfqId)).join('')}
     </div>`;
 
-  // Bind vendor field changes → update pills
+  // Bind changes
   panel.querySelectorAll('.v-field').forEach(inp => {
-    inp.addEventListener('input', () => {
-      saveDetailToRow(tr);
-      updateVendorPills(tr, getVendorsFromPanel(panel));
-    });
-    inp.addEventListener('change', () => {
-      saveDetailToRow(tr);
-      updateVendorPills(tr, getVendorsFromPanel(panel));
-    });
+    inp.addEventListener('input', () => { saveDetailToRow(tr); updateVendorPills(tr, getVendorsFromPanel(panel)); });
+    inp.addEventListener('change', () => { saveDetailToRow(tr); updateVendorPills(tr, getVendorsFromPanel(panel)); });
   });
   panel.querySelectorAll('.d-techresp,.d-procresp,.d-rfqdoc,.d-comments,.strat-wrap input').forEach(inp => {
     inp.addEventListener('input', () => saveDetailToRow(tr));
     inp.addEventListener('change', () => saveDetailToRow(tr));
   });
-  // Bind winner radio changes → save
   panel.querySelectorAll('.inp-winner').forEach(inp => {
-    inp.addEventListener('change', () => saveDetailToRow(tr));
+    inp.addEventListener('change', () => { saveDetailToRow(tr); updateVendorPills(tr, getVendorsFromPanel(panel)); });
   });
 }
 
@@ -775,9 +572,9 @@ function buildVendorBlock(v, i, requiredMonths, rfqId) {
             <option value="DKK" ${v.currency==='DKK'?'selected':''}>DKK</option>
           </select>
         </label>
-        <label style="grid-column:span 2;font-size:9.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px;">
-          <input type="radio" name="winner_${rfqId}" value="${i}" class="inp-winner" ${v.isWinner ? 'checked' : ''}>
-          Select as Winner
+        <label style="grid-column:span 2;font-size:10px;font-weight:700;color:var(--green);background:#f0fdf4;padding:6px;border-radius:4px;display:flex;align-items:center;gap:6px;margin-top:4px;border:1px solid #bbf7d0;cursor:pointer;">
+          <input type="radio" name="winner_${rfqId}" value="${i}" class="inp-winner" ${v.isWinner ? 'checked' : ''} style="cursor:pointer;">
+          Mark as Winning Quote
         </label>
       </div>
     </div>`;
@@ -789,7 +586,6 @@ function getVendorsFromPanel(panel) {
     const vi = parseInt(f.dataset.vi);
     vendors[vi][f.dataset.key] = f.value;
   });
-  // Handle winner radio (mutually exclusive per item)
   const winnerRadio = panel.querySelector('.inp-winner:checked');
   vendors.forEach((v, i) => { v.isWinner = winnerRadio ? parseInt(winnerRadio.value) === i : false; });
   return vendors;
@@ -819,11 +615,32 @@ function updateVendorPills(tr, vendors) {
     const s  = vendorStatus(v);
     td.innerHTML = '';
     if (v.name) {
+      const nameDiv = document.createElement('div');
+      nameDiv.style.fontSize = '10px'; nameDiv.style.fontWeight = '600'; nameDiv.textContent = v.name;
+      td.appendChild(nameDiv);
+
       const pill = document.createElement('div');
       pill.className = `v-pill ${statusClass(s)}`;
       pill.title = v.name;
       pill.textContent = statusLabel(s);
+      pill.style.marginTop = '4px';
       td.appendChild(pill);
+
+      // Show Price on main row
+      if (v.price) {
+        const pr = document.createElement('div');
+        pr.style.fontSize = '9px'; pr.style.fontFamily = 'monospace'; pr.style.marginTop = '4px';
+        pr.textContent = (v.currency||'EUR') + ' ' + Number(v.price).toLocaleString();
+        td.appendChild(pr);
+      }
+      
+      // Show Winner indicator
+      if (v.isWinner) {
+        const w = document.createElement('div');
+        w.style.fontSize = '9px'; w.style.color = 'var(--green)'; w.style.fontWeight = '700'; w.style.marginTop = '2px';
+        w.textContent = '★ WINNER';
+        td.appendChild(w);
+      }
     } else {
       td.innerHTML = '<span style="color:#ddd;font-size:10px;">—</span>';
     }
@@ -873,8 +690,7 @@ function getItems() {
     saveDetailToRow(tr);
     return {
       id:       tr.dataset.rfqId    || '',
-      type:     tr.querySelector('.item-type')?.value || '',
-      category: tr.querySelector('.rfq-inp-category')?.value || tr.querySelector('.item-type')?.value || '',
+      category: tr.querySelector('.rfq-inp-category')?.value || 'Other Cost Items',
       desc:     tr.querySelector('.item-desc')?.value || '',
       qty:      tr.querySelector('.item-qty')?.value  || '',
       units:    'pcs',
@@ -893,62 +709,68 @@ function getItems() {
   });
 }
 
+// ── PUSH TO CALCCAST ──
 function pushToCalcCast() {
   const state = collectState();
   let ccState;
   try { ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{"costRows":[]}'); }
   catch { ccState = { costRows: [] }; }
+
   if (!ccState.costRows) ccState.costRows = [];
   let pushedCount = 0;
+
   (state.items || []).forEach(item => {
     const winner = (item.vendors || []).find(v => v.isWinner);
     if (!winner || !winner.price) return; // Skip if no winner or no price entered
+
     // Find existing row in CalcCast by hidden RFQ ID
     const existingIdx = ccState.costRows.findIndex(r => r.rfqId && r.rfqId === item.id);
+
     const rowData = {
-      rfqId:     item.id,
-      category:  item.category || 'Other Cost Items',
-      desc:      item.desc || item.name || '',
-      scope:     'included',
-      supplier:  winner.name || '',
-      estFix:    'Fixed', // Supplier quotes are fixed
-      units:     item.units || 'pcs',
-      qty:       item.qty || 1,
+      rfqId: item.id,
+      category: item.category || 'Other Cost Items',
+      desc: item.desc || '',
+      scope: 'included',
+      supplier: winner.name || '',
+      estFix: 'Fixed', 
+      units: item.units || 'pcs',
+      qty: item.qty || 1,
       unitPrice: parseFloat(winner.price) || 0,
-      currency:  winner.currency || 'EUR',
+      currency: winner.currency || 'EUR'
     };
+
     if (existingIdx >= 0) {
-      // Update existing row (price/supplier/description) while preserving manual overrides
-      ccState.costRows[existingIdx].supplier  = rowData.supplier;
+      ccState.costRows[existingIdx].supplier = rowData.supplier;
       ccState.costRows[existingIdx].unitPrice = rowData.unitPrice;
-      ccState.costRows[existingIdx].estFix    = rowData.estFix;
-      ccState.costRows[existingIdx].currency  = rowData.currency;
-      ccState.costRows[existingIdx].desc      = rowData.desc;
+      ccState.costRows[existingIdx].estFix = rowData.estFix;
+      ccState.costRows[existingIdx].currency = rowData.currency;
+      ccState.costRows[existingIdx].desc = rowData.desc;
     } else {
       ccState.costRows.push(rowData);
     }
     pushedCount++;
   });
-  localStorage.setItem('bidcast_state_calccast', JSON.stringify(ccState));
 
-  // Trigger cross-tab sync
+  localStorage.setItem('bidcast_state_calccast', JSON.stringify(ccState));
+  
   const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
   sync._ts = Date.now();
   localStorage.setItem('bidcast_suite_sync', JSON.stringify(sync));
+
   alert(`Successfully pushed ${pushedCount} winning quote${pushedCount !== 1 ? 's' : ''} to CalcCast!`);
 }
 
+
 function collectState() {
   return {
-    version:  '1.2',
+    version:  '1.3',
     format:   currentFormat,
     projName: document.getElementById('proj-name').value,
     offerDue: document.getElementById('offer-due').value,
     validityMonths: document.getElementById('validity-months').value,
     rev:      document.getElementById('doc-rev').value,
     date:     document.getElementById('doc-date').value,
-    items:          getItems(),
-    equipmentTypes: getEquipTypes(),
+    items:    getItems(),
   };
 }
 
@@ -960,28 +782,12 @@ function applyState(s) {
   document.getElementById('doc-date').value        = s.date || '';
   if (s.format) setFormat(s.format);
 
-  // Restore equipment types (new format) or migrate legacy global suppliers
-  document.getElementById('equip-types-wrap').innerHTML = '';
-  etCount = 0;
-  if (s.equipmentTypes && s.equipmentTypes.length) {
-    s.equipmentTypes.forEach(t => addEquipType(t));
-  } else if (s.suppliers) {
-    // Migrate legacy: create one "General" type from old global suppliers
-    addEquipType({ name: 'General', suppliers: s.suppliers, strategyNotes: s.strategyNotes || '' });
-  }
-
   document.getElementById('rfq-body').innerHTML = '';
   rowCount = 0;
   (s.items || []).forEach(item => addItem(item));
-  syncTypeDropdowns();
 }
 
-// ── Supplier helpers ──
-function syncSupplierHeaders() {
-  // No-op for compatibility — item-level vendor names drive the columns
-}
-
-// ── Generate ──
+// ── Generate (Output View) ──
 function generate() {
   const state = collectState();
   const today = new Date(); today.setHours(0,0,0,0);
@@ -1014,133 +820,64 @@ function generate() {
     <div class="sum-card"><div class="sum-num" style="color:var(--red);">${totalExpired}</div><div class="sum-label">Expired</div></div>
     <div class="sum-card"><div class="sum-num" style="color:var(--amber);">${totalWarn}</div><div class="sum-label">Validity Warnings</div></div>`;
 
-  const APPROACH_COLORS = {
-    'Competitive': {bg:'#e8f0fb', color:'#2c4e87'},
-    'Single Source': {bg:'#fde8e8', color:'#a63232'},
-    'Framework Agreement': {bg:'#e8f4ed', color:'#3a7a52'},
-    'Preferred': {bg:'#f5edfb', color:'#7b4fa6'},
-    'In-House': {bg:'#fff3e0', color:'#e65100'},
-  };
-  const SUP_DOTS = ['#2c4e87','#3a7a52','#7b4fa6'];
-
-  // Hide legacy strategy section (replaced by per-type sections)
-  document.getElementById('out-strategy-section').style.display = 'none';
-
-  // Group items by equipment type
-  const equipTypes   = getEquipTypes();
-  const typeMap      = new Map(equipTypes.map(t => [t.name.toLowerCase(), t]));
-  const typeNames    = equipTypes.map(t => t.name).filter(Boolean);
-  const grouped      = new Map();
-  const untypedItems = [];
-
+  // Group items strictly by Category
+  const grouped = new Map();
   state.items.forEach(item => {
-    const key = (item.type || '').trim();
-    const match = typeMap.get(key.toLowerCase());
-    if (match) {
-      if (!grouped.has(match.name)) grouped.set(match.name, []);
-      grouped.get(match.name).push(item);
-    } else {
-      untypedItems.push(item);
-    }
+    const k = item.category || 'Other Cost Items';
+    if (!grouped.has(k)) grouped.set(k, []);
+    grouped.get(k).push(item);
   });
 
-  // Render per-type sections
   const table = document.getElementById('out-table');
-  table.innerHTML = '';
+  let tableHtml = '<tbody>';
 
-  function renderTypeTable(typeDef, items) {
-    if (!items.length) return '';
-    const sNames = typeDef ? typeDef.suppliers.map((s,i) => s.name || `Supplier ${i+1}`) : ['Supplier 1','Supplier 2','Supplier 3'];
-    const color  = typeDef ? typeDef.color : '#888';
-
-    let html = '';
-
-    // Type header
-    html += `<tr class="out-type-hdr-row"><td colspan="14" style="padding:10px 0 4px;border-bottom:2px solid ${color}20;">
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;"></div>
-        <span style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:${color};">${typeDef ? esc(typeDef.name) : 'Other'}</span>
-      </div>
-    </td></tr>`;
-
-    // Supplier strategy sub-row (if type has suppliers)
-    if (typeDef && typeDef.suppliers.some(s => s.name)) {
-      html += `<tr class="out-type-strat-row"><td colspan="14" style="padding:5px 0 8px;">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          ${typeDef.suppliers.map((s,i) => {
-            if (!s.name) return '';
-            const ac = APPROACH_COLORS[s.approach] || {bg:'#f0ede8', color:'#888'};
-            return `<div class="out-supplier-card" style="flex:1;min-width:160px;">
-              <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
-                <div style="width:7px;height:7px;border-radius:50%;background:${SUP_DOTS[i]};flex-shrink:0;"></div>
-                <span class="out-sc-name">${esc(s.name)}</span>
-              </div>
-              ${s.approach ? `<span class="out-sc-tag" style="background:${ac.bg};color:${ac.color}">${esc(s.approach)}</span>` : ''}
-              ${s.contact  ? `<div class="out-sc-contact">✉ ${esc(s.contact)}</div>` : ''}
-              ${s.scope    ? `<div class="out-sc-scope">${esc(s.scope)}</div>` : ''}
-            </div>`;
-          }).join('')}
-          ${typeDef.strategyNotes ? `<div style="flex:2;min-width:200px;font-size:8.5px;color:var(--muted);background:#faf9f7;border:1px solid var(--border);border-radius:5px;padding:7px 10px;white-space:pre-wrap;">${esc(typeDef.strategyNotes)}</div>` : ''}
-        </div>
-      </td></tr>`;
-    }
-
-    // Items table header
-    html += `<tr class="out-items-hdr-row" style="background:#f7f5f2;">
+  grouped.forEach((items, catName) => {
+    // Category Header
+    tableHtml += `<tr><td colspan="8" style="padding:12px 0 4px; border-bottom:2px solid var(--accent);"><div style="font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--accent);">${esc(catName)}</div></td></tr>`;
+    
+    // Sub Table Header
+    tableHtml += `<tr style="background:#f7f5f2;">
       <th style="font-size:9px;font-weight:700;text-align:left;padding:4px 6px;color:var(--faint);">Description</th>
       <th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Qty</th>
       <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">Tech Resp.</th>
-      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">${esc(sNames[0])}</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Status</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Validity</th>
-      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">${esc(sNames[1])}</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Status</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Validity</th>
-      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">${esc(sNames[2])}</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Status</th><th style="font-size:9px;font-weight:700;text-align:center;padding:4px 6px;color:var(--faint);">Validity</th>
+      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">Supplier 1</th>
+      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">Supplier 2</th>
+      <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">Supplier 3</th>
       <th style="font-size:9px;font-weight:700;padding:4px 6px;color:var(--faint);">Comments</th>
-      <td style="width:8px;background:#f7f5f2;"></td>
     </tr>`;
 
     // Items
     items.forEach(item => {
-      html += '<tr>';
-      html += `<td class="out-desc">${esc(item.desc)}</td>`;
-      html += `<td class="out-mark">${esc(item.qty||'')}</td>`;
-      html += `<td style="font-size:8.5px;">${esc(item.techResp||'')}</td>`;
+      tableHtml += '<tr>';
+      tableHtml += `<td class="out-desc">${esc(item.desc)}</td>`;
+      tableHtml += `<td class="out-mark">${esc(item.qty||'')}</td>`;
+      tableHtml += `<td style="font-size:8.5px;">${esc(item.techResp||'')}</td>`;
+      
       item.vendors.forEach(v => {
-        if (!v.name) { html += '<td>—</td><td></td><td></td>'; return; }
-        const s    = vendorStatus(v);
-        const warn = validityWarn(v, requiredMonths);
-        html += `<td style="font-size:8.5px;font-weight:500;">${esc(v.name)}</td>`;
-        html += `<td class="out-mark"><span class="out-v-pill ${statusClass(s)}">${statusLabel(s)}</span></td>`;
-        html += `<td class="out-mark">${v.validity ? `<span style="${warn?'color:var(--red);font-weight:700;':''}">${esc(v.validity)}</span>` : ''}</td>`;
+        if (!v.name) { tableHtml += '<td>—</td>'; return; }
+        const s = vendorStatus(v);
+        
+        let cell = `<div style="font-size:9px; font-weight:700; margin-bottom:3px;">${esc(v.name)}</div>`;
+        cell += `<span class="out-v-pill ${statusClass(s)}">${statusLabel(s)}</span> `;
+        
+        if (v.price) {
+          cell += `<div style="font-size:9.5px; font-family:monospace; font-weight:600; margin-top:4px;">${v.currency||'EUR'} ${Number(v.price).toLocaleString()}</div>`;
+        }
+        if (v.validity) {
+          cell += `<div style="font-size:8px; color:var(--muted); margin-top:2px;">Val: ${v.validity}</div>`;
+        }
+        if (v.isWinner) {
+          cell += `<div style="font-size:9px; color:var(--green); font-weight:700; margin-top:2px;">★ WINNER</div>`;
+        }
+        
+        tableHtml += `<td style="vertical-align:top; padding:6px;">${cell}</td>`;
       });
-      html += `<td style="font-size:8px;color:var(--muted);">${esc(item.comments||'')}</td>`;
-      html += '<td></td></tr>';
+      
+      tableHtml += `<td style="font-size:8px;color:var(--muted);">${esc(item.comments||'')}</td>`;
+      tableHtml += '</tr>';
     });
-
-    // Spacer
-    html += `<tr><td colspan="14" style="height:14px;"></td></tr>`;
-    return html;
-  }
-
-  let tableHtml = '<tbody>';
-
-  // Render defined types in order
-  equipTypes.forEach(t => {
-    const items = grouped.get(t.name) || [];
-    tableHtml += renderTypeTable(t, items);
+    tableHtml += `<tr><td colspan="8" style="height:10px;"></td></tr>`;
   });
-
-  // Items not matched to any type
-  if (untypedItems.length) {
-    // Group remaining by their type string
-    const ungrouped = new Map();
-    untypedItems.forEach(item => {
-      const k = (item.type||'Other').trim();
-      if (!ungrouped.has(k)) ungrouped.set(k, []);
-      ungrouped.get(k).push(item);
-    });
-    ungrouped.forEach((items, typeName) => {
-      tableHtml += renderTypeTable({ name: typeName, color: '#888', suppliers: [{},{},{}], strategyNotes: '' }, items);
-    });
-  }
 
   tableHtml += '</tbody>';
   table.innerHTML = tableHtml;
@@ -1155,31 +892,10 @@ function goBack() {
   document.getElementById('editor').style.display = 'block';
 }
 
-// ── Preset ──
-function loadPreset() {
-  if (!confirm('Load the standard substation procurement list? This will replace current items and types.')) return;
-  document.getElementById('rfq-body').innerHTML = '';
-  document.getElementById('equip-types-wrap').innerHTML = '';
-  etCount = 0; rowCount = 0;
-  // Default equipment types for a substation project
-  [
-    { name:'GIS',                    color:'#2c4e87' },
-    { name:'Power Transformer',      color:'#3a7a52' },
-    { name:'Shunt Reactor',          color:'#c47a1e' },
-    { name:'Control & Protection',   color:'#7b3dbf' },
-    { name:'SCADA / Network',        color:'#c43c3c' },
-    { name:'Civil Works',            color:'#1e7a8c' },
-    { name:'Electrical Installation',color:'#6a5c1e' },
-    { name:'LV Systems & Cables',    color:'#4e7e2c' },
-  ].forEach(t => addEquipType(t));
-  PRESET_RFQ.items.forEach(item => addItem(item));
-  syncTypeDropdowns();
-}
-
 // ── Save / Load ──
 function _suiteBundle(ownState) {
   const suite = { _suite:true, _version:1, _savedAt:new Date().toISOString(), _savedFrom:'rfqcast' };
-  ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+  ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast'].forEach(k => {
     const raw = localStorage.getItem('bidcast_state_' + k);
     suite[k] = raw ? JSON.parse(raw) : null;
   });
@@ -1204,7 +920,7 @@ function loadJSON(input) {
     try {
       const data = JSON.parse(e.target.result);
       if (data._suite) {
-        ['timecast','resourcecast','orgcast','rfqcast','dorcast'].forEach(k => {
+        ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast'].forEach(k => {
           if (k !== 'rfqcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
         if (data.rfqcast) applyState(data.rfqcast);
@@ -1228,54 +944,6 @@ function exportHTML() {
   URL.revokeObjectURL(a.href);
 }
 
-// ── Excel Import ──
-function importExcel(input) {
-  const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const wb=XLSX.read(e.target.result,{type:'binary', cellDates:true});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-    document.getElementById('rfq-body').innerHTML=''; rowCount=0;
-    const hIdx = data.findIndex(r=>r[1]&&String(r[1]).toLowerCase().includes('description'));
-    const startIdx = hIdx>=0 ? hIdx+2 : 6;
-    data.slice(startIdx).forEach(row=>{
-      if (!row[1]) return;
-      const vendors=[];
-      for(let bi=0;bi<3;bi++){
-        const b=14+bi*8;
-        vendors.push({
-          name:    String(row[b]||'').trim(),
-          nda:     String(row[b+1]||'').trim(),
-          enquiry: String(row[b+2]||'').trim(),
-          expOffer:String(row[b+3]||'').trim(),
-          offerRec:String(row[b+4]||'').trim(),
-          binding: String(row[b+5]||'').trim(),
-          validity:String(row[b+6]||'').trim(),
-        });
-      }
-      addItem({
-        type:   String(row[0]||'').trim(),
-        desc:   String(row[1]||'').trim(),
-        qty:    String(row[2]||'').trim(),
-        techResp:String(row[3]||'').trim(),
-        procResp:String(row[4]||'').trim(),
-        rfqDoc: String(row[5]||'').trim(),
-        inHouse: !!row[7],
-        external:!!row[8],
-        detDesign:!!row[9],
-        transport:!!row[10],
-        install:  !!row[11],
-        commission:!!row[12],
-        vendors,
-        comments:String(row[38]||'').trim(),
-      });
-    });
-    alert(`Imported ${document.querySelectorAll('#rfq-body tr.rfq-row').length} items.`);
-  };
-  reader.readAsBinaryString(file); input.value='';
-}
-
 // ── Excel Export ──
 function exportExcel() {
   const state=collectState();
@@ -1284,34 +952,34 @@ function exportExcel() {
   wsData.push([state.projName, '', 'Offer Due Date:', state.offerDue]);
   wsData.push(['', '', 'Validity Required (Months):', state.validityMonths]);
   wsData.push([]);
-  wsData.push(['Type','Description','Qty','Tech Resp.','Proc Resp.','RFQ Doc','',
+  wsData.push(['Category','Description','Qty','Tech Resp.','Proc Resp.','RFQ Doc','',
     'In House','External','Detailed Design','Transport','Installation','Commissioning','',
-    'V1 Name','V1 NDA','V1 Enquiry','V1 Exp.Offer','V1 Offer Rec.','V1 Binding','V1 Validity','',
-    'V2 Name','V2 NDA','V2 Enquiry','V2 Exp.Offer','V2 Offer Rec.','V2 Binding','V2 Validity','',
-    'V3 Name','V3 NDA','V3 Enquiry','V3 Exp.Offer','V3 Offer Rec.','V3 Binding','V3 Validity','',
+    'V1 Name','V1 NDA','V1 Enquiry','V1 Exp.Offer','V1 Offer Rec.','V1 Binding','V1 Validity','V1 Price','V1 Winner',
+    'V2 Name','V2 NDA','V2 Enquiry','V2 Exp.Offer','V2 Offer Rec.','V2 Binding','V2 Validity','V2 Price','V2 Winner',
+    'V3 Name','V3 NDA','V3 Enquiry','V3 Exp.Offer','V3 Offer Rec.','V3 Binding','V3 Validity','V3 Price','V3 Winner',
     'Comments']);
   state.items.forEach(item=>{
     const v=item.vendors;
     wsData.push([
-      item.type, item.desc, item.qty, item.techResp, item.procResp, item.rfqDoc, '',
+      item.category, item.desc, item.qty, item.techResp, item.procResp, item.rfqDoc, '',
       item.inHouse?'Yes':'', item.external?'Yes':'', item.detDesign?'Yes':'',
       item.transport?'Yes':'', item.install?'Yes':'', item.commission?'Yes':'', '',
-      v[0]?.name||'', v[0]?.nda||'', v[0]?.enquiry||'', v[0]?.expOffer||'', v[0]?.offerRec||'', v[0]?.binding||'', v[0]?.validity||'', '',
-      v[1]?.name||'', v[1]?.nda||'', v[1]?.enquiry||'', v[1]?.expOffer||'', v[1]?.offerRec||'', v[1]?.binding||'', v[1]?.validity||'', '',
-      v[2]?.name||'', v[2]?.nda||'', v[2]?.enquiry||'', v[2]?.expOffer||'', v[2]?.offerRec||'', v[2]?.binding||'', v[2]?.validity||'', '',
+      v[0]?.name||'', v[0]?.nda||'', v[0]?.enquiry||'', v[0]?.expOffer||'', v[0]?.offerRec||'', v[0]?.binding||'', v[0]?.validity||'', v[0]?.price||'', v[0]?.isWinner?'Yes':'',
+      v[1]?.name||'', v[1]?.nda||'', v[1]?.enquiry||'', v[1]?.expOffer||'', v[1]?.offerRec||'', v[1]?.binding||'', v[1]?.validity||'', v[1]?.price||'', v[1]?.isWinner?'Yes':'',
+      v[2]?.name||'', v[2]?.nda||'', v[2]?.enquiry||'', v[2]?.expOffer||'', v[2]?.offerRec||'', v[2]?.binding||'', v[2]?.validity||'', v[2]?.price||'', v[2]?.isWinner?'Yes':'',
       item.comments
     ]);
   });
   const ws=XLSX.utils.aoa_to_sheet(wsData);
-  ws['!cols']=[{wch:20},{wch:45},{wch:6},{wch:18},{wch:18},{wch:16},{wch:2},
-    {wch:10},{wch:10},{wch:16},{wch:12},{wch:14},{wch:14},{wch:2},
-    {wch:20},{wch:8},{wch:12},{wch:12},{wch:12},{wch:10},{wch:12},{wch:2},
-    {wch:20},{wch:8},{wch:12},{wch:12},{wch:12},{wch:10},{wch:12},{wch:2},
-    {wch:20},{wch:8},{wch:12},{wch:12},{wch:12},{wch:10},{wch:12},{wch:2},
-    {wch:30}];
   XLSX.utils.book_append_sheet(wb,ws,'Procurement Overview');
   const name=(state.projName||'rfq').replace(/[^a-z0-9_-]/gi,'_').toLowerCase();
   XLSX.writeFile(wb,name+'_rfqcast.xlsx');
+}
+
+function importExcel(input) {
+  // Simple import logic placeholder adapted for new Category system
+  alert("Import function needs template adjustment for new category system. Please use manual entry for now.");
+  input.value='';
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
@@ -1329,12 +997,6 @@ window.addEventListener('afterprint', function() {
   if (!_wasInOutput) { out.setAttribute('style','display:none'); ed.setAttribute('style',''); }
   else { out.setAttribute('style','display:block'); ed.setAttribute('style','display:none'); }
 });
-
-// ── Init ──
-(function init() {
-  const today = new Date();
-  document.getElementById('doc-date').value = today.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
-})();
 
 // ── Undo / Redo ──
 let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
@@ -1384,21 +1046,13 @@ document.addEventListener('keydown', e => {
     new MutationObserver(() => {
       if (_suppHist) return;
       clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, {
-      childList: true, subtree: true,
-      // attributes: true catches inline-style mutations (e.g. color-picker changes)
-      attributes: true, attributeFilter: ['style'],
-      // characterData: true catches text-node edits in contenteditable elements
-      characterData: true, characterDataSubtree: true,
-    });
-    // 'input' covers text inputs / textareas; 'change' covers selects and checkboxes
+    }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'], characterData: true, characterDataSubtree: true });
     ed.addEventListener('input',  _scheduleSnap);
     ed.addEventListener('change', _scheduleSnap);
   }
   setTimeout(_snapshot, 300);
 })();
 
-// ── PDF Export ──
 function exportPDF() {
   const state = collectState();
   const name = (state.projName || 'rfqcast').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
@@ -1406,16 +1060,7 @@ function exportPDF() {
   html2pdf().set({
     margin: 0, filename: name + '.pdf',
     image: { type: 'jpeg', quality: 0.97 },
-    html2canvas: {
-      scale: 2, useCORS: true,
-      onclone: d => {
-        d.querySelectorAll(
-          '.no-print, .print-bar, .persist-bar, .suite-nav, .config-bar'
-        ).forEach(el => el.remove());
-        const out = d.querySelector('#output');
-        if (out) { out.style.width = '100%'; out.style.padding = '10mm 12mm'; }
-      },
-    },
+    html2canvas: { scale: 2, useCORS: true, onclone: d => { d.querySelectorAll('.no-print, .print-bar, .persist-bar, .suite-nav, .config-bar').forEach(el => el.remove()); const out = d.querySelector('#output'); if (out) { out.style.width = '100%'; out.style.padding = '10mm 12mm'; } } },
     jsPDF: { unit: 'mm', format: fmt === 'A4' ? 'a4' : 'a3', orientation: 'landscape' }
   }).from(document.getElementById('output')).save();
 }
@@ -1425,10 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_rfqcast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
-  // If no equipment types after state restore, add a starter
-  setTimeout(() => {
-    if (!document.querySelector('.et-card')) addEquipType({ name: 'GIS', color: '#2c4e87' });
-  }, 100);
+  if (rowCount === 0) { addItem({}); } // Start with an empty row if completely empty
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
   SuiteManager.onUpdate((sync, key) => {
