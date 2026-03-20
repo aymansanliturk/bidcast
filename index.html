@@ -610,6 +610,7 @@
         <div class="stat-label">Risk Exposure</div>
         <div class="stat-value" id="stat-exposure">—</div>
         <div class="stat-source">RiskCast</div>
+        <div class="stat-chip hidden" id="chip-exposure"></div>
       </div>
 
     </div>
@@ -1187,6 +1188,7 @@ function refreshStats() {
   // ── CalcCast: Financials ──────────────────────────────────────────
   const cc = _load('calccast');
   let customerPrice = 0, totalDirect = 0, hasCalcData = false;
+  let ccRiskProvision = 0; // NEW VARIABLE
   if (cc && cc.costRows) {
     hasCalcData = true;
     const fxMap = { EUR: 1.0, USD: parseFloat(cc.fxUsd) || 0.92, GBP: parseFloat(cc.fxGbp) || 1.17, DKK: parseFloat(cc.fxDkk) || 0.134 };
@@ -1219,6 +1221,9 @@ function refreshStats() {
       totalOrder  += bondCost;
     });
     customerPrice = totalOrder / divNeg;
+
+    // NEW: Calculate absolute Risk Provision in EUR based on the margin formula
+    ccRiskProvision = (totalDirect / divSell) * risk;
   }
 
   // ── Timecast: dates, task/milestone counts, progress ─────────────
@@ -1362,18 +1367,39 @@ function refreshStats() {
       : '—',
     personCount > 0);
 
-  const expEl = document.getElementById('stat-exposure');
+  const expEl   = document.getElementById('stat-exposure');
+  const expCard = document.getElementById('stat-card-exposure');
+  const expChip = document.getElementById('chip-exposure');
+
   if (expEl) {
     if (!hasExposureData || riskCount === 0) {
       expEl.textContent = '—';
       expEl.style.color = '';
       expEl.classList.remove('has-data');
+      if (expChip) expChip.className = 'stat-chip hidden';
+      if (expCard) expCard.classList.remove('s-warn', 's-alert', 's-healthy');
     } else {
       const absVal = Math.abs(Math.round(totalExposure));
       const fmtd   = (totalExposure < 0 ? '-' : '') + '€\u202f' + absVal.toLocaleString('en-GB');
       expEl.textContent = fmtd;
       expEl.classList.add('has-data');
       expEl.style.color = totalExposure < 0 ? 'var(--green)' : totalExposure > 0 ? '#b36a00' : '';
+
+      // Cross-reference with CalcCast Risk Provision
+      if (hasCalcData && expChip) {
+        const gap = ccRiskProvision - totalExposure;
+        if (totalExposure > ccRiskProvision) {
+          expChip.textContent = '⚠ Deficit: ' + _fmtEUR(Math.abs(gap));
+          expChip.className = 'stat-chip red';
+          if (expCard) { expCard.classList.add('s-alert'); expCard.classList.remove('s-healthy', 's-warn'); }
+        } else {
+          expChip.textContent = '✓ Margin: ' + _fmtEUR(gap);
+          expChip.className = 'stat-chip green';
+          if (expCard) { expCard.classList.add('s-healthy'); expCard.classList.remove('s-alert', 's-warn'); }
+        }
+      } else if (expChip) {
+        expChip.className = 'stat-chip hidden';
+      }
     }
   }
 
