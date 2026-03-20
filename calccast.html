@@ -816,18 +816,21 @@ function _esc(s) {
 }
 
 function _collectCostRows() {
-  return Array.from(document.querySelectorAll('#cost-tbody .cost-row')).map(tr => ({
-    rfqId:     tr.querySelector('.inp-rfq-id')?.value || undefined,
-    category:  tr.querySelector('.sel-category').value,
-    desc:      tr.querySelector('.inp-desc').value,
-    scope:     tr.querySelector('.sel-scope').value,
-    supplier:  tr.querySelector('.inp-supplier').value,
-    estFix:    tr.querySelector('.sel-est-fix').value,
-    units:     tr.querySelector('.sel-units').value,
-    qty:       tr.querySelector('.inp-qty').value,
-    unitPrice: tr.querySelector('.inp-unit-price').value,
-    currency:  tr.querySelector('.sel-currency').value,
-  }));
+  return Array.from(document.querySelectorAll('#cost-tbody .cost-row')).map(tr => {
+    const rfqInp = tr.querySelector('.inp-rfq-id');
+    return {
+      rfqId:     rfqInp && rfqInp.value ? rfqInp.value : undefined,
+      category:  tr.querySelector('.sel-category').value,
+      desc:      tr.querySelector('.inp-desc').value,
+      scope:     tr.querySelector('.sel-scope').value,
+      supplier:  tr.querySelector('.inp-supplier').value,
+      estFix:    tr.querySelector('.sel-est-fix').value,
+      units:     tr.querySelector('.sel-units').value,
+      qty:       tr.querySelector('.inp-qty').value,
+      unitPrice: tr.querySelector('.inp-unit-price').value,
+      currency:  tr.querySelector('.sel-currency').value,
+    };
+  });
 }
 
 /* ══ Persistence ════════════════════════════════════════════════════════ */
