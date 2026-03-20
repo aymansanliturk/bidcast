@@ -328,6 +328,8 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
             <th style="min-width:180px;">Description</th>
             <th style="width:110px;">Scope</th>
             <th style="min-width:140px;">Supplier</th>
+            <th style="width:100px;">Est/Fix</th>
+            <th style="width:80px;">Unit</th>
             <th class="th-r" style="width:80px;">Qty</th>
             <th class="th-r" style="width:130px;">Unit Price</th>
             <th class="th-c" style="width:76px;">Ccy</th>
@@ -678,6 +680,16 @@ function addCostRow(data = {}) {
       `<option${c === (sel || 'EUR') ? ' selected' : ''}>${c}</option>`
     ).join('');
   }
+  function estFixOpts(sel) {
+    return ['Estimated', 'Fixed'].map(o =>
+      `<option value="${o}"${(sel || 'Estimated') === o ? ' selected' : ''}>${o}</option>`
+    ).join('');
+  }
+  function unitOpts(sel) {
+    return ['pcs', 'ls', 'kg', 'sqm', 'hrs', 'm', 'litre'].map(o =>
+      `<option value="${o}"${(sel || 'pcs') === o ? ' selected' : ''}>${o}</option>`
+    ).join('');
+  }
 
   tr.innerHTML = `
     <td class="td-num row-num"></td>
@@ -692,6 +704,8 @@ function addCostRow(data = {}) {
     </td>
     <td><input type="text"   class="calc-inp inp-supplier" placeholder="Supplier name"
           value="${_esc(data.supplier || '')}" oninput="calculateModel()"></td>
+    <td><select class="calc-sel sel-est-fix" oninput="calculateModel()">${estFixOpts(data.estFix)}</select></td>
+    <td><select class="calc-sel sel-units"   oninput="calculateModel()">${unitOpts(data.units)}</select></td>
     <td><input type="number" class="calc-inp num inp-qty" placeholder="1"
           min="0" step="1" value="${data.qty || ''}" oninput="calculateModel()"></td>
     <td><input type="number" class="calc-inp num inp-unit-price" placeholder="0.00"
@@ -728,9 +742,11 @@ function _esc(s) {
 function _collectCostRows() {
   return Array.from(document.querySelectorAll('#cost-tbody .cost-row')).map(tr => ({
     category:  tr.querySelector('.sel-category').value,
+    desc:      tr.querySelector('.inp-desc').value,
     scope:     tr.querySelector('.sel-scope').value,
     supplier:  tr.querySelector('.inp-supplier').value,
-    desc:      tr.querySelector('.inp-desc').value,
+    estFix:    tr.querySelector('.sel-est-fix').value,
+    units:     tr.querySelector('.sel-units').value,
     qty:       tr.querySelector('.inp-qty').value,
     unitPrice: tr.querySelector('.inp-unit-price').value,
     currency:  tr.querySelector('.sel-currency').value,
