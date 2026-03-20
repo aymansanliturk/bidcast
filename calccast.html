@@ -692,10 +692,19 @@ function addCostRow(data = {}, insertAfter = null) {
   function estFixOpts(sel) { return ['Estimated', 'Fixed'].map(o => `<option value="${o}"${(sel || 'Estimated') === o ? ' selected' : ''}>${o}</option>`).join(''); }
   function unitOpts(sel) { return ['pcs', 'ls', 'kg', 'sqm', 'hrs', 'm', 'litre'].map(o => `<option value="${o}"${(sel || 'pcs') === o ? ' selected' : ''}>${o}</option>`).join(''); }
 
+  const rfqBadge = data.rfqId
+    ? `<span style="background:#eef2ff;color:#4f46e5;font-size:8px;padding:2px 5px;border-radius:4px;font-weight:700;margin-right:6px;letter-spacing:0.5px;" title="Synced from RFQCast">RFQ</span>`
+    : '';
+
   tr.innerHTML = `
-    <td class="td-num"><span class="drag-handle" title="Drag to reorder">⋮⋮</span> <span class="row-num"></span></td>
+    <td class="td-num"><span class="drag-handle" title="Drag to reorder">⋮⋮</span> <span class="row-num"></span><input type="hidden" class="inp-rfq-id" value="${_esc(data.rfqId || '')}"></td>
     <td><select class="calc-sel sel-category" oninput="calculateModel()">${catOpts(data.category)}</select></td>
-    <td><input type="text" class="calc-inp inp-desc" placeholder="Item description..." value="${_esc(data.desc || '')}" oninput="calculateModel()"></td>
+    <td>
+      <div style="display:flex;align-items:center;">
+        ${rfqBadge}
+        <input type="text" class="calc-inp inp-desc" placeholder="Item description..." value="${_esc(data.desc || '')}" oninput="calculateModel()">
+      </div>
+    </td>
     <td>
       <select class="calc-sel sel-scope" oninput="calculateModel()">
         <option value="included"${(data.scope || 'included') === 'included' ? ' selected' : ''}>Included</option>
@@ -808,6 +817,7 @@ function _esc(s) {
 
 function _collectCostRows() {
   return Array.from(document.querySelectorAll('#cost-tbody .cost-row')).map(tr => ({
+    rfqId:     tr.querySelector('.inp-rfq-id')?.value || undefined,
     category:  tr.querySelector('.sel-category').value,
     desc:      tr.querySelector('.inp-desc').value,
     scope:     tr.querySelector('.sel-scope').value,
@@ -853,6 +863,16 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     calculateModel();
   }
+
+  // Live update when RFQCast pushes winning quotes from another tab
+  window.addEventListener('storage', e => {
+    if (e.key === 'bidcast_state_calccast') {
+      const latest = localStorage.getItem('bidcast_state_calccast');
+      if (latest) {
+        try { applyState(JSON.parse(latest)); } catch {}
+      }
+    }
+  });
 });
 </script>
 
