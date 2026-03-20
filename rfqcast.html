@@ -285,6 +285,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
           <tr>
             <th style="width:20px;"></th>
             <th>Type</th>
+            <th style="min-width:160px;">Category</th>
             <th style="min-width:220px;">Description</th>
             <th style="width:50px;">Qty</th>
             <th style="min-width:100px;" class="v-th">Supplier 1</th>
@@ -298,6 +299,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     </div>
     <div class="add-row-bar">
       <button class="btn-add-row" onclick="addItem({})">+ Add Item</button>
+      <button class="btn-primary" onclick="pushToCalcCast()" style="background:var(--green);border-color:var(--green);">→ Push to CalcCast</button>
     </div>
   </div>
 
@@ -423,6 +425,16 @@ const ITEM_TYPES = ['HV Equipment','Power Transformer','Shunt Reactor','Aux Tran
   'GIS','HV Cables','LV Cables','LV Systems','Control & Protection','SCADA',
   'Network & Telecoms','Cybersecurity','Civil Works','Electrical Installation',
   'Logistics','MEP','Earthing','ICMN','Harmonic Filter','STATCOM','Other'];
+
+const CATEGORIES = [
+  'Transformers', 'Shunt Reactors', '400kV / 245–275kV / 66–145kV GIS',
+  'Control & Protection & Telecom', 'STATCOM', 'MV Switchgear / AIS Switchgear',
+  'Auxiliary Transformers', 'Harmonic Filters / MSCDN', 'ICMS',
+  'Auxiliary System & UPS', 'Diesel Generator', 'Panels', 'LV/HV Cables',
+  'Earthing & Lightning', 'Building Systems', 'Civil Works', 'I&C Contractor',
+  'Onshore/Offshore Supervision', 'Studies', 'Project Hours & Travel',
+  'Training', 'O&M', 'Other Cost Items'
+];
 
 function setFormat(fmt) {
   currentFormat = fmt;
@@ -583,7 +595,8 @@ function addItem(data) {
 
   const tr = document.createElement('tr');
   tr.className = 'rfq-row';
-  tr.dataset.id = id;
+  tr.dataset.id    = id;
+  tr.dataset.rfqId = data.rfqId || ('rfq_' + Date.now() + Math.floor(Math.random() * 1000));
   tr.draggable = true;
   initDrag(tr);
 
@@ -594,10 +607,16 @@ function addItem(data) {
   const typeOpts = allTypes.map(t =>
     `<option value="${t}" ${t===curType?'selected':''}>${t}</option>`
   ).join('');
+  function catOpts(sel) {
+    return CATEGORIES.map(c =>
+      `<option value="${c}"${c === (sel || 'Other Cost Items') ? ' selected' : ''}>${c}</option>`
+    ).join('');
+  }
 
   tr.innerHTML = `
     <td><span class="drag-handle">⠿</span></td>
     <td><select class="item-type" style="font-size:11px;padding:3px 5px;min-width:120px;">${typeOpts}</select></td>
+    <td><select class="rfq-inp-category" style="font-size:11px;padding:3px 5px;width:100%;">${catOpts(data.category)}</select></td>
     <td><input class="item-desc" type="text" value="${esc(data.desc||'')}" placeholder="Technical description" style="width:100%;min-width:200px;"></td>
     <td><input class="item-qty" type="text" value="${esc(data.qty||'')}" placeholder="Qty" style="width:50px;text-align:center;"></td>
     <td class="v-cell" data-vi="0"></td>
@@ -612,11 +631,11 @@ function addItem(data) {
   det.className = 'detail-row';
   det.dataset.parent = id;
   const requiredMonths = parseInt(document.getElementById('validity-months').value) || 3;
-  det.innerHTML = `<td colspan="8"><div class="detail-panel" id="detail-${id}"></div></td>`;
+  det.innerHTML = `<td colspan="9"><div class="detail-panel" id="detail-${id}"></div></td>`;
   tbody.appendChild(det);
 
   // Store vendor data on tr
-  tr.dataset.vendors = JSON.stringify(v);
+  tr.dataset.vendors   = JSON.stringify(v);
   tr.dataset.techResp  = data.techResp  || '';
   tr.dataset.procResp  = data.procResp  || '';
   tr.dataset.rfqDoc    = data.rfqDoc    || '';
@@ -674,7 +693,7 @@ function buildDetailPanel(tr, vendors, requiredMonths) {
       </div>
     </div>
     <div class="detail-grid">
-      ${vendors.map((v,i) => buildVendorBlock(v, i, requiredMonths)).join('')}
+      ${vendors.map((v,i) => buildVendorBlock(v, i, requiredMonths, tr.dataset.rfqId)).join('')}
     </div>`;
 
   // Bind vendor field changes → update pills
@@ -692,9 +711,13 @@ function buildDetailPanel(tr, vendors, requiredMonths) {
     inp.addEventListener('input', () => saveDetailToRow(tr));
     inp.addEventListener('change', () => saveDetailToRow(tr));
   });
+  // Bind winner radio changes → save
+  panel.querySelectorAll('.inp-winner').forEach(inp => {
+    inp.addEventListener('change', () => saveDetailToRow(tr));
+  });
 }
 
-function buildVendorBlock(v, i, requiredMonths) {
+function buildVendorBlock(v, i, requiredMonths, rfqId) {
   const label = `Supplier ${i + 1}`;
   const warn = validityWarn(v, requiredMonths);
   return `
@@ -739,6 +762,23 @@ function buildVendorBlock(v, i, requiredMonths) {
           Validity Until
           <input type="date" class="v-field vf-input" data-vi="${i}" data-key="validity" value="${v.validity||''}">
         </label>
+        <label style="font-size:9.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;">
+          Quote Price
+          <input type="number" class="v-field vf-input" data-vi="${i}" data-key="price" value="${v.price||''}" placeholder="0.00" min="0" step="100">
+        </label>
+        <label style="font-size:9.5px;font-weight:500;color:var(--muted);display:flex;flex-direction:column;gap:3px;">
+          Currency
+          <select class="v-field vf-input" data-vi="${i}" data-key="currency">
+            <option value="EUR" ${(v.currency||'EUR')==='EUR'?'selected':''}>EUR</option>
+            <option value="USD" ${v.currency==='USD'?'selected':''}>USD</option>
+            <option value="GBP" ${v.currency==='GBP'?'selected':''}>GBP</option>
+            <option value="DKK" ${v.currency==='DKK'?'selected':''}>DKK</option>
+          </select>
+        </label>
+        <label style="grid-column:span 2;font-size:9.5px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <input type="radio" name="winner_${rfqId}" value="${i}" class="inp-winner" ${v.isWinner ? 'checked' : ''}>
+          Select as Winner
+        </label>
       </div>
     </div>`;
 }
@@ -749,6 +789,9 @@ function getVendorsFromPanel(panel) {
     const vi = parseInt(f.dataset.vi);
     vendors[vi][f.dataset.key] = f.value;
   });
+  // Handle winner radio (mutually exclusive per item)
+  const winnerRadio = panel.querySelector('.inp-winner:checked');
+  vendors.forEach((v, i) => { v.isWinner = winnerRadio ? parseInt(winnerRadio.value) === i : false; });
   return vendors;
 }
 
@@ -829,9 +872,12 @@ function getItems() {
   return [...document.querySelectorAll('#rfq-body tr.rfq-row')].map(tr => {
     saveDetailToRow(tr);
     return {
+      id:       tr.dataset.rfqId    || '',
       type:     tr.querySelector('.item-type')?.value || '',
+      category: tr.querySelector('.rfq-inp-category')?.value || tr.querySelector('.item-type')?.value || '',
       desc:     tr.querySelector('.item-desc')?.value || '',
       qty:      tr.querySelector('.item-qty')?.value  || '',
+      units:    'pcs',
       techResp: tr.dataset.techResp  || '',
       procResp: tr.dataset.procResp  || '',
       rfqDoc:   tr.dataset.rfqDoc    || '',
@@ -845,6 +891,51 @@ function getItems() {
       comments: tr.dataset.comments  || '',
     };
   });
+}
+
+function pushToCalcCast() {
+  const state = collectState();
+  let ccState;
+  try { ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{"costRows":[]}'); }
+  catch { ccState = { costRows: [] }; }
+  if (!ccState.costRows) ccState.costRows = [];
+  let pushedCount = 0;
+  (state.items || []).forEach(item => {
+    const winner = (item.vendors || []).find(v => v.isWinner);
+    if (!winner || !winner.price) return; // Skip if no winner or no price entered
+    // Find existing row in CalcCast by hidden RFQ ID
+    const existingIdx = ccState.costRows.findIndex(r => r.rfqId && r.rfqId === item.id);
+    const rowData = {
+      rfqId:     item.id,
+      category:  item.category || 'Other Cost Items',
+      desc:      item.desc || item.name || '',
+      scope:     'included',
+      supplier:  winner.name || '',
+      estFix:    'Fixed', // Supplier quotes are fixed
+      units:     item.units || 'pcs',
+      qty:       item.qty || 1,
+      unitPrice: parseFloat(winner.price) || 0,
+      currency:  winner.currency || 'EUR',
+    };
+    if (existingIdx >= 0) {
+      // Update existing row (price/supplier/description) while preserving manual overrides
+      ccState.costRows[existingIdx].supplier  = rowData.supplier;
+      ccState.costRows[existingIdx].unitPrice = rowData.unitPrice;
+      ccState.costRows[existingIdx].estFix    = rowData.estFix;
+      ccState.costRows[existingIdx].currency  = rowData.currency;
+      ccState.costRows[existingIdx].desc      = rowData.desc;
+    } else {
+      ccState.costRows.push(rowData);
+    }
+    pushedCount++;
+  });
+  localStorage.setItem('bidcast_state_calccast', JSON.stringify(ccState));
+
+  // Trigger cross-tab sync
+  const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+  sync._ts = Date.now();
+  localStorage.setItem('bidcast_suite_sync', JSON.stringify(sync));
+  alert(`Successfully pushed ${pushedCount} winning quote${pushedCount !== 1 ? 's' : ''} to CalcCast!`);
 }
 
 function collectState() {
