@@ -17,6 +17,7 @@ This file documents the codebase structure, conventions, and workflows for AI as
 | `rfqcast.html` | RFQCast | Supplier RFQ tracking dashboard |
 | `dorcast.html` | DORCast | RACI/DOR responsibility matrix builder |
 | `riskcast.html` | RiskCast | Risk & opportunity register with scoring matrix |
+| `calccast.html` | CalcCast | Cost breakdown calculator; receives winning quotes pushed from RFQCast |
 | `favicon.svg` | — | Brand favicon |
 | `logo.svg` | — | Brand logo (34×34px grid) |
 
@@ -227,6 +228,10 @@ python3 -m http.server 8080  # then visit http://localhost:8080
 ### RFQCast (`rfqcast.html`)
 - Validity expiration is computed dynamically from `Date.now()`
 - Equipment types are user-configurable categories for suppliers
+- Item rows have an animated SVG chevron `.expand-btn` that rotates 180° via `.open` class; `toggleDetail()` manages the toggle
+- Row click calls `toggleDetail()` unless the click target is a `select`, `input`, or `button` (other than `.expand-btn`, which has its own dedicated listener with `stopPropagation`)
+- **Push to CalcCast**: `pushToCalcCast()` reads winning vendor quotes and upserts them into `bidcast_state_calccast` via `rfqId` matching to prevent duplication
+- `.btn-green` class used for the Push to CalcCast action button
 
 ### DORCast (`dorcast.html`)
 - Has a preset modal to load standard responsibility templates
@@ -401,6 +406,17 @@ Shared functions present in every tool (not repeated below):
 | `loadPreset()` | Loads a responsibility template into the matrix |
 | `importExcel()` | Parses Excel file and loads rows/parties |
 | `exportExcel()` | Generates Excel workbook with matrix data |
+
+### calccast.html
+
+| Function | Description |
+|----------|-------------|
+| `addCostRow(data)` | Creates a cost breakdown row with category, description, scope, supplier, units, qty, unit price, currency |
+| `removeCostRow(btn)` | Deletes a cost row and recalculates totals |
+| `_collectCostRows()` | Extracts all cost row data; reads `rfqId` via explicit null guard to prevent duplication on RFQCast push |
+| `calcTotals()` | Recalculates subtotals and grand total across all cost rows |
+| `generate()` | Collects state and renders cost summary output |
+| `collectState()` / `applyState()` | Standard state serialization; stored under `bidcast_state_calccast` |
 
 ### riskcast.html
 
