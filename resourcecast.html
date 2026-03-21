@@ -274,6 +274,7 @@
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
+    <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
   </div>
 </div>
@@ -292,6 +293,7 @@
         <input type="text" id="proj-name" placeholder="e.g. Offshore Substation — Package 3"
           oninput="const _v=this.value.trim();if(_v&&_v!=='Project Name')SuiteManager.write({projectName:_v},'resourcecast')">
       </label>
+      <label>Project No. <input type="text" id="proj-num" placeholder="e.g. PRJ-001" oninput="_scheduleSnap(); SuiteManager.write({projNum:this.value.trim()},'resourcecast')"></label>
       <label>Revision
         <input type="text" id="proj-rev" value="Rev. 1.0">
       </label>
@@ -1312,6 +1314,7 @@ function updateLogoUI() {
       version: '2.0', format: currentFormat,
       phaseCollapsed,
       projName:  document.getElementById('proj-name').value,
+      projNum:   document.getElementById('proj-num').value,
       rev:       document.getElementById('proj-rev').value,
       projDate:  document.getElementById('proj-date').value,
       date:      document.getElementById('proj-date').value,
@@ -1324,6 +1327,7 @@ function updateLogoUI() {
     if (s.format) setFormat(s.format);
     phaseCollapsed = s.phaseCollapsed || {};
     document.getElementById('proj-name').value  = s.projName  || '';
+    document.getElementById('proj-num').value   = s.projNum   || '';
     document.getElementById('proj-rev').value   = s.rev       || '';
     document.getElementById('proj-date').value  = s.date || s.projDate || '';
     document.getElementById('idx-rate').value = s.idxRate || 0;
@@ -1713,7 +1717,7 @@ function updateLogoUI() {
   });
 
   // ── Undo / Redo ──
-  let _hist=[], _histIdx=-1, _suppHist=false, _histTimer=null;
+  let _hist=[], _histIdx=-1, _suppHist=false, _histTimer=null, _lastSaved=null;
 
   function _snapshot() {
     if (_suppHist) return;
@@ -1724,6 +1728,7 @@ function updateLogoUI() {
     _syncUndoUI();
     localStorage.setItem('bidcast_state_resourcecast', s);
   suiteWrite();
+    _lastSaved = Date.now(); _updateSavedLabel();
   }
   function _scheduleSnap() { if(_suppHist)return; clearTimeout(_histTimer); _histTimer=setTimeout(_snapshot,800); }
   function undo() { clearTimeout(_histTimer); if(_histIdx<=0)return; _suppHist=true; _histIdx--; applyState(JSON.parse(_hist[_histIdx])); _suppHist=false; _syncUndoUI(); }
@@ -1731,6 +1736,13 @@ function updateLogoUI() {
   function _syncUndoUI() {
     const u=document.getElementById('btn-undo'), r=document.getElementById('btn-redo');
     if(u) u.disabled=_histIdx<=0; if(r) r.disabled=_histIdx>=_hist.length-1;
+  }
+  function _updateSavedLabel() {
+    const el = document.getElementById('autosave-label');
+    if (!el) return;
+    if (!_lastSaved) { el.textContent = ''; return; }
+    const s = Math.floor((Date.now() - _lastSaved) / 1000);
+    el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
   }
   document.addEventListener('keydown', e => {
     if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undo();}
@@ -1833,6 +1845,8 @@ function suiteRead(sync) {
     const nameEl = document.getElementById('proj-name');
     if (nameEl && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== nameEl)
       nameEl.value = sync.projectName;
+    const pn = document.getElementById('proj-num');
+    if (pn && sync.projNum && document.activeElement !== pn) pn.value = sync.projNum;
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
   } catch(e) {}
 }
@@ -1850,6 +1864,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('res-tbody').addEventListener('input', _syncRoleDatumFromEvent);
   const _saved = localStorage.getItem('bidcast_state_resourcecast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });

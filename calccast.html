@@ -143,6 +143,11 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
 .cost-row.is-excluded > td { opacity: 0.4; }
 .cost-row.is-excluded .btn-del-row { opacity: 1; }
 
+/* Contingency rows */
+.cost-row.is-contingency { background: #f8f4ff; }
+.cost-row.is-contingency .cost-eur, .cost-row.is-contingency .sell-eur { color: var(--accent); font-style: italic; }
+.inp-contingency-pct { width: 52px !important; text-align: right; }
+
 /* Delete row button */
 .btn-del-row {
   background: none; border: 1px solid var(--border); border-radius: 4px;
@@ -248,6 +253,7 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
     <button class="tb-btn" onclick="exportPDF()">⬇ PDF</button>
+    <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved</span>
   </div>
 </div>
@@ -268,7 +274,7 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
       </label>
       <label>LoA ID
         <input type="text" id="loa-id" placeholder="e.g. LOA-2025-0042"
-          oninput="calculateModel()">
+          oninput="calculateModel(); SuiteManager.write({projNum:this.value.trim()},'calccast')">
       </label>
       <label>Project Type
         <input type="text" id="proj-type" placeholder="e.g. Offshore Substation"
@@ -374,6 +380,7 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
     </div>
 
     <button class="btn-add-item" onclick="addCostRow()">+ Add Item</button>
+    <button class="tb-btn" onclick="addContingencyRow()" title="Add a contingency row that calculates as % of rows above" style="margin-left:8px;">+ Contingency %</button>
   </div>
 
   <!-- Section 4: LoA W2W Consolidated Summary -->
@@ -565,8 +572,24 @@ function calculateModel() {
   const rcTotal = getResourceCastTotal();
   let totalDirect = 0;
   let totalOrder  = 0;
+  let runningIncludedBase = 0; // for contingency rows: sum of included non-contingency rows so far
 
   document.querySelectorAll('#cost-tbody .cost-row').forEach(tr => {
+    if (tr.classList.contains('is-contingency')) {
+      // Contingency row: percentage of all included non-contingency rows above it
+      const excluded = tr.querySelector('.sel-scope').value === 'excluded';
+      const pct      = parseFloat(tr.querySelector('.inp-contingency-pct').value) || 0;
+      const rowCost  = excluded ? 0 : runningIncludedBase * (pct / 100);
+      const rowSell  = excluded ? 0 : rowCost / kpiDivisor;
+      totalDirect += rowCost;
+      totalOrder  += rowSell;
+      tr.classList.toggle('is-excluded', excluded);
+      const fmt = n => n > 0 ? '€\u202f' + Math.round(n).toLocaleString('en-GB') : '—';
+      tr.querySelector('.cost-eur').textContent = excluded ? '—' : fmt(rowCost);
+      tr.querySelector('.sell-eur').textContent = excluded ? '—' : fmt(rowSell);
+      return;
+    }
+
     const cat      = tr.querySelector('.sel-category').value;
     const scopeSel = tr.querySelector('.sel-scope');
     const qtyInp   = tr.querySelector('.inp-qty');
@@ -599,6 +622,7 @@ function calculateModel() {
     // MATH FIX
     const rowCost = excluded ? 0 : (qty * unit * fx);
     const rowSell = excluded ? 0 : (rowCost / kpiDivisor);
+    if (!excluded) runningIncludedBase += rowCost;
     totalDirect += rowCost;
     totalOrder  += rowSell;
 
@@ -654,7 +678,7 @@ function calculateModel() {
 }
 
 /* ══ Undo / Redo ════════════════════════════════════════════════════════ */
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
+let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
 
 function _snapshot() {
   if (_suppHist) return;
@@ -665,6 +689,7 @@ function _snapshot() {
   if (_hist.length > 50) _hist.shift(); else _histIdx++;
   _syncUndoUI();
   localStorage.setItem('bidcast_state_calccast', s);
+  _lastSaved = Date.now(); _updateSavedLabel();
 }
 function _scheduleSnap() {
   if (_suppHist) return;
@@ -675,6 +700,13 @@ function _syncUndoUI() {
   const r = document.getElementById('btn-redo');
   if (u) u.disabled = _histIdx <= 0;
   if (r) r.disabled = _histIdx >= _hist.length - 1;
+}
+function _updateSavedLabel() {
+  const el = document.getElementById('autosave-label');
+  if (!el) return;
+  if (!_lastSaved) { el.textContent = ''; return; }
+  const s = Math.floor((Date.now() - _lastSaved) / 1000);
+  el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
 }
 function undo() {
   clearTimeout(_histTimer);
@@ -737,6 +769,7 @@ const CURRENCIES  = ['EUR','USD','GBP','DKK'];
 let _rowCounter   = 0;
 
 function addCostRow(data = {}, insertAfter = null) {
+  if (data.rowType === 'contingency') { addContingencyRow(data, insertAfter); return; }
   const tbody = document.getElementById('cost-tbody');
   const idx   = _rowCounter++;
   const tr    = document.createElement('tr');
@@ -789,6 +822,40 @@ function addCostRow(data = {}, insertAfter = null) {
     tbody.appendChild(tr);
   }
 
+  _attachDragEvents(tr);
+  _renumberRows();
+  calculateModel();
+}
+
+function addContingencyRow(data = {}, insertAfter = null) {
+  const tbody = document.getElementById('cost-tbody');
+  const idx   = _rowCounter++;
+  const tr    = document.createElement('tr');
+  tr.className   = 'cost-row is-contingency';
+  tr.dataset.idx = idx;
+  tr.innerHTML = `
+    <td class="td-num"><span class="drag-handle" title="Drag to reorder">⋮⋮</span> <span class="row-num"></span></td>
+    <td><span style="font-size:11px;color:var(--faint);padding:2px 6px;">Contingency</span></td>
+    <td><input type="text" class="calc-inp inp-desc" placeholder="Contingency label…" value="${_esc(data.desc || 'Contingency')}" oninput="calculateModel()"></td>
+    <td><select class="calc-sel sel-scope" oninput="calculateModel()">
+      <option value="included"${(data.scope||'included')==='included'?' selected':''}>Included</option>
+      <option value="excluded"${data.scope==='excluded'?' selected':''}>Excluded</option>
+    </select></td>
+    <td colspan="5" style="text-align:center;padding:4px 8px;">
+      <span style="font-size:11px;color:var(--faint);">% of all included rows above:</span>
+      <input type="number" class="calc-inp inp-contingency-pct num" placeholder="10" min="0" max="100" step="0.5" value="${data.contingencyPct||10}" oninput="calculateModel()" style="width:52px;text-align:right;display:inline-block;margin-left:4px;">
+      <span style="font-size:11px;color:var(--faint);margin-left:2px;">%</span>
+    </td>
+    <td><span class="calc-readonly cost-eur">—</span></td>
+    <td><span class="calc-readonly sell-eur">—</span></td>
+    <td>
+      <div class="row-actions">
+        <button class="btn-del-row" onclick="deleteCostRow(this)" title="Remove row">✕</button>
+      </div>
+    </td>
+  `;
+  if (insertAfter && insertAfter.nextSibling) tbody.insertBefore(tr, insertAfter.nextSibling);
+  else tbody.appendChild(tr);
   _attachDragEvents(tr);
   _renumberRows();
   calculateModel();
@@ -873,6 +940,14 @@ function _esc(s) {
 
 function _collectCostRows() {
   return Array.from(document.querySelectorAll('#cost-tbody .cost-row')).map(tr => {
+    if (tr.classList.contains('is-contingency')) {
+      return {
+        rowType:        'contingency',
+        desc:           tr.querySelector('.inp-desc').value,
+        scope:          tr.querySelector('.sel-scope').value,
+        contingencyPct: tr.querySelector('.inp-contingency-pct').value,
+      };
+    }
     const rfqInp = tr.querySelector('.inp-rfq-id');
     return {
       rfqId:     rfqInp && rfqInp.value ? rfqInp.value : undefined,
@@ -1032,9 +1107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     calculateModel();
   }
   setTimeout(_snapshot, 300);
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
 
   SuiteManager.onUpdate((sync, key) => {
     if (key === 'bidcast_logo') { updateLogoUI(); return; }
+    const loaEl = document.getElementById('loa-id');
+    if (loaEl && sync && sync.projNum && document.activeElement !== loaEl) loaEl.value = sync.projNum;
   });
 
   // Live update when RFQCast pushes winning quotes from another tab

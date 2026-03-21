@@ -1993,6 +1993,7 @@ function closeExecutiveReport() {
 
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
+  SuiteManager.migrate();
   ppLoad();
   ppPopulateSelect();
   refreshStats();

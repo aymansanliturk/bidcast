@@ -368,6 +368,7 @@
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
+    <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
   </div>
 </div>
@@ -381,10 +382,11 @@
   <!-- Chart Info -->
   <div class="section">
     <div class="section-title">Chart Information</div>
-    <div class="fields f1">
+    <div class="fields f2">
       <label>Chart Title
         <input type="text" id="proj-title" value="" placeholder="Auto-synced with project name">
       </label>
+      <label>Project No. <input type="text" id="proj-num" placeholder="e.g. PRJ-001" oninput="_scheduleSnap(); SuiteManager.write({projNum:this.value.trim()},'timecast')"></label>
     </div>
     <div class="fields f2" style="margin-top:12px;">
       <label>Revision
@@ -1518,6 +1520,7 @@ function updateLogoUI() {
       format:       currentFormat,
       projCount:    projIds.length,
       chartTitle:   document.getElementById('proj-title')?.value    || '',
+      projNum:      document.getElementById('proj-num')?.value      || '',
       rev:          document.getElementById('proj-rev')?.value      || '',
       chartDate:    document.getElementById('proj-date')?.value     || '',
       startMonth:   parseInt(document.getElementById('start-month')?.value) || 0,
@@ -1533,6 +1536,7 @@ function updateLogoUI() {
   function applyState(s) {
     if (s.format) setFormat(s.format);
     if (s.chartTitle)      { const el = document.getElementById('proj-title');   if(el) { el.value = s.chartTitle; el._manuallyEdited = true; } }
+    if (s.projNum != null) { const el = document.getElementById('proj-num');     if(el) el.value = s.projNum; }
     if (s.rev)             { const el = document.getElementById('proj-rev');     if(el) el.value = s.rev; }
     if (s.chartDate)       { const el = document.getElementById('proj-date');    if(el) el.value = s.chartDate; }
     if (s.startMonth != null) { const el = document.getElementById('start-month'); if(el) el.value = s.startMonth; }
@@ -1651,7 +1655,7 @@ function updateLogoUI() {
   updateDelBtns();
 
   // ── Undo / Redo ──
-  let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
+  let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
 
   function _snapshot() {
     if (_suppHist) return;
@@ -1663,6 +1667,7 @@ function updateLogoUI() {
     _syncUndoUI();
     localStorage.setItem('bidcast_state_timecast', s);
     suiteWrite();
+    _lastSaved = Date.now(); _updateSavedLabel();
   }
   function _scheduleSnap() {
     if (_suppHist) return;
@@ -1686,6 +1691,13 @@ function updateLogoUI() {
     const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
     if (u) u.disabled = _histIdx <= 0;
     if (r) r.disabled = _histIdx >= _hist.length - 1;
+  }
+  function _updateSavedLabel() {
+    const el = document.getElementById('autosave-label');
+    if (!el) return;
+    if (!_lastSaved) { el.textContent = ''; return; }
+    const s = Math.floor((Date.now() - _lastSaved) / 1000);
+    el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
   }
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -1788,6 +1800,8 @@ function suiteRead(sync) {
         renderChart();
       }
     }
+    const pn = document.getElementById('proj-num');
+    if (pn && sync.projNum && document.activeElement !== pn) pn.value = sync.projNum;
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
   } catch(e) {}
 }
@@ -1802,6 +1816,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_timecast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });

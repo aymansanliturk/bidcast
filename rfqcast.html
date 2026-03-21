@@ -207,6 +207,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     <label class="tb-btn" style="cursor:pointer;">↑ Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
+    <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
   </div>
 </div>
 
@@ -216,6 +217,7 @@ input:focus, select:focus { border-color:var(--accent); background:#fff; }
     <div class="section-title">Project Information</div>
     <div class="fields f1">
       <label>Project Name <input type="text" id="proj-name" value="" placeholder="e.g. Bidstrup 132kV Substation" oninput="const _v=this.value.trim();if(_v&&_v!=='Project Name')SuiteManager.write({projectName:_v},'rfqcast')"></label>
+      <label>Project No. <input type="text" id="proj-num" placeholder="e.g. PRJ-001" oninput="_scheduleSnap(); SuiteManager.write({projNum:this.value.trim()},'rfqcast')"></label>
     </div>
     <div class="fields f4" style="margin-top:12px;">
       <label>Offer Due Date <input type="date" id="offer-due"></label>
@@ -345,6 +347,8 @@ function suiteRead(sync) {
   const pn = document.getElementById('proj-name');
   if (pn && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== pn)
     pn.value = sync.projectName;
+  const projNumEl = document.getElementById('proj-num');
+  if (projNumEl && sync.projNum && document.activeElement !== projNumEl) projNumEl.value = sync.projNum;
   updateLogoUI();
 }
 
@@ -785,6 +789,7 @@ function collectState() {
     version:  '1.3',
     format:   currentFormat,
     projName: document.getElementById('proj-name').value,
+    projNum:  document.getElementById('proj-num').value,
     offerDue: document.getElementById('offer-due').value,
     validityMonths: document.getElementById('validity-months').value,
     rev:      document.getElementById('doc-rev').value,
@@ -795,6 +800,7 @@ function collectState() {
 
 function applyState(s) {
   document.getElementById('proj-name').value       = s.projName || '';
+  document.getElementById('proj-num').value        = s.projNum  || '';
   document.getElementById('offer-due').value       = s.offerDue || '';
   document.getElementById('validity-months').value = s.validityMonths || '3';
   document.getElementById('doc-rev').value         = s.rev  || '';
@@ -1018,7 +1024,7 @@ window.addEventListener('afterprint', function() {
 });
 
 // ── Undo / Redo ──
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
+let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
 
 function _snapshot() {
   if (_suppHist) return;
@@ -1029,6 +1035,7 @@ function _snapshot() {
   if (_hist.length > 50) _hist.shift(); else _histIdx++;
   _syncUndoUI();
   localStorage.setItem('bidcast_state_rfqcast', s);
+  _lastSaved = Date.now(); _updateSavedLabel();
 }
 function _scheduleSnap() {
   if (_suppHist) return;
@@ -1052,6 +1059,13 @@ function _syncUndoUI() {
   const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
   if (u) u.disabled = _histIdx <= 0;
   if (r) r.disabled = _histIdx >= _hist.length - 1;
+}
+function _updateSavedLabel() {
+  const el = document.getElementById('autosave-label');
+  if (!el) return;
+  if (!_lastSaved) { el.textContent = ''; return; }
+  const s = Math.floor((Date.now() - _lastSaved) / 1000);
+  el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
 }
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -1090,6 +1104,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const _saved = localStorage.getItem('bidcast_state_rfqcast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
   if (rowCount === 0) { addItem({}); } // Start with an empty row if completely empty
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
   SuiteManager.onUpdate((sync, key) => {
