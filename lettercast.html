@@ -822,10 +822,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } else {
     addDefaultSections();
-    /* pull project name from suite sync */
-    const sync = SuiteManager.read();
-    if (sync.projectName) sv('proj-name', sync.projectName);
   }
+
+  // Always apply current workspace project name (workspace is source of truth)
+  const _bootSync = SuiteManager.read();
+  const _nameEl = $id('proj-name');
+  if (_nameEl && _bootSync.projectName && _bootSync.projectName !== 'Project Name')
+    sv('proj-name', _bootSync.projectName);
+
 
   /* cross-tool sync listener */
   SuiteManager.onUpdate(sync => {
