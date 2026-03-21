@@ -25,6 +25,7 @@
     --brand:    #2c4e87;
     --green:    #107c41; --green-dk: #0a6032;
     --red:      #c0392b;
+    --amber:    #f59e0b;
   }
 
   body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
@@ -283,6 +284,8 @@
   .bar-current:hover .bar-handle { opacity: 1; }
   /* Allow bar body + milestones to be grabbed for full-bar move */
   .bar, .bar-current { cursor: grab; }
+  /* Critical path highlighting */
+  .bar.cp, .bar-current.cp { outline: 2px dashed var(--amber, #f59e0b); outline-offset: -2px; z-index: 6; }
   .milestone { cursor: grab; }
   .gantt-outer.gantt-dragging,
   .gantt-outer.gantt-dragging * { cursor: ew-resize !important; user-select: none !important; }
@@ -1194,7 +1197,9 @@ function updateLogoUI() {
             if (si!==-1 && ei!==-1 && c>=si && c<=ei) {
               const cls=useB?'bar-current':'bar';
               let p='m'; if(si===ei)p='solo'; else if(c===si)p='s'; else if(c===ei)p='e';
-              cell.appendChild(_makeBarSegment(t, cls, p, projIdx, lane, i, c, si, ei));
+              const seg = _makeBarSegment(t, cls, p, projIdx, lane, i, c, si, ei);
+              if (t._isCritical) seg.classList.add('cp');
+              cell.appendChild(seg);
             }
           }
           gantt.appendChild(cell);
@@ -1219,6 +1224,18 @@ function updateLogoUI() {
       renderGroup(proj.execTasks, false, showPhaseHeaders, pi);
     });
 
+    // Critical path: find TASK pairs where A ends the same unit B starts (zero float)
+    // Mark tasks with _isCritical flag before rendering bars
+    const onlyTasks = allTasks.filter(t => t.type === 'task' || t.type === 'TASK' || !t.type);
+    onlyTasks.forEach(t => { t._isCritical = false; });
+    onlyTasks.forEach((a, ai) => {
+      onlyTasks.forEach((b, bi) => {
+        if (ai === bi) return;
+        if (a.em === b.sm && a.ey === b.sy) { a._isCritical = true; b._isCritical = true; }
+      });
+    });
+    const hasCriticalPath = onlyTasks.some(t => t._isCritical);
+
     // Legend
     const legend = document.getElementById('legend');
     legend.innerHTML = '';
@@ -1235,6 +1252,10 @@ function updateLogoUI() {
           <div style="width:14px;height:4px;background:#888;border-radius:1px;opacity:0.35"></div>
           <div style="width:14px;height:7px;background:#888;border-radius:1px"></div>
         </div>Planned vs Current</div>`;
+    }
+    if (hasCriticalPath) {
+      legend.innerHTML += `<div class="legend-sep"></div>
+        <div class="li"><div style="width:14px;height:10px;border-radius:2px;background:var(--accent);outline:2px dashed var(--amber,#f59e0b);outline-offset:-2px;flex-shrink:0;"></div>Critical path</div>`;
     }
     if (todayIdx!==-1) {
       legend.innerHTML += `<div class="legend-sep"></div>
