@@ -1137,9 +1137,18 @@ document.addEventListener('DOMContentLoaded', () => {
   _lastSaved = Date.now(); _updateSavedLabel();
   setInterval(_updateSavedLabel, 15000);
 
+  // Apply workspace project name on load
+  const _bootSync = SuiteManager.read();
+  const _projEl = document.getElementById('proj-name');
+  if (_projEl && _bootSync.projectName && _bootSync.projectName !== 'Project Name' && document.activeElement !== _projEl)
+    _projEl.value = _bootSync.projectName;
+
   SuiteManager.onUpdate((sync, key) => {
     if (key === 'bidcast_logo') { updateLogoUI(); return; }
     if (sync && sync.theme) _applyTheme(sync.theme);
+    const projEl = document.getElementById('proj-name');
+    if (projEl && sync && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== projEl)
+      projEl.value = sync.projectName;
     const loaEl = document.getElementById('loa-id');
     if (loaEl && sync && sync.projNum && document.activeElement !== loaEl) loaEl.value = sync.projNum;
   });
