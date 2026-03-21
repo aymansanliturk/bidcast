@@ -326,6 +326,9 @@
   </div>
   <div class="tb-right">
     <input type="file" id="load-file" accept=".json" style="display:none" onchange="loadJSON(this)">
+    <button class="tb-btn" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
+    <button class="tb-btn" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <div class="tb-sep"></div>
     <button class="tb-btn" onclick="document.getElementById('load-file').click()">↑ Load JSON</button>
     <button class="tb-btn" onclick="saveJSON()">↓ Save JSON</button>
     <button class="tb-btn primary" onclick="generate()">Preview →</button>
@@ -334,7 +337,7 @@
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
-    <span class="kb-hint">Ctrl+S save · Ctrl+E PDF</span>
+    <span class="kb-hint">Ctrl+Z undo · Ctrl+S save · Ctrl+E PDF</span>
   </div>
 </div>
 
@@ -715,7 +718,7 @@ function applyState(s) {
 }
 
 function autoSave() {
-  try { localStorage.setItem('bidcast_state_lettercast', JSON.stringify(collectState())); } catch {}
+  _scheduleSnap();
 }
 
 function saveJSON() {
@@ -742,6 +745,60 @@ function loadJSON(input) {
   };
   reader.readAsText(file);
 }
+
+/* ══ Undo / Redo ════════════════════════════════════════════════════════ */
+let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+
+function _snapshot() {
+  if (_suppHist) return;
+  const s = JSON.stringify(collectState());
+  if (_hist[_histIdx] === s) return;
+  _hist.splice(_histIdx + 1);
+  _hist.push(s);
+  if (_hist.length > 50) _hist.shift(); else _histIdx++;
+  _syncUndoUI();
+  localStorage.setItem('bidcast_state_lettercast', s);
+  _lastSaved = Date.now(); _updateSavedLabel();
+}
+function _scheduleSnap() {
+  if (_suppHist) return;
+  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
+}
+function _syncUndoUI() {
+  const u = document.getElementById('btn-undo');
+  const r = document.getElementById('btn-redo');
+  if (u) u.disabled = _histIdx <= 0;
+  if (r) r.disabled = _histIdx >= _hist.length - 1;
+}
+function _updateSavedLabel() {
+  const el = document.getElementById('autosave-label');
+  if (!el) return;
+  if (!_lastSaved) { el.textContent = ''; return; }
+  const s = Math.floor((Date.now() - _lastSaved) / 1000);
+  el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
+}
+function undo() {
+  clearTimeout(_histTimer);
+  if (_histIdx <= 0) return;
+  _histIdx--; _suppHist = true;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+function redo() {
+  clearTimeout(_histTimer);
+  if (_histIdx >= _hist.length - 1) return;
+  _histIdx++; _suppHist = true;
+  applyState(JSON.parse(_hist[_histIdx]));
+  _suppHist = false; _syncUndoUI();
+}
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+    if (e.key === 's') { e.preventDefault(); saveJSON(); }
+    if (e.key === 'e') { e.preventDefault(); exportPDF(); }
+  }
+});
 
 /* ══ Boot ═════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -781,6 +838,10 @@ document.addEventListener('DOMContentLoaded', () => {
   /* autosave on any editor input */
   $id('editor').addEventListener('input',  autoSave);
   $id('editor').addEventListener('change', autoSave);
+
+  setTimeout(_snapshot, 300);
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
 });
 
 function addDefaultSections() {

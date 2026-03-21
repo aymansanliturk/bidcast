@@ -18,6 +18,7 @@ This file documents the codebase structure, conventions, and workflows for AI as
 | `dorcast.html` | DORCast | RACI/DOR responsibility matrix builder |
 | `riskcast.html` | RiskCast | Risk & opportunity register with scoring matrix |
 | `calccast.html` | CalcCast | Cost breakdown calculator; receives winning quotes pushed from RFQCast |
+| `lettercast.html` | LetterCast | Commercial cover letter / offer document generator with dynamic sections |
 | `favicon.svg` | — | Brand favicon |
 | `logo.svg` | — | Brand logo (34×34px grid) |
 
@@ -237,6 +238,15 @@ python3 -m http.server 8080  # then visit http://localhost:8080
 - Has a preset modal to load standard responsibility templates
 - Supports multiple parties (columns) with free-form naming
 
+### LetterCast (`lettercast.html`)
+- Generates formal commercial cover letters / offer documents with logos, addressee block, subject line, and dynamic free-text sections
+- Supports two logos: company (left) and customer (right), both stored in `localStorage` and shared with other tools
+- Dynamic sections list: users add/remove/reorder titled text blocks that appear in the output document
+- Default sections loaded on first run: Scope of Supply, Assumptions & Deviations, Terms & Conditions
+- Project name is synced from `bidcast_suite_sync.projectName` on load and via `SuiteManager.onUpdate`
+- PDF export uses `window.print()` rather than html2pdf.js (output is a print-optimised A4 sheet)
+- State key: `bidcast_state_lettercast`
+
 ### RiskCast (`riskcast.html`)
 - Risk register with 5×5 scoring matrix (likelihood × impact)
 - Each row has: Type (risk/opportunity), Category, Topic, Cause, Risk Description, Impact Description, Likelihood (1-5), Impact (1-5), Score (auto), Mitigation Plan, Status
@@ -406,6 +416,28 @@ Shared functions present in every tool (not repeated below):
 | `loadPreset()` | Loads a responsibility template into the matrix |
 | `importExcel()` | Parses Excel file and loads rows/parties |
 | `exportExcel()` | Generates Excel workbook with matrix data |
+
+### lettercast.html
+
+| Function | Description |
+|----------|-------------|
+| `addSection(data)` | Creates a titled text section block with title input and content textarea |
+| `removeSection(btn)` | Deletes a section block and triggers autoSave |
+| `getSections()` | Extracts all section data `{title, content}` from DOM |
+| `addDefaultSections()` | Inserts the three default sections (Scope, Assumptions, T&C) on first load |
+| `uploadLogo(side, input)` | Reads image file and stores as base64 in `bidcast_logo` (co) or `bidcast_customer_logo` (cx) |
+| `clearLogo(side)` | Removes logo from localStorage and hides preview |
+| `loadLogos()` | Reads both logos from localStorage and populates preview elements |
+| `onProjName()` | Writes project name change to suite sync |
+| `generate()` | Renders the output document (logos, addressee, subject, intro, sections) and switches to output view |
+| `goBack()` | Switches back from output view to editor |
+| `exportPDF()` | Calls `generate()` then `window.print()` for A4 print-to-PDF |
+| `collectState()` / `applyState()` | Standard state serialization; stored under `bidcast_state_lettercast` |
+| `autoSave()` | Debounces to `_scheduleSnap()` which writes to localStorage via `_snapshot()` |
+| `saveJSON()` | Downloads state as `.json` and writes a timed backup |
+| `loadJSON(input)` | Parses uploaded `.json` and calls `applyState()` |
+| `_writeBackup()` | Saves a timestamped backup to localStorage; prunes to last 5 |
+| `_showBackups()` | Shows a popover listing restorable backups |
 
 ### calccast.html
 
