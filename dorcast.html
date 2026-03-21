@@ -402,6 +402,8 @@ function suiteRead(sync) {
   const dt = document.getElementById('doc-title');
   if (dt && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== dt)
     dt.value = sync.projectName;
+  const pn = document.getElementById('proj-num');
+  if (pn && sync.projNum && document.activeElement !== pn) pn.value = sync.projNum;
   updateLogoUI();
   SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
 }
@@ -647,6 +649,7 @@ function collectState() {
     version: '1.0',
     format:  currentFormat,
     title:   document.getElementById('doc-title').value,
+    projNum: document.getElementById('proj-num').value,
     rev:     document.getElementById('doc-rev').value,
     date:    document.getElementById('doc-date').value,
     parties: getParties(),
@@ -656,6 +659,7 @@ function collectState() {
 
 function applyState(s) {
   document.getElementById('doc-title').value = s.title||'';
+  document.getElementById('proj-num').value  = s.projNum||'';
   document.getElementById('doc-rev').value   = s.rev  ||'';
   document.getElementById('doc-date').value  = s.date ||'';
   if (s.format) setFormat(s.format);

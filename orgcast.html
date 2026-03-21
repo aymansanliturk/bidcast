@@ -173,6 +173,7 @@
     <div class="tb-sep"></div>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
+    <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
   </div>
 </div>
@@ -188,6 +189,7 @@
         <input type="text" id="chart-title" value="Project Organisation Chart"
           oninput="const _v=this.value.trim();if(_v&&_v!=='Project Name'&&_v!=='Project Organisation Chart')SuiteManager.write({projectName:_v},'orgcast')">
       </label>
+      <label>Project No. <input type="text" id="proj-num" placeholder="e.g. PRJ-001" oninput="_scheduleSnap(); SuiteManager.write({projNum:this.value.trim()},'orgcast')"></label>
       <label>Revision <input type="text" id="chart-rev"  value="Rev. 1.0"></label>
       <label>Date     <input type="text" id="chart-date" value=""></label>
     </div>
@@ -708,9 +710,10 @@ function updateLogoUI() {
   function collectState() {
     return {
       version: '1.2', format: currentFormat, compact: compactMode,
-      title:  document.getElementById('chart-title').value,
-      rev:    document.getElementById('chart-rev').value,
-      date:   document.getElementById('chart-date').value,
+      title:   document.getElementById('chart-title').value,
+      projNum: document.getElementById('proj-num').value,
+      rev:     document.getElementById('chart-rev').value,
+      date:    document.getElementById('chart-date').value,
       people: getPeople(),
     };
   }
@@ -757,6 +760,7 @@ function updateLogoUI() {
 
   function applyState(s) {
     document.getElementById('chart-title').value = s.title||'';
+    document.getElementById('proj-num').value    = s.projNum||'';
     document.getElementById('chart-rev').value   = s.rev  ||'';
     document.getElementById('chart-date').value  = s.date ||'';
     if (s.format) setFormat(s.format);
@@ -884,7 +888,7 @@ function updateLogoUI() {
   });
 
   // ── Undo / Redo ──
-  let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null;
+  let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
 
   function _snapshot() {
     if (_suppHist) return;
@@ -896,6 +900,7 @@ function updateLogoUI() {
     _syncUndoUI();
     localStorage.setItem('bidcast_state_orgcast', s);
   suiteWrite();
+    _lastSaved = Date.now(); _updateSavedLabel();
   }
   function _scheduleSnap() {
     if (_suppHist) return;
@@ -919,6 +924,13 @@ function updateLogoUI() {
     const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
     if (u) u.disabled = _histIdx <= 0;
     if (r) r.disabled = _histIdx >= _hist.length - 1;
+  }
+  function _updateSavedLabel() {
+    const el = document.getElementById('autosave-label');
+    if (!el) return;
+    if (!_lastSaved) { el.textContent = ''; return; }
+    const s = Math.floor((Date.now() - _lastSaved) / 1000);
+    el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
   }
   document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -1012,6 +1024,8 @@ function suiteRead(sync) {
     const titleEl = document.getElementById('chart-title');
     if (titleEl && sync.projectName && sync.projectName !== 'Project Name' && document.activeElement !== titleEl)
       titleEl.value = sync.projectName;
+    const pn = document.getElementById('proj-num');
+    if (pn && sync.projNum && document.activeElement !== pn) pn.value = sync.projNum;
     SuiteManager.updateBadge(document.getElementById('suite-sync-badge'));
   } catch(e) {}
 }
@@ -1026,6 +1040,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateLogoUI();
   const _saved = localStorage.getItem('bidcast_state_orgcast');
   if (_saved) { try { applyState(JSON.parse(_saved)); } catch(e) {} }
+  _lastSaved = Date.now(); _updateSavedLabel();
+  setInterval(_updateSavedLabel, 15000);
   suiteRead(SuiteManager.read());
   setTimeout(suiteWrite, 900);
 });
