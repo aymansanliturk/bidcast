@@ -711,12 +711,16 @@ function calculateModel() {
   const salesMarginEUR = customerPrice - totalDirect;
   const salesMarginPct = customerPrice > 0 ? (salesMarginEUR / customerPrice) * 100 : 0;
 
-  // Overhead is the difference between the selling price (without EBIT) and the direct cost
-  const priceNoEbit  = totalDirect / kpiNoEbitDivisor;
-  const overheadCost = priceNoEbit - totalDirect;
+  // FunctionalCost = SG&A + EXU + BA only (risk/warranty are tracked separately, not deducted)
+  // Delta between price-after-risk and price-after-risk+func isolates the functional layer.
+  const priceNoEbit    = totalDirect / kpiNoEbitDivisor;       // after risk+warr+SGA+EXU+BA
+  const kpiRiskOnlyPct = risk + warr;
+  const kpiRiskOnlyDiv = kpiRiskOnlyPct >= 1 ? 0.01 : (1 - kpiRiskOnlyPct);
+  const priceAfterRisk = totalDirect / kpiRiskOnlyDiv;         // after risk+warr only
+  const functionalCost = priceNoEbit - priceAfterRisk;         // SG&A + EXU + BA EUR
 
-  // Profit is Customer Price minus BOTH Direct Cost and Overhead Cost
-  const profitEUR      = customerPrice - (totalDirect + overheadCost);
+  // Profit = SalesMargin − FunctionalCost  (Risk provision stays inside profit)
+  const profitEUR      = salesMarginEUR - functionalCost;
   const profitPct      = customerPrice > 0 ? (profitEUR / customerPrice) * 100 : 0;
 
   // ── 5. Update summary UI ─────────────────────────────────────────────
