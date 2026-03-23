@@ -246,7 +246,7 @@ label input[readonly] { background: var(--bg); color: var(--muted); cursor: defa
   transition: all .15s;
 }
 .btn-del-factory:hover { border-color: var(--red); color: var(--red); }
-.factory-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+.factory-kpis { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; }
 .factory-kpis label { font-size: 10px; }
 .factory-kpis label input {
   font-size: 12px; padding: 6px 8px;
@@ -278,6 +278,42 @@ label input[readonly] { background: var(--bg); color: var(--muted); cursor: defa
 }
 .btn-add-factory:hover { background: var(--accent2); border-color: var(--accent2); }
 #factory-empty { text-align: center; padding: 40px 24px; color: var(--faint); font-size: 13px; }
+
+/* ── W2W Consolidator Table ── */
+#w2w-consolidator-table { margin-bottom: 30px; overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.w2w-tbl-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+.w2w-tbl-meta-l { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.6; }
+.w2w-tbl-meta-r { font-size: 11px; color: var(--faint); text-align: right; line-height: 1.6; }
+.w2w-tbl-empty  { text-align: center; padding: 24px; color: var(--faint); font-size: 12px; }
+table.w2w-tbl { width: 100%; border-collapse: collapse; font-size: 11px; }
+table.w2w-tbl th, table.w2w-tbl td { padding: 6px 10px; white-space: nowrap; }
+table.w2w-tbl thead tr.w2w-tr-group th {
+  background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+  letter-spacing: .6px; text-transform: uppercase; border: 1px solid var(--accent);
+}
+table.w2w-tbl thead tr.w2w-tr-sub th {
+  background: #eef1f8; color: var(--muted); font-size: 9px; font-weight: 600;
+  letter-spacing: .5px; text-transform: uppercase; border: 1px solid var(--border);
+  text-align: right;
+}
+table.w2w-tbl thead tr.w2w-tr-sub th.w2w-label-head { text-align: left; min-width: 200px; }
+table.w2w-tbl tbody tr { border-bottom: 1px solid var(--border); }
+table.w2w-tbl tbody tr:last-child { border-bottom: none; }
+table.w2w-tbl tbody tr:hover { background: #f8f7f3; }
+table.w2w-tbl td.w2w-label { font-size: 11px; font-weight: 600; color: var(--text); padding-left: 10px; min-width: 200px; }
+table.w2w-tbl td.w2w-label.w2w-sub { font-weight: 400; color: var(--muted); padding-left: 26px; font-size: 10px; }
+table.w2w-tbl td.w2w-num { font-family: 'DM Mono', monospace; font-size: 11px; text-align: right; color: var(--text); }
+table.w2w-tbl td.w2w-pct { font-family: 'DM Mono', monospace; font-size: 10px; text-align: right; color: var(--faint); }
+table.w2w-tbl td.w2w-sub { color: var(--muted); }
+table.w2w-tbl tr.w2w-row-total td { background: #f0f3fa; font-weight: 700; }
+table.w2w-tbl tr.w2w-row-total td.w2w-label { color: var(--accent); }
+table.w2w-tbl tr.w2w-row-total td.w2w-num { color: var(--accent); }
+table.w2w-tbl tr.w2w-row-hi td { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); }
+table.w2w-tbl tr.w2w-row-hi td.w2w-label { color: #fff; font-weight: 700; }
+table.w2w-tbl tr.w2w-row-hi td.w2w-num  { color: #fff; }
+table.w2w-tbl tr.w2w-row-hi td.w2w-pct  { color: rgba(255,255,255,.65); }
+table.w2w-tbl tr.w2w-row-sep td { border-top: 2px solid var(--border); }
+table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding: 0; border: none; }
 
 @media (max-width: 900px) {
   .summary-banner { grid-template-columns: 1fr 1fr; }
@@ -586,6 +622,8 @@ label input[readonly] { background: var(--bg); color: var(--muted); cursor: defa
 
   <!-- ── Tab 6: Factory Breakdowns ────────────────────────────────────────── -->
   <div id="tab-factories" class="tab-panel">
+
+    <div id="w2w-consolidator-table"></div>
 
     <div class="factory-add-bar">
       <select id="factory-cat-select">
@@ -1081,7 +1119,7 @@ function addFactory() {
   _w2wState.factories.push({
     id:  Date.now(),
     category: cat,
-    kpis: { rw: 5, sga: 4, exu: 3, ba: 2, ebit: 8 },
+    kpis: { specRisk: 1, unspecRisk: 2, warr: 1, sga: 4, exu: 3, ba: 2, ebit: 8 },
   });
   saveW2WState();
   renderFactories();
@@ -1103,22 +1141,42 @@ function updateFactoryKpi(id, key, val) {
 }
 
 function _computeFactory(dc, kpis) {
-  const afterRW   = dc        * (1 + kpis.rw   / 100);
-  const afterSGA  = afterRW   * (1 + kpis.sga  / 100);
-  const afterEXU  = afterSGA  * (1 + kpis.exu  / 100);
-  const afterBA   = afterEXU  * (1 + kpis.ba   / 100);
-  const transfer  = afterBA   * (1 + kpis.ebit / 100);
-  return { dc, afterRW, afterSGA, afterEXU, afterBA, transfer };
+  // backward-compat: old state stored rw as a combined field
+  const specRisk   = kpis.specRisk   != null ? kpis.specRisk   : 0;
+  const unspecRisk = kpis.unspecRisk != null ? kpis.unspecRisk : 0;
+  const warr       = kpis.warr       != null ? kpis.warr       : (kpis.rw || 0);
+  const totalRiskPct = specRisk + unspecRisk + warr;
+
+  const afterRisk = dc        * (1 + totalRiskPct      / 100);
+  const afterSGA  = afterRisk * (1 + (kpis.sga  || 0) / 100);
+  const afterEXU  = afterSGA  * (1 + (kpis.exu  || 0) / 100);
+  const afterBA   = afterEXU  * (1 + (kpis.ba   || 0) / 100);
+  const transfer  = afterBA   * (1 + (kpis.ebit || 0) / 100);
+
+  const riskProv  = afterRisk - dc;
+  const specProv  = totalRiskPct > 0 ? riskProv * (specRisk   / totalRiskPct) : 0;
+  const unspecProv= totalRiskPct > 0 ? riskProv * (unspecRisk / totalRiskPct) : 0;
+  const warrProv  = totalRiskPct > 0 ? riskProv * (warr       / totalRiskPct) : 0;
+  const sgaProv   = afterSGA  - afterRisk;
+  const exuProv   = afterEXU  - afterSGA;
+  const baProv    = afterBA   - afterEXU;
+  const ebitProv  = transfer  - afterBA;
+
+  return {
+    dc, afterRisk, afterSGA, afterEXU, afterBA, transfer,
+    riskProv, specProv, unspecProv, warrProv,
+    sgaProv, exuProv, baProv, ebitProv,
+  };
 }
 
 function _factoryStackHTML(r) {
   const rows = [
-    { label: 'Base Direct Cost',       val: r.dc       },
-    { label: 'After Risk + Warranty',  val: r.afterRW  },
-    { label: 'After SG&A',            val: r.afterSGA },
-    { label: 'After EXU',             val: r.afterEXU },
-    { label: 'After BA',              val: r.afterBA  },
-    { label: 'Factory Transfer Price', val: r.transfer, hi: true },
+    { label: 'Base Direct Cost',       val: r.dc        },
+    { label: 'After Risk + Warranty',  val: r.afterRisk },
+    { label: 'After SG&A',            val: r.afterSGA  },
+    { label: 'After EXU',             val: r.afterEXU  },
+    { label: 'After BA',              val: r.afterBA   },
+    { label: 'Factory Transfer Price', val: r.transfer,  hi: true },
   ];
   return rows.map(row =>
     `<div class="fsr${row.hi ? ' fhi' : ''}">
@@ -1148,9 +1206,12 @@ function renderFactories() {
   if (_w2wState.factories.length === 0) {
     list.innerHTML = '';
     if (empty) empty.style.display = 'block';
+    renderW2WTable();
     return;
   }
   if (empty) empty.style.display = 'none';
+
+  renderW2WTable();
 
   list.innerHTML = _w2wState.factories.map(f => {
     const dc   = _byCategory[f.category] || 0;
@@ -1160,14 +1221,16 @@ function renderFactories() {
       : '';
 
     const kpiFields = [
-      ['rw',   'Risk+Warr %'],
-      ['sga',  'SG&A %'],
-      ['exu',  'EXU %'],
-      ['ba',   'BA %'],
-      ['ebit', 'EBIT %'],
+      ['specRisk',  'Spec. Risk %'],
+      ['unspecRisk','Unspec. Risk %'],
+      ['warr',      'Warranty %'],
+      ['sga',       'SG&A %'],
+      ['exu',       'EXU %'],
+      ['ba',        'BA %'],
+      ['ebit',      'EBIT %'],
     ].map(([key, lbl]) =>
       `<label>${lbl}
-        <input type="number" value="${f.kpis[key]}" min="0" step="0.1"
+        <input type="number" value="${f.kpis[key] || 0}" min="0" step="0.1"
           onchange="updateFactoryKpi(${f.id},'${key}',this.value)">
       </label>`
     ).join('');
@@ -1185,6 +1248,141 @@ function renderFactories() {
       <div class="factory-stack" id="fstack-${f.id}">${_factoryStackHTML(r)}</div>
     </div>`;
   }).join('');
+}
+
+/* ══ W2W Consolidated Table ════════════════════════════════════════════════ */
+function renderW2WTable() {
+  const el = $('w2w-consolidator-table');
+  if (!el) return;
+
+  const factories = _w2wState.factories;
+
+  // ── Meta info ──
+  const projName = _ccState.projName || SuiteManager.read().projectName || '—';
+  const loaId    = _ccState.loaId    || '—';
+  const today    = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+
+  // ── Empty state ──
+  if (factories.length === 0) {
+    el.innerHTML = `<div class="w2w-tbl-empty">Add at least one Factory Breakdown above to see the consolidated W2W table.</div>`;
+    return;
+  }
+
+  // ── Compute per-factory results ──
+  const results = factories.map(f => ({
+    f,
+    r: _computeFactory(_byCategory[f.category] || 0, f.kpis),
+  }));
+
+  // ── Business Area (BA) totals ──
+  const ba = {
+    dc:        results.reduce((s, x) => s + x.r.dc,         0),
+    transfer:  results.reduce((s, x) => s + x.r.transfer,   0),
+    riskProv:  results.reduce((s, x) => s + x.r.riskProv,   0),
+    specProv:  results.reduce((s, x) => s + x.r.specProv,   0),
+    unspecProv:results.reduce((s, x) => s + x.r.unspecProv, 0),
+    warrProv:  results.reduce((s, x) => s + x.r.warrProv,   0),
+    sgaProv:   results.reduce((s, x) => s + x.r.sgaProv,    0),
+    exuProv:   results.reduce((s, x) => s + x.r.exuProv,    0),
+    baProv:    results.reduce((s, x) => s + x.r.baProv,     0),
+    ebitProv:  results.reduce((s, x) => s + x.r.ebitProv,   0),
+  };
+  ba.salesMargin = ba.transfer - ba.dc;
+  ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
+
+  // ── Helper: format a pair of cells (kEUR, %) relative to revenue ──
+  function cells(val, rev, cls = '') {
+    const pct = rev > 0 ? (val / rev) * 100 : 0;
+    return `<td class="w2w-num${cls ? ' '+cls : ''}">${fmtK(val)}</td><td class="w2w-pct${cls ? ' '+cls : ''}">${fmtP(pct)}</td>`;
+  }
+
+  // ── Column headers ──
+  const subsysGroupCols = results.map(({ f }) =>
+    `<th colspan="2" style="text-align:center;">${_esc(f.category)}</th>`
+  ).join('');
+
+  const subsysSubCols = results.map(() =>
+    `<th>kEUR</th><th>%</th>`
+  ).join('');
+
+  // ── Row builder ──
+  function row(label, valFn, opts = {}) {
+    const { cls = '', sub = false, spacer = false, hi = false, sep = false, total = false } = opts;
+    if (spacer) return `<tr class="w2w-row-spacer"><td colspan="${2 + results.length * 2 + 2}"></td></tr>`;
+
+    let rowCls = '';
+    if (hi)    rowCls = 'w2w-row-hi';
+    if (total) rowCls = 'w2w-row-total';
+    if (sep)   rowCls += (rowCls ? ' ' : '') + 'w2w-row-sep';
+
+    const labelCls = `w2w-label${sub ? ' w2w-sub' : ''}`;
+    const cellCls  = sub ? 'w2w-sub' : '';
+
+    const subsysCells = results.map(({ r }) => {
+      const val = valFn(r);
+      const rev = r.transfer;
+      return cells(val, rev, cellCls);
+    }).join('');
+
+    const baVal = valFn(ba);
+    const baCells = cells(baVal, ba.transfer, cellCls);
+
+    return `<tr class="${rowCls}">
+      <td class="${labelCls}">${label}</td>
+      ${subsysCells}
+      ${baCells}
+    </tr>`;
+  }
+
+  // Augment ba with computed fields matching the r shape used in valFn
+  ba.salesMargin = ba.transfer - ba.dc;
+  ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
+
+  const tableHTML = `
+    <div class="w2w-tbl-meta">
+      <div class="w2w-tbl-meta-l">
+        Wall-to-Wall Financial Summary<br>
+        <span style="font-weight:400;font-size:11px;color:var(--muted);">${_esc(projName)}</span>
+      </div>
+      <div class="w2w-tbl-meta-r">
+        LoA Ref: ${_esc(loaId)}<br>${today}
+      </div>
+    </div>
+
+    <table class="w2w-tbl">
+      <thead>
+        <tr class="w2w-tr-group">
+          <th class="w2w-label-head" rowspan="2" style="background:var(--text);color:#fff;min-width:200px;">Line Item</th>
+          ${subsysGroupCols}
+          <th colspan="2" style="text-align:center;">Business Area Summary</th>
+        </tr>
+        <tr class="w2w-tr-sub">
+          <th class="w2w-label-head" style="display:none;"></th>
+          ${subsysSubCols}
+          <th>kEUR</th><th>%</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${row('Revenue (Factory Transfer Price)', r => r.transfer, { hi: true })}
+        ${row('', null, { spacer: true })}
+        ${row('Cost of Goods Sold (Direct Cost)', r => r.dc, { sep: true })}
+        ${row('Sales Margin', r => r.transfer - r.dc, { total: true })}
+        ${row('', null, { spacer: true })}
+        ${row('Functional Cost', r => r.sgaProv + r.exuProv + r.baProv, { sep: true, total: true })}
+        ${row('Overhead Type 1 — SG&A', r => r.sgaProv, { sub: true })}
+        ${row('Overhead Type 2 — HQ EXU', r => r.exuProv, { sub: true })}
+        ${row('Overhead Type 3 — HQ BA', r => r.baProv, { sub: true })}
+        ${row('', null, { spacer: true })}
+        ${row('EBIT Provision', r => r.ebitProv, { sep: true, total: true })}
+        ${row('', null, { spacer: true })}
+        ${row('Risk Contingency', r => r.riskProv, { sep: true, total: true })}
+        ${row('Specified Risk', r => r.specProv, { sub: true })}
+        ${row('Unspecified Risk', r => r.unspecProv, { sub: true })}
+        ${row('Warranty-Related', r => r.warrProv, { sub: true })}
+      </tbody>
+    </table>`;
+
+  el.innerHTML = tableHTML;
 }
 
 /* ══ Tab Switching ═════════════════════════════════════════════════════════ */
