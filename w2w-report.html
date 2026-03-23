@@ -248,9 +248,12 @@ label input[readonly] { background: var(--bg); color: var(--muted); cursor: defa
 .btn-del-factory:hover { border-color: var(--red); color: var(--red); }
 .factory-kpis {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 6px;
   margin-bottom: 16px;
+}
+table.w2w-tbl td.w2w-grey {
+  background: #c0c0c0 !important; /* Greyed out cell for N/A factory data */
 }
 .factory-kpis label {
   font-size: 8.5px;
@@ -1133,7 +1136,7 @@ function addFactory() {
   _w2wState.factories.push({
     id:  Date.now(),
     category: cat,
-    kpis: { specRisk: 1, unspecRisk: 2, warr: 1, sga: 4, exu: 3, ba: 2, ebit: 8 },
+    kpis: { rw: 5, sga: 4, exu: 3, ba: 2, ebit: 8 },
   });
   saveW2WState();
   renderFactories();
@@ -1155,33 +1158,27 @@ function updateFactoryKpi(id, key, val) {
 }
 
 function _computeFactory(dc, kpis) {
-  // backward-compat: old state stored rw as a combined field
-  const specRisk   = kpis.specRisk   != null ? kpis.specRisk   : 0;
-  const unspecRisk = kpis.unspecRisk != null ? kpis.unspecRisk : 0;
-  const warr       = kpis.warr       != null ? kpis.warr       : (kpis.rw || 0);
-  const totalRiskPct = specRisk + unspecRisk + warr;
+  // fallback for older states that might have saved specRisk
+  const rw = kpis.rw != null ? kpis.rw : ((kpis.specRisk||0) + (kpis.unspecRisk||0) + (kpis.warr||0));
 
-  const afterRisk = dc        * (1 + totalRiskPct      / 100);
-  const afterSGA  = afterRisk * (1 + (kpis.sga  || 0) / 100);
-  const afterEXU  = afterSGA  * (1 + (kpis.exu  || 0) / 100);
-  const afterBA   = afterEXU  * (1 + (kpis.ba   || 0) / 100);
-  const transfer  = afterBA   * (1 + (kpis.ebit || 0) / 100);
+  const afterRisk = dc        * (1 + rw / 100);
+  const afterSGA  = afterRisk * (1 + (kpis.sga||0) / 100);
+  const afterEXU  = afterSGA  * (1 + (kpis.exu||0) / 100);
+  const afterBA   = afterEXU  * (1 + (kpis.ba||0) / 100);
+  const transfer  = afterBA   * (1 + (kpis.ebit||0) / 100);
+  const riskProv = afterRisk - dc;
+  const sgaProv  = afterSGA  - afterRisk;
+  const exuProv  = afterEXU  - afterSGA;
+  const baProv   = afterBA   - afterEXU;
+  const ebitProv = transfer  - afterBA;
 
-  const riskProv  = afterRisk - dc;
-  const specProv  = totalRiskPct > 0 ? riskProv * (specRisk   / totalRiskPct) : 0;
-  const unspecProv= totalRiskPct > 0 ? riskProv * (unspecRisk / totalRiskPct) : 0;
-  const warrProv  = totalRiskPct > 0 ? riskProv * (warr       / totalRiskPct) : 0;
-  const sgaProv   = afterSGA  - afterRisk;
-  const exuProv   = afterEXU  - afterSGA;
-  const baProv    = afterBA   - afterEXU;
-  const ebitProv  = transfer  - afterBA;
   const salesMargin = transfer - dc;
   const funcCost    = sgaProv + exuProv + baProv;
-  const profit      = salesMargin - funcCost;
-
+  const profit      = ebitProv;
   return {
     dc, afterRisk, afterSGA, afterEXU, afterBA, transfer,
-    riskProv, specProv, unspecProv, warrProv,
+    riskProv,
+    specProv: null, unspecProv: null, warrProv: null, // Set to null to grey out
     sgaProv, exuProv, baProv, ebitProv,
     salesMargin, funcCost, profit,
   };
@@ -1239,13 +1236,11 @@ function renderFactories() {
       : '';
 
     const kpiFields = [
-      ['specRisk',  'Spec. Risk %'],
-      ['unspecRisk','Unspec. Risk %'],
-      ['warr',      'Warranty %'],
-      ['sga',       'SG&A %'],
-      ['exu',       'HQ EXU %'],
-      ['ba',        'HQ BA %'],
-      ['ebit',      'EBIT %'],
+      ['rw',   'Risk+Warr %'],
+      ['sga',  'SG&A %'],
+      ['exu',  'HQ EXU %'],
+      ['ba',   'HQ BA %'],
+      ['ebit', 'EBIT %'],
     ].map(([key, lbl]) =>
       `<label>${lbl}
         <input type="number" value="${f.kpis[key] || 0}" min="0" step="0.1"
@@ -1297,19 +1292,27 @@ function renderW2WTable() {
     dc:        results.reduce((s, x) => s + x.r.dc,         0),
     transfer:  results.reduce((s, x) => s + x.r.transfer,   0),
     riskProv:  results.reduce((s, x) => s + x.r.riskProv,   0),
-    specProv:  results.reduce((s, x) => s + x.r.specProv,   0),
-    unspecProv:results.reduce((s, x) => s + x.r.unspecProv, 0),
-    warrProv:  results.reduce((s, x) => s + x.r.warrProv,   0),
     sgaProv:   results.reduce((s, x) => s + x.r.sgaProv,    0),
     exuProv:   results.reduce((s, x) => s + x.r.exuProv,    0),
     baProv:    results.reduce((s, x) => s + x.r.baProv,     0),
     ebitProv:  results.reduce((s, x) => s + x.r.ebitProv,   0),
   };
+
   ba.salesMargin = ba.transfer - ba.dc;
   ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
+  ba.profit      = ba.ebitProv;
+  // Split BA Risk using global KPI percentages
+  const gSpec   = parseFloat(document.getElementById('w-spec-risk')?.value) || 0;
+  const gUnspec = parseFloat(document.getElementById('w-unspec-risk')?.value) || 0;
+  const gWarr   = parseFloat(document.getElementById('w-warranty')?.value) || 0;
+  const gTotalRisk = gSpec + gUnspec + gWarr;
+  ba.specProv   = gTotalRisk > 0 ? ba.riskProv * (gSpec / gTotalRisk) : 0;
+  ba.unspecProv = gTotalRisk > 0 ? ba.riskProv * (gUnspec / gTotalRisk) : 0;
+  ba.warrProv   = gTotalRisk > 0 ? ba.riskProv * (gWarr / gTotalRisk) : 0;
 
   // ── Helper: format a pair of cells (kEUR, %) relative to revenue ──
   function cells(val, rev, cls = '') {
+    if (val === null) return `<td class="w2w-grey" colspan="2"></td>`;
     const pct = rev > 0 ? (val / rev) * 100 : 0;
     return `<td class="w2w-num${cls ? ' '+cls : ''}">${fmtK(val)}</td><td class="w2w-pct${cls ? ' '+cls : ''}">${fmtP(pct)}</td>`;
   }
