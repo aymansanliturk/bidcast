@@ -1788,9 +1788,16 @@ function generateExecutiveReport() {
   const topRisks = [...risks].filter(r => (r.type || 'risk') !== 'opportunity').sort((a, b) => b._score - a._score).slice(0, 5);
   const rTotal = risks.length || 1;
   // ── 5. OrgCast & RFQCast ──────────────────────────────────────────
-  const orgMap = {}; let personCount = 0;
+  const orgMap = {}; let personCount = 0; const orgPeople = [];
   if (oc) {
-    (oc.people || []).forEach(p => { if (!p.vacancy) { personCount++; const c = p.company || 'Internal'; orgMap[c] = (orgMap[c] || 0) + 1; } });
+    (oc.people || []).forEach(p => {
+      if (!p.vacancy) {
+        personCount++;
+        const c = p.company || 'Internal';
+        orgMap[c] = (orgMap[c] || 0) + 1;
+        orgPeople.push({ name: p.name || '—', title: p.title || '', company: c });
+      }
+    });
   }
   let rfqRec = 0, rfqPend = 0; const rfqList = [];
   if (rq) {
@@ -1950,8 +1957,8 @@ function generateExecutiveReport() {
       <div>
         <div style="font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#6b6860;margin-bottom:7px;">Org Breakdown (${personCount} People)</div>
         <table style="width:100%;border-collapse:collapse;font-size:10px;">
-          <tr style="background:#f5f4f0;"><th style="padding:6px;text-align:left;">Company</th><th style="padding:6px;text-align:right;">Headcount</th></tr>
-          ${Object.entries(orgMap).map(([c, n]) => `<tr style="border-bottom:1px solid #e0ddd6;"><td style="padding:6px;">${esc(c)}</td><td style="padding:6px;text-align:right;font-family:'DM Mono';">${n}</td></tr>`).join('')}
+          <tr style="background:#f5f4f0;"><th style="padding:6px;text-align:left;">Name</th><th style="padding:6px;text-align:left;">Title</th><th style="padding:6px;text-align:left;">Company</th></tr>
+          ${orgPeople.map(p => `<tr style="border-bottom:1px solid #e0ddd6;"><td style="padding:6px;font-weight:600;">${esc(p.name)}</td><td style="padding:6px;color:#6b6860;">${esc(p.title)}</td><td style="padding:6px;color:#6b6860;">${esc(p.company)}</td></tr>`).join('')}
         </table>
       </div>
       <div>
