@@ -528,7 +528,7 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
             <td class="lp"></td>
           </tr>
           <tr>
-            <td class="ll loa-indent">Functional Cost (EXU + BA)</td>
+            <td class="ll loa-indent">Functional Cost (SG&amp;A + EXU + BA)</td>
             <td class="lv" id="loa-func-cost">—</td>
             <td class="lp"></td>
           </tr>
@@ -824,7 +824,7 @@ function computeKpis(dc, risk, sga, exu, ba, ebit, neg) {
   const negProv  = custPrice - sellPrice;
 
   // Derived KPIs
-  const funcCost       = exuProv + baProv;           // EXU + BA overhead
+  const funcCost       = sgaProv + exuProv + baProv;  // SG&A + EXU + BA overhead
   const salesMargin    = sellPrice - dc;
   const salesMarginPct = sellPrice > 0 ? (salesMargin / sellPrice) * 100 : 0;
   const profit         = salesMargin - funcCost;
@@ -1174,11 +1174,15 @@ function _computeFactory(dc, kpis) {
   const exuProv   = afterEXU  - afterSGA;
   const baProv    = afterBA   - afterEXU;
   const ebitProv  = transfer  - afterBA;
+  const salesMargin = transfer - dc;
+  const funcCost    = sgaProv + exuProv + baProv;
+  const profit      = salesMargin - funcCost;
 
   return {
     dc, afterRisk, afterSGA, afterEXU, afterBA, transfer,
     riskProv, specProv, unspecProv, warrProv,
     sgaProv, exuProv, baProv, ebitProv,
+    salesMargin, funcCost, profit,
   };
 }
 
@@ -1350,6 +1354,7 @@ function renderW2WTable() {
   // Augment ba with computed fields matching the r shape used in valFn
   ba.salesMargin = ba.transfer - ba.dc;
   ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
+  ba.profit      = ba.salesMargin - ba.funcCost;
 
   const tableHTML = `
     <div class="w2w-tbl-meta">
@@ -1385,6 +1390,7 @@ function renderW2WTable() {
         ${row('Overhead Type 1 — SG&A', r => r.sgaProv, { sub: true })}
         ${row('Overhead Type 2 — HQ EXU', r => r.exuProv, { sub: true })}
         ${row('Overhead Type 3 — HQ BA', r => r.baProv, { sub: true })}
+        ${row('Profit (Sales Margin − Func. Cost)', r => r.profit, { total: true, sep: true })}
         ${row('', null, { spacer: true })}
         ${row('EBIT Provision', r => r.ebitProv, { sep: true, total: true })}
         ${row('', null, { spacer: true })}
