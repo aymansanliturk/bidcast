@@ -350,9 +350,11 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
 
     <div class="field-group-label">KPI Stack (%)</div>
     <div class="fields f6" style="grid-template-columns: repeat(7, 1fr);">
-      <label>Risk %
-        <input type="number" id="kpi-risk" value="5.0" min="0" max="100" step="0.1"
-          oninput="calculateModel()">
+      <label>Specified Risk %
+        <input type="number" id="kpi-spec-risk" value="2.0" min="0" max="100" step="0.1" oninput="calculateModel()">
+      </label>
+      <label>Unspecified Risk %
+        <input type="number" id="kpi-unspec-risk" value="3.0" min="0" max="100" step="0.1" oninput="calculateModel()">
       </label>
       <label>SG&amp;A %
         <input type="number" id="kpi-sga" value="4.0" min="0" max="100" step="0.1"
@@ -535,7 +537,8 @@ function collectState() {
     fxGbp:        g('fx-gbp').value,
     fxDkk:        g('fx-dkk').value,
     // KPI Stack
-    kpiRisk:      g('kpi-risk').value,
+    kpiSpecRisk:   g('kpi-spec-risk').value,
+    kpiUnspecRisk: g('kpi-unspec-risk').value,
     kpiSga:       g('kpi-sga').value,
     kpiExu:       g('kpi-exu').value,
     kpiBa:        g('kpi-ba').value,
@@ -561,7 +564,8 @@ function applyState(s) {
   set('fx-usd',          s.fxUsd);
   set('fx-gbp',          s.fxGbp);
   set('fx-dkk',          s.fxDkk);
-  set('kpi-risk',        s.kpiRisk);
+  set('kpi-spec-risk',   s.kpiSpecRisk);
+  set('kpi-unspec-risk', s.kpiUnspecRisk);
   set('kpi-sga',         s.kpiSga);
   set('kpi-exu',         s.kpiExu);
   set('kpi-ba',          s.kpiBa);
@@ -602,7 +606,9 @@ function calculateModel() {
     GBP: parseFloat(document.getElementById('fx-gbp').value)  || 1.17,
     DKK: parseFloat(document.getElementById('fx-dkk').value)  || 0.134,
   };
-  const risk = (parseFloat(document.getElementById('kpi-risk').value)     || 0) / 100;
+  const specRisk   = (parseFloat(document.getElementById('kpi-spec-risk').value)   || 0) / 100;
+  const unspecRisk = (parseFloat(document.getElementById('kpi-unspec-risk').value) || 0) / 100;
+  const risk       = specRisk + unspecRisk;
   const warr = (parseFloat(document.getElementById('kpi-warranty').value) || 0) / 100;
   const sga  = (parseFloat(document.getElementById('kpi-sga').value)      || 0) / 100;
   const exu  = (parseFloat(document.getElementById('kpi-exu').value)      || 0) / 100;
@@ -1131,7 +1137,8 @@ function exportExcel() {
     ['DKK → EUR',           parseFloat(state.fxDkk)      || ''],
     [''],
     ['KPI Stack (%)'],
-    ['Risk %',              parseFloat(state.kpiRisk)     || ''],
+    ['Specified Risk %',    parseFloat(state.kpiSpecRisk)   || ''],
+    ['Unspecified Risk %',  parseFloat(state.kpiUnspecRisk) || ''],
     ['SG&A %',              parseFloat(state.kpiSga)      || ''],
     ['HQ Adders EXU %',     parseFloat(state.kpiExu)      || ''],
     ['HQ Adders BA %',      parseFloat(state.kpiBa)       || ''],

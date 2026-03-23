@@ -1228,7 +1228,9 @@ function refreshStats() {
   if (cc && cc.costRows) {
     hasCalcData = true;
     const fxMap = { EUR: 1.0, USD: parseFloat(cc.fxUsd) || 0.92, GBP: parseFloat(cc.fxGbp) || 1.17, DKK: parseFloat(cc.fxDkk) || 0.134 };
-    const risk = (parseFloat(cc.kpiRisk)     || 0) / 100;
+    const specRisk = (parseFloat(cc.kpiSpecRisk)   || 0) / 100;
+    const unspecRisk = (parseFloat(cc.kpiUnspecRisk) || 0) / 100;
+    const risk = specRisk + unspecRisk;
     const warr = (parseFloat(cc.kpiWarranty) || 0) / 100;
     const sga  = (parseFloat(cc.kpiSga)      || 0) / 100;
     const exu  = (parseFloat(cc.kpiExu)      || 0) / 100;
@@ -1710,7 +1712,9 @@ function generateExecutiveReport() {
   let ccDirect = 0, ccOrder = 0, ccCustomer = 0, ccMargin = 0, ccProfit = 0, ccOverhead = 0;
   if (cc && cc.costRows) {
     const fxMap = { EUR: 1.0, USD: parseFloat(cc.fxUsd)||0.92, GBP: parseFloat(cc.fxGbp)||1.17, DKK: parseFloat(cc.fxDkk)||0.134 };
-    const risk = (parseFloat(cc.kpiRisk)||0)/100;
+    const specRisk = (parseFloat(cc.kpiSpecRisk)||0)/100;
+    const unspecRisk = (parseFloat(cc.kpiUnspecRisk)||0)/100;
+    const risk = specRisk + unspecRisk;
     const warr = (parseFloat(cc.kpiWarranty)||0)/100;
     const sga  = (parseFloat(cc.kpiSga)||0)/100;
     const exu  = (parseFloat(cc.kpiExu)||0)/100;
