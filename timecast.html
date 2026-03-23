@@ -234,8 +234,7 @@
   .yr-cell { background: #f3f2ee; font-family: 'DM Mono', monospace; font-size: 7.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); text-align: center; padding: 4px 2px; border-bottom: 1px solid #e5e2db; border-right: 1px solid #e5e2db; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 20; }
   .mo-gap  { background: #f8f7f4; font-size: 8px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); padding: 5px 10px; border-bottom: 1px solid var(--border); border-right: 1.5px solid #ccc9c1; display: flex; align-items: center; position: sticky; left: 0; top: 22px; z-index: 40; }
   .mo-notes-gap { background: #f8f7f4; font-size: 7px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--faint); padding: 5px 4px; border-bottom: 1px solid var(--border); border-right: 1.5px solid #ccc9c1; display: flex; align-items: center; position: sticky; left: 0; top: 22px; z-index: 40; }
-  .mo-cell { background: #f8f7f4; font-family: 'DM Mono', monospace; font-size: 7px; font-weight: 500; color: #8a877f; text-align: center; padding: 5px 1px; border-bottom: 1px solid var(--border); border-right: 1px solid #ece9e2; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.3; position: sticky; top: 22px; z-index: 20; }
-  .mo-cell .yr-s { font-size: 5.5px; color: #c0bdb6; }
+  .mo-cell { background: #f8f7f4; font-family: 'DM Mono', monospace; font-size: 8.5px; font-weight: 600; color: #6b6860; text-align: center; padding: 5px 2px; border-bottom: 1px solid var(--border); border-right: 1px solid #ece9e2; display: flex; align-items: center; justify-content: center; position: sticky; top: 22px; z-index: 20; }
   .mo-cell.today-col { background: #fff5f5; }
   .mo-cell.today-col .mo-txt { color: var(--today); font-weight: 700; }
 
@@ -1236,7 +1235,7 @@ function updateLogoUI() {
     const gantt = document.getElementById('gantt');
     gantt.innerHTML = '';
     const notesCols = hasNotes ? ' 64px' : '';
-    const colTpl = scale === 'weekly' ? `minmax(26px,1fr)` : scale === 'quarterly' ? `minmax(60px,1fr)` : '1fr';
+    const colTpl = scale === 'weekly' ? `minmax(28px,1fr)` : scale === 'quarterly' ? `minmax(60px,1fr)` : `minmax(36px,1fr)`;
     gantt.style.gridTemplateColumns = `155px${notesCols} repeat(${n}, ${colTpl})`;
 
     // Year row
@@ -1254,9 +1253,8 @@ function updateLogoUI() {
     if (hasNotes) gantt.appendChild(el('div','mo-notes-gap','Notes'));
     units.forEach((u,i) => {
       const isT = i===todayIdx;
-      const inner = scale === 'monthly'
-        ? `<span class="mo-txt">${u.label}</span><span class="yr-s">'${u.yLabel}</span>`
-        : `<span class="mo-txt">${u.label}</span>`;
+      // Year is already in the header above, no need to repeat it here.
+      const inner = `<span class="mo-txt">${u.label}</span>`;
       gantt.appendChild(el('div',`mo-cell${isT?' today-col':''}`, inner));
     });
 
