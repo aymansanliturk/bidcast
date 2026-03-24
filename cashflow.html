@@ -179,6 +179,26 @@ body {
 
 @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
 @media (max-width: 700px)  { .stat-grid { grid-template-columns: 1fr 1fr; } }
+
+/* ── Field grids (matching CalcCast) ── */
+.fields { display: grid; gap: 12px; margin-bottom: 0; }
+.f2 { grid-template-columns: 1fr 1fr; }
+
+label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 11px; font-weight: 500; color: var(--muted);
+}
+.section label input[type="number"],
+.section label select {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
+  background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; outline: none; width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+.section label input[type="number"]:focus,
+.section label select:focus {
+  border-color: var(--accent); background: var(--input-bg-focus);
+}
 </style>
 </head>
 <body>
@@ -254,10 +274,51 @@ body {
         <button class="btn-reload" onclick="loadSuiteData(); simulate();">↺ Reload from Suite</button>
       </div>
 
-      <!-- Simulation Parameters (placeholder — completed in Part 2) -->
+      <!-- Simulation Parameters -->
       <div class="section">
         <div class="section-title">Simulation Parameters</div>
-        <p style="font-size:11px; color:var(--faint);">Controls will be added in Part 2.</p>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:12px;">Payment Milestones</div>
+        <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">Define customer payment schedule. Total must be 100%.</div>
+
+        <div style="display:flex; gap:8px; margin-bottom:4px; font-size:10px; font-weight:600; color:var(--faint);">
+          <div style="width:80px;">Month</div>
+          <div style="width:80px;">Payment %</div>
+        </div>
+        <div id="milestone-container" style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid var(--border);">
+          <button class="tb-btn" onclick="addMilestone()" style="margin:0; padding:4px 8px;">+ Add Payment</button>
+          <div id="milestone-total" style="font-size:12px; font-weight:700; font-family:'DM Mono', monospace;">Total: 0%</div>
+        </div>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:12px; margin-top:24px;">Cost Distribution Curves</div>
+        <div class="fields f2">
+          <label>Direct Cost Profile
+            <select id="sim-dc-curve" onchange="updateSimState('dcCurve', this.value)">
+              <option value="linear">Linear (Even)</option>
+              <option value="front" selected>Front-Loaded</option>
+              <option value="back">Back-Loaded</option>
+              <option value="bell">Bell Curve</option>
+            </select>
+          </label>
+          <label>Functional Cost Profile
+            <select id="sim-fc-curve" onchange="updateSimState('fcCurve', this.value)">
+              <option value="linear" selected>Linear (Even)</option>
+              <option value="front">Front-Loaded</option>
+              <option value="back">Back-Loaded</option>
+            </select>
+          </label>
+        </div>
+
+        <div style="font-size:9px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:12px; margin-top:24px;">Cancellation Terms</div>
+        <div class="fields f2">
+          <label>Initial Penalty % (M1)
+            <input type="number" id="sim-canc-start" value="10" min="0" max="100" oninput="updateSimState('cancStart', this.value)">
+          </label>
+          <label>Final Penalty % (End)
+            <input type="number" id="sim-canc-end" value="100" min="0" max="100" oninput="updateSimState('cancEnd', this.value)">
+          </label>
+        </div>
       </div>
 
     </div><!-- /controls-panel -->
@@ -316,6 +377,63 @@ function toggleTheme() {
 
 /* ══ Global simulation state ═══════════════════════════════════════════ */
 const MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let _simState = {
+  milestones: [
+    { m: 1,  p: 10 },
+    { m: 15, p: 20 },
+    { m: 30, p: 30 },
+    { m: 45, p: 30 },
+    { m: 60, p: 10 },
+  ],
+  dcCurve:   'front',
+  fcCurve:   'linear',
+  cancStart: 10,
+  cancEnd:   100,
+};
+
+function renderMilestones() {
+  const cont = document.getElementById('milestone-container');
+  if (!cont) return;
+  let html = '', total = 0;
+  _simState.milestones.forEach((ms, i) => {
+    total += ms.p;
+    html += `<div style="display:flex; gap:8px; align-items:center;">
+      <input type="number" style="width:80px; padding:6px; font-size:12px; border:1px solid var(--border); border-radius:4px; background:var(--input-bg); color:var(--text); font-family:'DM Mono',monospace;" value="${ms.m}" min="1" max="${_simData.duration || 120}" onchange="updateMilestone(${i},'m',this.value)">
+      <input type="number" style="width:80px; padding:6px; font-size:12px; border:1px solid var(--border); border-radius:4px; background:var(--input-bg); color:var(--text); font-family:'DM Mono',monospace;" value="${ms.p}" min="0" max="100" step="1" onchange="updateMilestone(${i},'p',this.value)">
+      <button onclick="removeMilestone(${i})" style="background:none; border:none; color:var(--faint); cursor:pointer; font-size:14px;">✕</button>
+    </div>`;
+  });
+  cont.innerHTML = html;
+
+  const totEl = document.getElementById('milestone-total');
+  if (totEl) {
+    totEl.textContent = `Total: ${total}%`;
+    totEl.style.color = total === 100 ? 'var(--green)' : 'var(--red)';
+  }
+
+  if (typeof simulate === 'function') simulate();
+}
+
+function updateMilestone(idx, field, val) {
+  _simState.milestones[idx][field] = parseFloat(val) || 0;
+  renderMilestones();
+}
+
+function addMilestone() {
+  _simState.milestones.push({ m: _simData.duration || 60, p: 0 });
+  renderMilestones();
+}
+
+function removeMilestone(idx) {
+  _simState.milestones.splice(idx, 1);
+  renderMilestones();
+}
+
+function updateSimState(key, val) {
+  _simState[key] = isNaN(parseFloat(val)) ? val : parseFloat(val);
+  if (typeof simulate === 'function') simulate();
+}
 
 let _simData = {
   contractValue: 0,
@@ -444,6 +562,7 @@ function loadSuiteData() {
   };
 
   _updateInfoPanel();
+  renderMilestones();
 }
 
 function _updateInfoPanel() {
