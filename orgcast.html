@@ -14,6 +14,7 @@
     --bg:      #f5f4f0; --surface: #ffffff; --border: #e0ddd6;
     --text:    #1a1916; --muted:   #6b6860; --faint:  #a8a49e;
     --accent:  #2c4e87; --accent2: #1e3a6b; --brand:  #2c4e87; --green: #107c41; --green-dk: #0a6032; --red: #c0392b;
+    --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
 /* ── Dark mode ── */
@@ -28,6 +29,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar {
   background: rgba(36,35,32,0.95);
@@ -78,8 +80,8 @@
   .f3 { grid-template-columns:1fr 1fr 1fr; }
 
   label { display:flex; flex-direction:column; gap:5px; font-size:11px; font-weight:500; color:var(--muted); }
-  input[type="text"], select { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text); background:#faf9f7; border:1px solid var(--border); border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.15s; }
-  input:focus, select:focus { border-color:var(--accent); background:#fff; }
+  input[type="text"], select { font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text); background:var(--input-bg); border:1px solid var(--border); border-radius:8px; padding:10px 12px; outline:none; transition:border-color 0.15s; }
+  input:focus, select:focus { border-color:var(--accent); background:var(--input-bg-focus); }
 
   .node-table { width:100%; border-collapse:collapse; }
   .node-table thead th { font-size:9px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--faint); padding:0 4px 8px; text-align:left; }
@@ -92,7 +94,7 @@
   .node-row.dragging  { opacity:0.35; background:#f0f4fa !important; }
   .node-row.drag-over { border-top:2px solid var(--accent); }
 
-  input[type="color"] { width:26px; height:26px; border:1px solid var(--border); border-radius:3px; padding:2px; cursor:pointer; background:#faf9f7; flex-shrink:0; }
+  input[type="color"] { width:26px; height:26px; border:1px solid var(--border); border-radius:3px; padding:2px; cursor:pointer; background:var(--input-bg); flex-shrink:0; }
   .chex { font-family:'DM Mono',monospace; font-size:9px; color:#bbb; }
   .color-wrap { display:flex; align-items:center; gap:4px; }
 

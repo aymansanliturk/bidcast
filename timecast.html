@@ -26,6 +26,7 @@
     --green:    #107c41; --green-dk: #0a6032;
     --red:      #c0392b;
     --amber:    #f59e0b;
+    --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
 /* ── Dark mode ── */
@@ -40,6 +41,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar {
   background: rgba(36,35,32,0.95);
@@ -108,10 +110,10 @@
   label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 500; color: var(--muted); }
   input[type="text"], input[type="number"], select {
     font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
-    background: #faf9f7; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
     padding: 10px 12px; outline: none; transition: border-color 0.15s;
   }
-  input:focus, select:focus { border-color: var(--accent); background: #fff; }
+  input:focus, select:focus { border-color: var(--accent); background: var(--input-bg-focus); }
   .btn-clr { background: none; border: 1px solid var(--border); border-radius: 5px; padding: 6px 9px; font-size: 12px; color: var(--faint); cursor: pointer; }
   .btn-clr:hover { color: var(--today); border-color: var(--today); }
 
@@ -149,7 +151,7 @@
   .type-mile { background: #fff3e0; color: #b36a00; }
 
   .color-wrap { display: flex; align-items: center; gap: 4px; }
-  input[type="color"] { width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 3px; padding: 2px; cursor: pointer; background: #faf9f7; flex-shrink: 0; }
+  input[type="color"] { width: 26px; height: 26px; border: 1px solid var(--border); border-radius: 3px; padding: 2px; cursor: pointer; background: var(--input-bg); flex-shrink: 0; }
   .chex { font-family: 'DM Mono', monospace; font-size: 9px; color: #bbb; }
 
   .btn-del { background: none; border: 1px solid var(--border); border-radius: 4px; width: 24px; height: 24px; cursor: pointer; color: #c0bdb6; font-size: 13px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }

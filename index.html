@@ -21,6 +21,7 @@
     --navy:    #1e3a6b;
     --green:   #107c41;
     --red:     #c0392b;
+    --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
 /* ── Dark mode ── */
@@ -35,6 +36,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar,
 [data-theme="dark"] header {
@@ -127,14 +129,14 @@
     outline: none; cursor: pointer; max-width: 190px;
     transition: border-color 0.15s;
   }
-  .pp-select:focus { border-color: var(--accent); background: #fff; color: var(--text); }
+  .pp-select:focus { border-color: var(--accent); background: var(--input-bg-focus); color: var(--text); }
   .pp-input {
     font-family: 'DM Sans', sans-serif; font-size: 13px;
     border: 1.5px solid var(--border); border-radius: 8px;
     padding: 7px 12px; background: var(--bg); color: var(--text);
     outline: none; transition: border-color 0.15s;
   }
-  .pp-input:focus { border-color: var(--accent); background: #fff; }
+  .pp-input:focus { border-color: var(--accent); background: var(--input-bg-focus); }
   .pp-input.name  { width: 260px; font-weight: 600; }
   .pp-sep { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
   .pp-logo-wrap { display: flex; align-items: center; gap: 8px; }

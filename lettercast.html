@@ -20,6 +20,7 @@
     --accent2: #1e3a6b;
     --green:   #107c41; --green-dk: #0a6032;
     --red:     #c0392b;
+    --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
 /* ── Dark mode ── */
@@ -34,6 +35,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar {
   background: rgba(36,35,32,0.95);
@@ -179,8 +181,8 @@
     background: transparent;
     padding: 3px 6px; border-radius: 6px;
   }
-  .dyn-block-hd input:hover { background: #fff; }
-  .dyn-block-hd input:focus { border-color: var(--accent); background: #fff; }
+  .dyn-block-hd input:hover { background: var(--input-bg-focus); }
+  .dyn-block-hd input:focus { border-color: var(--accent); background: var(--input-bg-focus); }
 
   .btn-del-sec {
     background: none; border: none; color: var(--faint);

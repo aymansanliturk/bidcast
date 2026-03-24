@@ -15,6 +15,7 @@
     --bg: #f5f4f0; --surface: #ffffff; --border: #e0ddd6;
     --text: #1a1916; --muted: #6b6860; --faint: #a8a49e;
     --accent: #2c4e87; --accent2: #1e3a6b; --green: #107c41; --green-dk: #0a6032; --red: #c0392b;
+    --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
 /* ── Dark mode ── */
@@ -29,6 +30,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar {
   background: rgba(36,35,32,0.95);
@@ -83,10 +85,10 @@
   label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 500; color: var(--muted); }
   input[type="text"], input[type="number"], select {
     font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text);
-    background: #faf9f7; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px;
     padding: 10px 12px; outline: none; transition: border-color 0.15s; width: 100%;
   }
-  input:focus, select:focus { border-color: var(--accent); background: #fff; }
+  input:focus, select:focus { border-color: var(--accent); background: var(--input-bg-focus); }
 
   /* Phases */
   .phases-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 36px; }
@@ -113,8 +115,8 @@
   .res-table tbody tr { border-top: 1px solid #f0ede8; }
   .res-table tbody tr:hover { background: #fdf9f7; }
   .res-table td { padding: 3px 3px; vertical-align: middle; }
-  .res-inp { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 7px; background: #fafaf8; border: 1px solid var(--border); border-radius: 4px; outline: none; transition: border-color 0.12s; }
-  .res-inp:focus { border-color: var(--accent); background: #fff; }
+  .res-inp { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 7px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; outline: none; transition: border-color 0.12s; }
+  .res-inp:focus { border-color: var(--accent); background: var(--input-bg-focus); }
   .res-inp-phase { font-family: 'DM Mono', monospace; width: 68px; text-align: right; }
   .res-inp-rate  { font-family: 'DM Mono', monospace; width: 74px; text-align: right; }
   .res-inp-name  { width: 150px; }
@@ -245,8 +247,8 @@
   .mg-agg-col { font-size:9px; font-weight:600; min-width:60px; }
   /* Input cells */
   .mg-cell { padding:1px 1px; }
-  .mg-inp { font-family:'DM Mono',monospace; font-size:11px; width:52px; min-width:52px; text-align:right; padding:4px 4px; background:#fafaf8; border:1px solid transparent; border-radius:3px; outline:none; transition:border-color 0.12s; -moz-appearance:textfield; }
-  .mg-inp:focus { border-color:var(--accent); background:#fff; }
+  .mg-inp { font-family:'DM Mono',monospace; font-size:11px; width:52px; min-width:52px; text-align:right; padding:4px 4px; background:var(--input-bg); border:1px solid transparent; border-radius:3px; outline:none; transition:border-color 0.12s; -moz-appearance:textfield; }
+  .mg-inp:focus { border-color:var(--accent); background:var(--input-bg-focus); }
   .mg-inp:not(:placeholder-shown) { border-color:#e8e3dc; }
   .mg-inp::-webkit-inner-spin-button,
   .mg-inp::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }

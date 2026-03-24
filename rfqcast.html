@@ -21,6 +21,7 @@
   --s-received:#d4edda; --s-received-txt:#155724;
   --s-expired: #f8d7da; --s-expired-txt: #721c24;
   --s-binding: #e8f5e9; --s-binding-txt: #2e7d32;
+  --input-bg: #faf9f7; --input-bg-focus: #ffffff;
 }
 
 /* ── Dark mode ── */
@@ -35,6 +36,7 @@
   --accent2: #4a6da8;
   --green: #22a85a;
   --green-dk: #1a8a47;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
 }
 [data-theme="dark"] #toolbar {
   background: rgba(36,35,32,0.95);
@@ -85,10 +87,10 @@ body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text)
 label { display:flex; flex-direction:column; gap:5px; font-size:11px; font-weight:500; color:var(--muted); }
 input[type="text"], input[type="date"], input[type="number"], select {
   font-family:'DM Sans',sans-serif; font-size:13px; color:var(--text);
-  background:#faf9f7; border:1px solid var(--border); border-radius:8px;
+  background:var(--input-bg); border:1px solid var(--border); border-radius:8px;
   padding:10px 12px; outline:none; transition:border-color 0.15s;
 }
-input:focus, select:focus { border-color:var(--accent); background:#fff; }
+input:focus, select:focus { border-color:var(--accent); background:var(--input-bg-focus); }
 
 
 /* ── RFQ TABLE ── */
