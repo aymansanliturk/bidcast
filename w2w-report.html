@@ -1218,7 +1218,7 @@ function addFactory() {
   _w2wState.factories.push({
     id:  Date.now(),
     category: cat,
-    kpis: { specRisk: 2, unspecRisk: 3, warr: 1, sga: 4, exu: 3, ba: 2, ebit: 8 },
+    kpis: { rw: 5, sga: 4, exu: 3, ba: 2, ebit: 8 },
   });
   saveW2WState();
   renderFactories();
@@ -1242,38 +1242,22 @@ function updateFactoryKpi(id, key, val) {
 }
 
 function _computeFactory(dc, kpis) {
-  // Backward compat: legacy states stored a single combined 'rw' with no split
-  const hasLegacyRw = kpis.rw != null && kpis.specRisk == null;
-
-  let specProv, unspecProv, warrProv, riskProv, afterRisk;
-  if (hasLegacyRw) {
-    afterRisk  = dc * (1 + kpis.rw / 100);
-    riskProv   = afterRisk - dc;
-    specProv   = null; unspecProv = null; warrProv = null;
-  } else {
-    specProv   = dc * (kpis.specRisk   || 0) / 100;
-    unspecProv = dc * (kpis.unspecRisk || 0) / 100;
-    warrProv   = dc * (kpis.warr       || 0) / 100;
-    riskProv   = specProv + unspecProv + warrProv;
-    afterRisk  = dc + riskProv;
-  }
-
-  const afterSGA  = afterRisk * (1 + (kpis.sga||0)  / 100);
-  const afterEXU  = afterSGA  * (1 + (kpis.exu||0)  / 100);
-  const afterBA   = afterEXU  * (1 + (kpis.ba||0)   / 100);
-  const transfer  = afterBA   * (1 + (kpis.ebit||0) / 100);
-  const sgaProv  = afterSGA - afterRisk;
-  const exuProv  = afterEXU - afterSGA;
-  const baProv   = afterBA  - afterEXU;
-  const ebitProv = transfer - afterBA;
-
+  const riskProv = dc * (kpis.rw  || 0) / 100;
+  const afterRisk = dc + riskProv;
+  const afterSGA  = afterRisk * (1 + (kpis.sga  || 0) / 100);
+  const afterEXU  = afterSGA  * (1 + (kpis.exu  || 0) / 100);
+  const afterBA   = afterEXU  * (1 + (kpis.ba   || 0) / 100);
+  const transfer  = afterBA   * (1 + (kpis.ebit || 0) / 100);
+  const sgaProv   = afterSGA  - afterRisk;
+  const exuProv   = afterEXU  - afterSGA;
+  const baProv    = afterBA   - afterEXU;
+  const ebitProv  = transfer  - afterBA;
   const salesMargin = transfer - dc;
   const funcCost    = sgaProv + exuProv + baProv;
-  const profit      = ebitProv;
+  const profit      = salesMargin - funcCost;
   return {
     dc, afterRisk, afterSGA, afterEXU, afterBA, transfer,
-    riskProv, specProv, unspecProv, warrProv,
-    sgaProv, exuProv, baProv, ebitProv,
+    riskProv, sgaProv, exuProv, baProv, ebitProv,
     salesMargin, funcCost, profit,
   };
 }
@@ -1330,12 +1314,10 @@ function renderFactories() {
       : '';
 
     const kpiFields = [
-      ['specRisk',   'Spec. Risk %'],
-      ['unspecRisk', 'Unspec. Risk %'],
-      ['warr',       'Warranty %'],
-      ['sga',        'SG&A %'],
-      ['exu',        'HQ EXU %'],
-      ['ba',         'HQ BA %'],
+      ['rw',   'Risk + Warranty %'],
+      ['sga',  'SG&A %'],
+      ['exu',  'HQ Adders — EXU %'],
+      ['ba',   'HQ Adders — BA %'],
       ['ebit',       'EBIT %'],
     ].map(([key, lbl]) =>
       `<label>${lbl}
@@ -1396,11 +1378,7 @@ function renderW2WTable() {
 
   ba.salesMargin = ba.transfer - ba.dc;
   ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
-  ba.profit      = ba.ebitProv;
-  // BA risk sub-rows: sum directly from per-factory values (null = legacy factory, treated as 0)
-  ba.specProv   = results.reduce((s, x) => s + (x.r.specProv   || 0), 0);
-  ba.unspecProv = results.reduce((s, x) => s + (x.r.unspecProv || 0), 0);
-  ba.warrProv   = results.reduce((s, x) => s + (x.r.warrProv   || 0), 0);
+  ba.profit      = ba.salesMargin - ba.funcCost;
 
   // ── Helper: format a pair of cells (kEUR, %) relative to revenue ──
   function cells(val, rev, cls = '') {
@@ -1447,10 +1425,7 @@ function renderW2WTable() {
     </tr>`;
   }
 
-  // Augment ba with computed fields matching the r shape used in valFn
-  ba.salesMargin = ba.transfer - ba.dc;
-  ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
-  ba.profit      = ba.salesMargin - ba.funcCost;
+  // (ba computed fields already set above)
 
   const tableHTML = `
     <div class="w2w-tbl-meta">
@@ -1483,17 +1458,14 @@ function renderW2WTable() {
         ${row('Sales Margin', r => r.transfer - r.dc, { total: true })}
         ${row('', null, { spacer: true })}
         ${row('Functional Cost', r => r.sgaProv + r.exuProv + r.baProv, { sep: true, total: true })}
-        ${row('Overhead Type 1 — SG&A', r => r.sgaProv, { sub: true })}
-        ${row('Overhead Type 2 — HQ EXU', r => r.exuProv, { sub: true })}
-        ${row('Overhead Type 3 — HQ BA', r => r.baProv, { sub: true })}
+        ${row('SG&A', r => r.sgaProv, { sub: true })}
+        ${row('HQ Adders — EXU', r => r.exuProv, { sub: true })}
+        ${row('HQ Adders — BA', r => r.baProv, { sub: true })}
         ${row('Profit (Sales Margin − Func. Cost)', r => r.profit, { total: true, sep: true })}
         ${row('', null, { spacer: true })}
         ${row('EBIT Provision', r => r.ebitProv, { sep: true, total: true })}
         ${row('', null, { spacer: true })}
-        ${row('Risk Contingency', r => r.riskProv, { sep: true, total: true })}
-        ${row('Specified Risk', r => r.specProv, { sub: true })}
-        ${row('Unspecified Risk', r => r.unspecProv, { sub: true })}
-        ${row('Warranty-Related', r => r.warrProv, { sub: true })}
+        ${row('Risk + Warranty', r => r.riskProv, { sep: true, total: true })}
       </tbody>
     </table>`;
 
