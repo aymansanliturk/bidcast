@@ -94,10 +94,6 @@
     color: var(--faint); text-align: left; line-height: 1;
     text-transform: uppercase; letter-spacing: 0.5px;
   }
-  .header-custom-logo {
-    height: 34px; max-width: 130px; object-fit: contain;
-    border-radius: 4px; display: none;
-  }
 
   /* ── Workspace Bar ── */
   .workspace-bar {
@@ -468,7 +464,6 @@
         <rect x="10" y="10" width="7" height="7" rx="1.5" fill="white" opacity="0.4"/>
       </svg>
     </div>
-    <img id="header-custom-logo" class="header-custom-logo" src="" alt="Company Logo">
     <div class="logo-text">
       <span class="site-name">PYL0N<span class="dot">.</span></span>
       <div class="header-meta">100% Private · Local Execution</div>
@@ -1151,20 +1146,6 @@ function ppDelete() {
   refreshStats();
 }
 
-/* ── Logo helpers ── */
-function _updateHeaderLogo(logo) {
-  const icon    = document.getElementById('header-logo-icon');
-  const img     = document.getElementById('header-custom-logo');
-  if (!icon || !img) return;
-  if (logo) {
-    img.src = logo; img.style.display = 'block';
-    icon.style.display = 'none';
-  } else {
-    img.style.display = 'none';
-    icon.style.display = 'flex';
-  }
-}
-
 function ppUpdateLogo() {
   const logo    = SuiteManager.getLogo();
   const preview = document.getElementById('pp-logo-preview');
@@ -1174,7 +1155,6 @@ function ppUpdateLogo() {
   if (clearEl) clearEl.style.display = logo ? 'inline-flex' : 'none';
   if (btnEl)   btnEl.textContent     = logo ? '⟳ Logo' : '⊕ Logo';
   _updateBrandPanel();
-  _updateHeaderLogo(logo);
 }
 
 function ppSaveLogo(input) {
