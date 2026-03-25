@@ -831,8 +831,7 @@ function aggregateDirectCost(s) {
     const fxRate  = fx[row.currency]           || 1;
     const costEUR = qty * unit * fxRate;
 
-    const isFixed = (row.costType  && row.costType.toLowerCase()  === 'fixed') ||
-                    (row.priceType && row.priceType.toLowerCase() === 'fixed');
+    const isFixed = (row.estFix || '').toLowerCase() === 'fixed';
     if (isFixed) { fixedDC += costEUR; } else { estimatedDC += costEUR; }
 
     totalDC     += costEUR;
