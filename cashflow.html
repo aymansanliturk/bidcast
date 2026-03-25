@@ -955,7 +955,7 @@ function renderItemDist() {
     const cfg  = (_simState.itemDist && _simState.itemDist[item.id]) || {};
     const type = cfg.type || 'linear';
     const sid  = esc(item.id);
-    const jid  = JSON.stringify(item.id);
+    const jid  = esc(JSON.stringify(item.id)); // HTML-escape quotes so they don't break the attribute delimiter
 
     html += `<div class="item-dist-row">
       <div class="item-dist-info">
