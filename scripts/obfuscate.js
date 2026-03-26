@@ -51,9 +51,11 @@ const HTML_FILES = [
 
 // Non-HTML files to copy verbatim into dist-src/
 const COPY_FILES = [
+  'package.json',
   'main.js',
   'preload.js',
   'auth.js',
+  'azure-config.json',
   'favicon.svg',
   'logo.svg',
 ];
