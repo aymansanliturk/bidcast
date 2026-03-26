@@ -11,6 +11,9 @@
     "build:linux": "electron-builder --linux",
     "build": "electron-builder --win --mac --linux"
   },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
+  },
   "devDependencies": {
     "electron": "^33.0.0",
     "electron-builder": "^25.0.0"
@@ -59,6 +62,11 @@
       "installerIcon": "build/icon.ico",
       "uninstallerIcon": "build/icon.ico",
       "shortcutName": "PYL0N"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "aymansanliturk",
+      "repo": "pyl0n.app"
     },
     "dmg": {
       "title": "PYL0N ${version}",

@@ -2,6 +2,12 @@ const { app, BrowserWindow, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 
+// Auto-updater — only active in packaged builds (not during npm start)
+let autoUpdater = null;
+if (app.isPackaged) {
+  try { autoUpdater = require('electron-updater').autoUpdater; } catch (_) {}
+}
+
 // Keep a global reference to prevent garbage collection closing the window
 let mainWindow;
 
@@ -81,10 +87,41 @@ ipcMain.handle('fs:readFile', async (_event, filePath) => {
 
 ipcMain.handle('app:getVersion', () => app.getVersion());
 
+// ── Auto-update IPC ───────────────────────────────────────────────────────────
+
+ipcMain.handle('app:checkForUpdates', async () => {
+  if (!autoUpdater) return { available: false, reason: 'dev-mode' };
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return { available: !!result, version: result?.updateInfo?.version };
+  } catch (err) {
+    return { available: false, error: err.message };
+  }
+});
+
+ipcMain.handle('app:installUpdate', () => {
+  if (autoUpdater) autoUpdater.quitAndInstall();
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Check for updates silently 5 seconds after launch (packaged builds only)
+  if (autoUpdater) {
+    autoUpdater.autoDownload = true;
+    autoUpdater.autoInstallOnAppQuit = true;
+
+    autoUpdater.on('update-downloaded', (info) => {
+      // Notify the renderer so it can show a banner to the user
+      if (mainWindow) {
+        mainWindow.webContents.send('update:ready', { version: info.version });
+      }
+    });
+
+    setTimeout(() => autoUpdater.checkForUpdatesAndNotify(), 5000);
+  }
 
   // macOS: re-create window when dock icon is clicked and no windows are open
   app.on('activate', () => {

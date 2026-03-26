@@ -27,4 +27,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Get the Electron / app version for display
   getVersion: () => ipcRenderer.invoke('app:getVersion'),
+
+  // Auto-update: manually check for a newer version
+  checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+
+  // Auto-update: quit and install a downloaded update immediately
+  installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
+
+  // Listen for 'update:ready' event pushed from main process
+  // callback receives { version } — call this once on page load
+  onUpdateReady: (callback) => ipcRenderer.on('update:ready', (_e, info) => callback(info)),
 });
