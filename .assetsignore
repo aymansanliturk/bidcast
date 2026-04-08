@@ -1,0 +1,25 @@
+# Electron / desktop build artefacts
+main.js
+preload.js
+auth.js
+azure-config.json
+login.html
+build/
+
+# Build tooling / scripts
+scripts/
+wrangler.toml
+_worker.js
+package.json
+package-lock.json
+
+# Generated output directories
+node_modules/
+dist/
+dist-src/
+
+# Dev / config docs
+CLAUDE.md
+.gitignore
+.assetsignore
+staticwebapp.config.json

@@ -16,7 +16,7 @@
     "build:win": "electron-builder --win --config.directories.app=dist-src",
     "build:mac": "electron-builder --mac --config.directories.app=dist-src",
     "build:linux": "electron-builder --linux --config.directories.app=dist-src",
-    "build": "electron-builder --win --mac --linux --config.directories.app=dist-src"
+    "build": "echo 'Web deployment: static HTML files served via Cloudflare Workers. For Electron builds use build:win / build:mac / build:linux.'"
   },
   "dependencies": {
     "electron-updater": "^6.3.0"
