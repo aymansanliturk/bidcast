@@ -135,8 +135,58 @@
 
     .score-hint { font-size:11px; color:var(--faint); text-align:center; margin-top:10px; }
 
-    /* ── Output (stub — filled by Part 2) ── */
-    #output { display:none; }
+    /* ── Output ── */
+    #output { display:none; max-width:900px; margin:0 auto; padding:28px 24px 80px; }
+
+    .out-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+
+    .out-card {
+      background:var(--surface); border:1.5px solid var(--border);
+      border-radius:14px; padding:32px; margin-bottom:20px;
+    }
+    .out-hdr {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:16px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--border);
+    }
+    .out-logo { height:30px; object-fit:contain; display:block; margin-bottom:8px; }
+    .out-proj-name { font-size:22px; font-weight:700; letter-spacing:-0.5px; margin-bottom:4px; }
+    .out-proj-meta { font-size:12px; color:var(--muted); }
+
+    /* Gauge */
+    .gauge-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 16px; }
+    .gauge-bg   { fill:none; stroke:var(--border); stroke-width:14; stroke-linecap:round; }
+    .gauge-fill { fill:none; stroke-width:14; stroke-linecap:round; transition:stroke-dasharray 1s cubic-bezier(.4,0,.2,1), stroke .4s; }
+    .gauge-num  { font-size:38px; font-weight:700; font-family:'DM Mono',monospace; text-anchor:middle; }
+    .gauge-sub  { font-size:13px; text-anchor:middle; }
+    .out-verdict { margin-top:10px; font-size:17px; font-weight:700; letter-spacing:0.5px; }
+
+    /* Category breakdown */
+    .cat-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .cat-lbl  { width:110px; font-size:13px; font-weight:600; flex-shrink:0; }
+    .cat-track{ flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .cat-fill { height:100%; border-radius:4px; }
+    .cat-val  { width:52px; text-align:right; font-size:12px; font-weight:600; font-family:'DM Mono',monospace; color:var(--muted); flex-shrink:0; }
+
+    /* Scoring table */
+    .out-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+    .out-table th { padding:7px 8px; text-align:left; font-size:10px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.8px; border-bottom:1.5px solid var(--border); white-space:nowrap; }
+    .out-table td { padding:8px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .out-table tr:last-child td { border-bottom:none; }
+    .out-table .r { text-align:right; font-family:'DM Mono',monospace; font-weight:600; }
+    .score-dot { display:inline-flex; width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; }
+    .out-total td { font-weight:700; border-top:2px solid var(--border); padding-top:11px; }
+    .out-section { margin-top:22px; padding-top:20px; border-top:1px solid var(--border); }
+    .out-sec-title { font-size:11px; font-weight:700; color:var(--faint); letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+    .out-notes { font-size:13px; line-height:1.65; white-space:pre-wrap; }
+    .out-footer { font-size:10px; color:var(--faint); text-align:center; padding-top:18px; margin-top:20px; border-top:1px solid var(--border); }
+
+    @media print {
+      #toolbar, .out-toolbar { display:none !important; }
+      body { background:#fff; }
+      #output { display:block !important; padding:16px; }
+      #editor { display:none !important; }
+      .out-card { border:none; padding:0; }
+    }
   </style>
 </head>
 <body>
@@ -426,12 +476,197 @@ function _refreshLiveScore() {
   _saveLocal();
 }
 
-/* ══ Exports (stubs — implemented in Part 2) ══════════════════════════ */
-function generate()     { alert('Output view coming in next build.'); }
-function goBack()       { document.getElementById('editor').style.display='block'; document.getElementById('output').style.display='none'; }
-async function exportPDF()  { alert('PDF export coming in next build.'); }
-async function exportExcel(){ alert('Excel export coming in next build.'); }
-async function exportHTML() { alert('HTML export coming in next build.'); }
+/* ══ Generate output view ═════════════════════════════════════════════ */
+function generate() {
+  const s       = collectState();
+  const score   = computeScore(s.criteria);
+  const verdict = verdictOf(score);
+  const vColor  = verdictColor(verdict);
+  const vClass  = verdictClass(verdict);
+
+  // Category breakdown
+  const catMap = {};
+  s.criteria.forEach(c => {
+    const k = c.category || 'General';
+    if (!catMap[k]) catMap[k] = { wSum:0, wScoreSum:0 };
+    const w = parseFloat(c.weight)||0;
+    const sc = parseInt(c.score)||0;
+    catMap[k].wSum      += w;
+    catMap[k].wScoreSum += w * sc;
+  });
+
+  // SVG gauge: semicircle path M20,110 A80,80 0 0 1 180,110
+  // arc length = π×80 ≈ 251.33
+  const ARC = Math.PI * 80;
+  const filled = +(score / 100 * ARC).toFixed(2);
+
+  const logo    = SuiteManager.getLogo();
+  const dateStr = s.bidDate
+    ? new Date(s.bidDate + 'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    : '—';
+
+  const catRows = Object.entries(catMap).map(([cat, d]) => {
+    const avg = d.wSum > 0 ? d.wScoreSum / d.wSum : 0; // avg score 0-5
+    const pct = Math.round(avg / 5 * 100);
+    return `<div class="cat-row">
+      <div class="cat-lbl">${esc(cat)}</div>
+      <div class="cat-track"><div class="cat-fill" style="width:${pct}%;background:${vColor}"></div></div>
+      <div class="cat-val">${avg.toFixed(1)} / 5</div>
+    </div>`;
+  }).join('');
+
+  const tableRows = s.criteria.map((c, i) => {
+    const w   = parseFloat(c.weight)||0;
+    const sc  = parseInt(c.score)||0;
+    const wtd = w > 0 ? (w * sc / 5).toFixed(1) : '—';
+    const dotBg = sc >= 4 ? 'var(--green)' : sc >= 3 ? 'var(--accent)' : sc >= 2 ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="color:var(--muted)">${esc(c.category)}</td>
+      <td>${esc(c.name)}</td>
+      <td class="r">${w}%</td>
+      <td style="text-align:center"><span class="score-dot" style="background:${dotBg}">${sc}</span></td>
+      <td class="r">${wtd}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(c.notes)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalW = s.criteria.reduce((a,c) => a+(parseFloat(c.weight)||0), 0);
+
+  document.getElementById('output').innerHTML = `
+    <div class="out-toolbar">
+      <button class="tb-btn" onclick="goBack()">← Editor</button>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="tb-btn" onclick="exportPDF()">PDF</button>
+        <button class="tb-btn" onclick="exportExcel()">Excel</button>
+        <button class="tb-btn" onclick="exportHTML()">HTML</button>
+      </div>
+    </div>
+
+    <div class="out-card" id="out-printable">
+      <div class="out-hdr">
+        <div>
+          ${logo ? `<img class="out-logo" src="${logo}">` : ''}
+          <div class="out-proj-name">${esc(s.projName || 'Untitled Bid')}</div>
+          <div class="out-proj-meta">
+            ${s.bidRef     ? `Ref: ${esc(s.bidRef)} &nbsp;·&nbsp; ` : ''}
+            Date: ${dateStr}
+            ${s.assessedBy ? ` &nbsp;·&nbsp; By: ${esc(s.assessedBy)}` : ''}
+          </div>
+        </div>
+        <span class="verdict-pill ${vClass}" style="font-size:14px;padding:8px 20px;flex-shrink:0">${verdict}</span>
+      </div>
+
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 200 120" width="240" height="144" style="overflow:visible">
+          <path class="gauge-bg"   d="M20,110 A80,80 0 0 1 180,110"
+            stroke-dasharray="${ARC.toFixed(2)} ${(ARC*2).toFixed(2)}"/>
+          <path class="gauge-fill" d="M20,110 A80,80 0 0 1 180,110"
+            stroke="${vColor}"
+            stroke-dasharray="${filled} ${(ARC*2).toFixed(2)}"/>
+          <text class="gauge-num" x="100" y="100" fill="${vColor}">${score}</text>
+          <text class="gauge-sub" x="100" y="116" fill="var(--muted)">out of 100</text>
+        </svg>
+        <div class="out-verdict" style="color:${vColor}">${verdict}</div>
+      </div>
+
+      ${Object.keys(catMap).length ? `
+      <div class="out-section">
+        <div class="out-sec-title">Category Breakdown</div>
+        ${catRows}
+      </div>` : ''}
+
+      <div class="out-section">
+        <div class="out-sec-title">Scoring Detail</div>
+        <table class="out-table">
+          <thead><tr>
+            <th>#</th><th>Category</th><th>Criterion</th>
+            <th style="text-align:right">Weight</th>
+            <th style="text-align:center">Score</th>
+            <th style="text-align:right">Weighted</th>
+            <th>Notes</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+          <tfoot><tr class="out-total">
+            <td colspan="3">Total</td>
+            <td class="r">${Math.round(totalW * 10)/10}%</td>
+            <td></td>
+            <td class="r">${score}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+
+      ${s.notes ? `
+      <div class="out-section">
+        <div class="out-sec-title">Decision Notes</div>
+        <div class="out-notes">${esc(s.notes)}</div>
+      </div>` : ''}
+
+      <div class="out-footer">Generated with BidScore · PYL0N Suite</div>
+    </div>`;
+
+  document.getElementById('editor').style.display = 'none';
+  document.getElementById('output').style.display  = 'block';
+  window.scrollTo(0, 0);
+}
+
+function goBack() {
+  document.getElementById('editor').style.display = 'block';
+  document.getElementById('output').style.display  = 'none';
+}
+
+/* ══ Exports ══════════════════════════════════════════════════════════ */
+async function exportPDF() {
+  generate();
+  const el   = document.getElementById('out-printable');
+  const name = (document.getElementById('proj-name')?.value || 'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSavePDF(el, `BidScore_${name}.pdf`, {
+    margin:10, image:{type:'jpeg',quality:0.97},
+    html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  });
+}
+
+async function exportExcel() {
+  const s  = collectState();
+  const wb = XLSX.utils.book_new();
+  const score   = computeScore(s.criteria);
+  const verdict = verdictOf(score);
+  const rows = [
+    ['BidScore — Bid/No-Bid Scorecard'],
+    ['Project:',     s.projName],
+    ['Bid Ref:',     s.bidRef],
+    ['Date:',        s.bidDate],
+    ['Assessed By:', s.assessedBy],
+    [],
+    ['#','Category','Criterion','Weight %','Score (1-5)','Weighted Score','Notes'],
+  ];
+  s.criteria.forEach((c, i) => {
+    const w = parseFloat(c.weight)||0;
+    const sc = parseInt(c.score)||0;
+    rows.push([i+1, c.category, c.name, w, sc, +(w*sc/5).toFixed(2), c.notes]);
+  });
+  const totalW = s.criteria.reduce((a,c)=>a+(parseFloat(c.weight)||0),0);
+  rows.push([], ['','','Total', Math.round(totalW*10)/10+'%', '', score, '']);
+  rows.push([], ['Recommendation:', verdict]);
+  if (s.notes) rows.push(['Notes:', s.notes]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:4},{wch:14},{wch:44},{wch:10},{wch:12},{wch:16},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'BidScore');
+  const name = (s.projName||'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSaveXLSX(wb, `BidScore_${name}.xlsx`);
+}
+
+async function exportHTML() {
+  const s       = collectState();
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+  const src     = document.documentElement.outerHTML;
+  const injected = src.replace('</body>',
+    `<script>try{applyState(JSON.parse(decodeURIComponent(escape(atob("${encoded}")))))}catch(e){}<\/script></body>`);
+  const name = (s.projName||'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSaveHTML(`BidScore_${name}.html`, injected);
+}
 async function saveJSON() {
   const s = collectState();
   try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch {}
