@@ -125,7 +125,34 @@
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea          { line-height: 1.65; }
   textarea.intro    { min-height: 160px; }
-  textarea.sec-body { min-height: 100px; font-size: 12.5px; }
+
+  /* ── Rich-text section body ── */
+  div.sec-body {
+    min-height: 100px; font-size: 12.5px; line-height: 1.65;
+    padding: 10px 12px; outline: none;
+    color: var(--text); background: var(--surface);
+    cursor: text; word-break: break-word;
+  }
+  div.sec-body:focus { background: var(--input-bg-focus); }
+  div.sec-body ul, div.sec-body ol { padding-left: 20px; margin: 4px 0; }
+  div.sec-body li { margin-bottom: 2px; }
+
+  /* ── Formatting toolbar ── */
+  .fmt-toolbar {
+    display: flex; gap: 2px; flex-wrap: wrap;
+    padding: 4px 8px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .fmt-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px;
+    background: none; border: 1px solid transparent;
+    border-radius: 4px; padding: 2px 7px; line-height: 1.6;
+    cursor: pointer; color: var(--text); transition: all .1s;
+    user-select: none;
+  }
+  .fmt-btn:hover  { background: var(--border); border-color: var(--border); }
+  .fmt-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .fmt-sep { width: 1px; background: var(--border); margin: 3px 4px; }
 
   /* ── Logo controls ── */
   .logo-row  { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -274,10 +301,13 @@
     padding-bottom: 5px;
     border-bottom: 1px solid var(--border);
   }
-  .out-sec p {
+  .out-sec .sec-content {
     font-size: 12.5px; line-height: 1.85;
-    color: var(--text); white-space: pre-wrap;
+    color: var(--text);
   }
+  .out-sec .sec-content ul,
+  .out-sec .sec-content ol { padding-left: 22px; margin: 6px 0; }
+  .out-sec .sec-content li { margin-bottom: 3px; }
 
   .out-footer {
     margin-top: 36px;
@@ -427,7 +457,10 @@
     </div>
     <div class="section-body">
       <div id="sections-list"></div>
-      <button class="btn-add-sec" onclick="addSection()">+ Add Section</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-add-sec" onclick="addSection()">+ Add Section</button>
+        <button class="btn-add-sec" onclick="insertRiskSummary()" title="Pull medium+ risks from RiskCast into a Risks &amp; Deviations section" style="border-color:var(--accent);color:var(--accent);">↺ Risks from RiskCast</button>
+      </div>
     </div>
   </div>
 
@@ -549,6 +582,17 @@ function onProjName() {
 /* ══ Dynamic Sections ══════════════════════════════════════════════════════ */
 let _secCount = 0;
 
+/* Convert legacy plain-text saved content to HTML for the contenteditable editor */
+function _toRichHtml(str) {
+  if (!str) return '';
+  if (/<[a-zA-Z][\s\S]*>/.test(str)) return str; // already HTML
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function _fmt(cmd, val) {
+  document.execCommand(cmd, false, val || null);
+}
+
 function addSection(data) {
   _secCount++;
   const title   = data ? (data.title   || '') : '';
@@ -563,10 +607,22 @@ function addSection(data) {
       <input type="text" value="${esc(title)}" placeholder="Section Title" oninput="autoSave()">
       <button class="btn-del-sec" onclick="this.closest('.dyn-block').remove();autoSave();" title="Remove">✕</button>
     </div>
-    <div class="dyn-block-body">
-      <textarea class="sec-body" placeholder="Paste your section content here…" oninput="autoSave()">${esc(content)}</textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('bold')"            title="Bold (Ctrl+B)"><b>B</b></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('italic')"          title="Italic (Ctrl+I)"><i>I</i></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('underline')"       title="Underline (Ctrl+U)"><u>U</u></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('strikeThrough')"   title="Strikethrough"><s>S</s></button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('insertUnorderedList')" title="Bullet list">• List</button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('insertOrderedList')"   title="Numbered list">1. List</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('removeFormat')"   title="Clear formatting">✕ fmt</button>
+    </div>
+    <div class="dyn-block-body" style="padding:0;">
+      <div class="sec-body" contenteditable="true" spellcheck="true" oninput="autoSave()"></div>
     </div>`;
 
+  block.querySelector('.sec-body').innerHTML = _toRichHtml(content);
   initDrag(block);
   $id('sections-list').appendChild(block);
   autoSave();
@@ -610,10 +666,59 @@ function initDrag(block) {
   });
 }
 
+function insertRiskSummary() {
+  let risks = [];
+  try {
+    const raw = localStorage.getItem('bidcast_state_riskcast');
+    if (raw) risks = JSON.parse(raw).risks || [];
+  } catch {}
+
+  // Medium and above (score >= 8), risks only (not opportunities), sorted by score desc
+  const filtered = risks
+    .filter(r => r.type !== 'opportunity' && (r.score || (r.likelihood * r.impact)) >= 8)
+    .sort((a, b) => (b.score || b.likelihood * b.impact) - (a.score || a.likelihood * a.impact));
+
+  if (!filtered.length) {
+    alert('No medium, high, or critical risks found in RiskCast. Add risks with a score of 8 or above first.');
+    return;
+  }
+
+  function levelLabel(s) {
+    if (s >= 20) return 'CRITICAL';
+    if (s >= 12) return 'HIGH';
+    return 'MEDIUM';
+  }
+
+  const lines = ['The following risks have been identified for this project:\n'];
+  filtered.forEach(r => {
+    const score = r.score || (r.likelihood * r.impact);
+    const lvl   = levelLabel(score);
+    const topic = [r.category, r.topic].filter(Boolean).join(' — ');
+    lines.push(`• [${lvl}] ${topic}`);
+    if (r.desc)       lines.push(`  ${r.desc}`);
+    if (r.mitigation) lines.push(`  Mitigation: ${r.mitigation}`);
+    lines.push('');
+  });
+
+  const content = lines.join('\n').trim();
+  const TITLE   = 'Risks & Deviations';
+
+  // Update existing section if one with this title already exists
+  const existing = [...($id('sections-list')?.querySelectorAll('.dyn-block') || [])].find(
+    b => b.querySelector('input[type=text]')?.value.trim() === TITLE
+  );
+  if (existing) {
+    existing.querySelector('.sec-body').innerHTML = _toRichHtml(content);
+    autoSave();
+  } else {
+    addSection({ title: TITLE, content });
+  }
+}
+
 function getSections() {
   return [...$id('sections-list').querySelectorAll('.dyn-block')].map(b => ({
     title:   b.querySelector('input[type=text]').value,
-    content: b.querySelector('textarea').value,
+    content: b.querySelector('.sec-body').innerHTML,
   }));
 }
 
@@ -659,11 +764,12 @@ function generate() {
     const div  = document.createElement('div');
     div.className = 'out-sec';
     const h3   = document.createElement('h3');
-    const p    = document.createElement('p');
-    h3.textContent = s.title;
-    p.textContent  = s.content;
+    const body = document.createElement('div');
+    h3.textContent  = s.title;
+    body.className  = 'sec-content';
+    body.innerHTML  = s.content;
     div.appendChild(h3);
-    div.appendChild(p);
+    div.appendChild(body);
     container.appendChild(div);
   });
 
