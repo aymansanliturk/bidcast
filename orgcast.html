@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
+<script src="libs/html2canvas.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
 <style id="page-size-style">@page { size: A4 landscape; margin: 10mm; }</style>
 <style>
@@ -1115,28 +1116,32 @@ function updateLogoUI() {
   }
 
   // ── PNG Export ──
-  function exportPNG() {
-    const orgCanvas = document.getElementById('org-canvas');
-    if (!orgCanvas || !orgCanvas.children.length) { alert('Please generate the chart first.'); return; }
-
-    // html2canvas is bundled inside html2pdf.bundle — access via window.html2canvas
+  async function exportPNG() {
+    const element = document.getElementById('output');
+    if (!element || element.style.display === 'none') {
+      alert('Please generate the chart first.');
+      return;
+    }
     if (typeof html2canvas === 'undefined') {
       alert('PNG export unavailable — html2canvas not loaded.');
       return;
     }
 
-    const state = collectState();
-    const name  = (state.title || 'orgcast').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+    const projectName = (SuiteManager.read().projectName || collectState().title || 'OrgChart')
+      .replace(/[^a-z0-9_-]/gi, '_');
+    const filename = `OrgChart_${projectName}.png`;
 
-    html2canvas(orgCanvas, {
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-      logging: false
-    }).then(async cvs => {
+    try {
+      const cvs = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
       if (window.electronAPI) {
         const { canceled, filePath } = await window.electronAPI.saveFile({
-          defaultPath: name + '-export.png',
+          defaultPath: filename,
           filters: [{ name: 'PNG Images', extensions: ['png'] }],
         });
         if (!canceled && filePath) {
@@ -1144,14 +1149,17 @@ function updateLogoUI() {
           await window.electronAPI.writeFile(filePath, b64, 'base64');
         }
       } else {
-        const a = document.createElement('a');
-        a.download = name + '-export.png';
-        a.href = cvs.toDataURL('image/png');
-        a.click();
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = cvs.toDataURL('image/png');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-    }).catch(() => {
+    } catch (err) {
+      console.error('Error exporting PNG:', err);
       alert('PNG export failed. Try the PDF export instead.');
-    });
+    }
   }
 
 /* ── SUITE SYNC ── */
