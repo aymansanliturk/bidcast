@@ -427,7 +427,15 @@ function updateLogoUI() {
   function roleLabel(key)   { return ROLES.find(r=>r.key===key)?.label    || key; }
   function roleColor(key)   { return ROLES.find(r=>r.key===key)?.color    || '#6b6860'; }
   function compLabel(key)   { return COMPANIES.find(c=>c.key===key)?.label || key; }
-  function compColor(key)   { return COMPANIES.find(c=>c.key===key)?.color || '#6b6860'; }
+  // compColor: accepts legacy key, display label, or any free-text string
+  function compColor(str)   {
+    if (!str) return '#6b6860';
+    const byKey   = COMPANIES.find(c => c.key   === str);
+    if (byKey)   return byKey.color;
+    const byLabel = COMPANIES.find(c => c.label.toLowerCase() === str.toLowerCase());
+    if (byLabel) return byLabel.color;
+    return '#6b6860'; // neutral fallback for custom strings
+  }
 
   // ── Role opts / company opts HTML ──
   function roleOpts(sel) {
@@ -443,7 +451,8 @@ function updateLogoUI() {
     const id      = personCount++;
     const isVac   = !!data.vacancy;
     const defRole = data.role    || (isVac ? 'other' : 'pm');
-    const defCo = data.company || 'ourco';
+    // Resolve legacy key ('ourco', 'client', …) to display label for the text input
+    const defCo = compLabel(data.company || '');
     const defClr  = data.color   || roleColor(defRole);
 
     const tr = document.createElement('tr');
@@ -459,7 +468,7 @@ function updateLogoUI() {
       <td><input class="p-name" type="text" value="${data.name||''}" placeholder="${isVac?'Role to fill':'Full name'}"></td>
       <td><input class="p-title" type="text" value="${data.title||''}" placeholder="e.g. Project Manager"></td>
       <td><select class="p-role">${roleOpts(defRole)}</select></td>
-      <td><select class="p-company">${compOpts(defCo)}</select></td>
+      <td><input type="text" class="p-company" value="${defCo}" placeholder="Company / Org" oninput="_scheduleSnap()"></td>
       <td><select class="p-parent" style="font-size:11px;"><option value="">— None (top level) —</option></select></td>
       <td>
         <div class="color-wrap">
@@ -693,7 +702,7 @@ function updateLogoUI() {
             <div class="node-role-tag" style="color:${p.color}">${roleLabel(p.role)}</div>
             <div class="node-name">${p.name}</div>
             ${p.title ? `<div class="node-title-txt">${p.title}</div>` : ''}
-            <span class="node-company-tag" style="background:${coBg};color:${coClr}">${compLabel(p.company)}</span>
+            <span class="node-company-tag" style="background:${coBg};color:${coClr}">${p.company || ''}</span>
           </div>`;
       }
       canvas.appendChild(div);
@@ -944,7 +953,7 @@ function updateLogoUI() {
       'Name':       p.vacancy ? '(Vacant)' : p.name,
       'Title':      p.title || '',
       'Role':       roleLabel(p.role),
-      'Company':    compLabel(p.company),
+      'Company':    p.company || '',
       'Reports To': p.parent !== '' ? (nameMap[p.parent] || '') : '',
       'Vacancy':    p.vacancy ? 'Yes' : 'No',
     }));
@@ -1204,7 +1213,7 @@ function suiteRead(sync) {
         const byName  = t.name  && existingNames.has(t.name.trim().toLowerCase());
         if (!byTitle && !byName) {
           addPerson({ name: t.name||'', title: t.title||'', role: t.roleKey||'other',
-                      company: t.company||'ourco', color: t.color||'#6b6860' });
+                      company: t.company||'', color: t.color||'#6b6860' });
         }
       });
     }

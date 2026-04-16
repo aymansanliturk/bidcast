@@ -379,7 +379,12 @@ The build workflow runs three parallel jobs (mac/win/linux), then a `release` jo
 ### OrgCast (`orgcast.html`)
 - Renders SVG connector lines between org chart nodes
 - Supports vacancy placeholders
-- Exports at A4 and A3 print formats
+- **Format selector**: A4 Landscape / A4 Portrait / A3 Landscape via `<select id="format-select">` → `changeFormat()` → `setFormat(fmt)`. Format stored as `currentFormat` global (normalised to `'a4-landscape'`/`'a4-portrait'`/`'a3-landscape'`); legacy values `'A4'`/`'A3'`/`'screen'` are remapped on load.
+- **Portrait layout**: `layoutNodePortrait()` stacks nodes vertically (depth = column, row = y); uses L-shaped connectors (parent right-center → busX → child left-center). `subtreeHeight()` is the vertical counterpart of `subtreeWidth()`.
+- **Landscape layout**: `layoutNode()` spreads nodes horizontally (depth = row); uses bus-bar connectors (parent bottom → busY → child top).
+- **`autoScale(contentW, contentH)`**: portrait scales by HEIGHT (257 mm usable, `transformOrigin: 'top left'`); landscape modes scale by WIDTH (`top center`).
+- **Export PNG**: `exportPNG()` captures `#output` (full page: title + chart + legend) via `html2canvas` at scale:2. Filename derived from `SuiteManager` project name. `libs/html2canvas.min.js` loaded separately in `<head>`.
+- **Company field**: free-text `<input type="text" class="p-company">` — accepts any string (JV partner, subcontractor, etc.). Legacy key values (`'ourco'`, `'client'`, etc.) are resolved to display labels via `compLabel()` when loading old saves. `compColor()` matches by key first, then by label, then returns `#6b6860` fallback.
 
 ### RFQCast (`rfqcast.html`)
 - Validity expiration is computed dynamically from `Date.now()`
@@ -547,17 +552,23 @@ Shared functions present in every tool (not repeated below):
 |----------|-------------|
 | `toggleCompact()` | Toggles compact/expanded layout mode for org chart |
 | `roleLabel()` / `roleColor()` | Look up display label/color for a role key |
-| `compLabel()` / `compColor()` | Look up display label/color for a company key |
-| `roleOpts()` / `compOpts()` | Generate HTML option elements for role/company selects |
-| `addPerson()` | Creates team member row with role, title, company, parent dropdown |
+| `compLabel(key)` | Resolves legacy company key to display label (or returns key unchanged for free text) |
+| `compColor(str)` | Returns color for company string: matches by key, then by label, then `#6b6860` fallback |
+| `roleOpts()` | Generates HTML option elements for role select |
+| `addPerson()` | Creates team member row with role, title, free-text company input, parent dropdown |
 | `refreshParentDropdowns()` | Updates parent person dropdown in all rows |
 | `getPeople()` | Extracts all person data from table rows |
 | `initDrag()` | Attaches HTML5 drag-and-drop listeners to person row |
 | `buildTree()` | Constructs parent-child tree structure from flat person array |
-| `subtreeWidth()` | Recursively calculates node width needed for layout |
-| `layoutNode()` | Assigns x, y positions recursively for tree nodes |
-| `renderChart()` | Builds SVG org chart with nodes and connector lines |
-| `autoScale()` | Adjusts SVG zoom/pan to fit content in viewport |
+| `subtreeWidth()` | Recursively calculates horizontal node-columns needed (landscape layout) |
+| `subtreeHeight()` | Recursively calculates vertical node-rows consumed (portrait layout) |
+| `layoutNode()` | Assigns x, y positions for landscape layout (depth = row, spread horizontally) |
+| `layoutNodePortrait()` | Assigns x, y positions for portrait layout (depth = column, stacked vertically) |
+| `renderChart()` | Branches on `currentFormat`: portrait uses `layoutNodePortrait` + L-shaped connectors; landscape uses `layoutNode` + bus-bar connectors |
+| `autoScale(contentW, contentH)` | Portrait: scales by HEIGHT (`top left`); landscape: scales by WIDTH (`top center`) |
+| `changeFormat()` | Reads format select, calls `setFormat()`, re-generates chart if output is visible |
+| `setFormat(fmt)` | Normalises legacy format strings, sets `currentFormat`, updates CSS class and `@page` size |
+| `exportPNG()` | Captures `#output` via `html2canvas` scale:2, downloads as `OrgChart_<projectName>.png` |
 | `generate()` | Collects state and renders org chart output |
 | `setParentByRole()` | Sets parent-child relationship by matching role keys |
 
