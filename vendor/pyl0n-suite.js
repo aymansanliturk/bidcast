@@ -174,3 +174,12 @@ const SuiteManager = (() => {
     checkStorageQuota,
   };
 })();
+
+/* ── PWA Service Worker registration ─────────────────────────────────── */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function (err) {
+      console.warn('PYL0N SW registration failed:', err);
+    });
+  });
+}
