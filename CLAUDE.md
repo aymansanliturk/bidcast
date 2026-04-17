@@ -4,10 +4,10 @@ This file documents the codebase structure, conventions, and workflows for AI as
 
 ## Project Overview
 
-**PYL0N** is a bid and project planning suite available in two deployment modes:
+**PYL0N** is a bid and project planning suite available in three deployment modes:
 - **Browser** — open any `.html` file directly, no installation
-- **Electron desktop app** — packaged `.dmg` (Mac) and `.exe` (Windows) installers built via electron-builder
-- **Azure Static Web App** — hosted on Azure, protected by Azure AD (Entra ID), accessible from any browser with no installation
+- **Electron desktop app** — packaged `.dmg` for macOS (x64 + Apple Silicon) via electron-builder
+- **Cloudflare Pages** — static hosting from the repo; security headers enforced via `_headers`
 
 The suite consists of twelve specialized planning tools plus a landing page.
 
@@ -27,8 +27,6 @@ The suite consists of twelve specialized planning tools plus a landing page.
 | `cashflow.html` | CashFlow | Monthly cash-flow simulation with per-item cost distribution and cancellation curve |
 | `w2w-report.html` | W2W Report | Wall-to-Wall financial report; factory-level KPI breakdown consolidated into a business area summary table |
 | `cvcast.html` | CVCast | Curriculum vitae / résumé generator with experience, education, skills, languages, and A4 PDF export |
-| `login.html` | Login screen | Azure AD sign-in page shown on first launch (Electron) or on auth failure |
-| `403.html` | Access denied | Shown by Azure Static Web Apps when a signed-in user lacks access |
 | `favicon.svg` | — | Brand favicon |
 | `logo.svg` | — | Brand logo (34×34px grid) |
 
@@ -57,7 +55,7 @@ All libraries live in `libs/` — no CDN calls at runtime:
 |------|---------|---------|
 | `libs/xlsx.full.min.js` | 0.20.3 | All tools with Excel export/import |
 | `libs/html2pdf.bundle.min.js` | 0.10.1 | PDF export in all tools |
-| `libs/html2canvas.min.js` | 1.4.1 | `timecast.html` PNG export |
+| `libs/html2canvas.min.js` | 1.4.1 | `timecast.html` and `orgcast.html` PNG export |
 | `libs/chart.js` | latest UMD | `cashflow.html`, `w2w-report.html` |
 | `libs/fonts.css` | — | Local @font-face rules for DM Sans + DM Mono |
 | `libs/fonts/*.woff2` | — | DM Sans (300–700, italic) + DM Mono (400,500) |
@@ -94,7 +92,7 @@ No cookies, no IndexedDB, no server storage.
 ### File Structure Per Tool
 
 Each tool HTML file follows this layout:
-1. `<!DOCTYPE html>` + `<head>` with CDN links and Google Fonts
+1. `<!DOCTYPE html>` + `<head>` with `<script src="libs/...">` tags for bundled libraries, `<link rel="stylesheet" href="libs/fonts.css">` for local fonts, and `<script src="vendor/pyl0n-native.js">` for the file-I/O bridge
 2. `<style>` block with all CSS
 3. `<body>` containing:
    - `#toolbar` — top action bar (save/load/export buttons)
@@ -217,8 +215,8 @@ python3 -m http.server 8080   # visit http://localhost:8080
 npm install        # first time only
 npm start          # opens the app in Electron with DevTools available
 ```
-`azure-config.json` must have a real `clientId`/`tenantId` for auth to work.
-If the values are still placeholders (`YOUR-CLIENT-ID-HERE`), auth is skipped and the app opens directly — safe for local development.
+The desktop app has no auth gate — it boots directly into `index.html` and
+persists user data in the Chromium `persist:pyl0n` session partition.
 
 ### Making Changes
 
@@ -243,7 +241,7 @@ git push
 git tag v1.x.x
 git push origin v1.x.x
 ```
-Pushing a tag triggers GitHub Actions to build `.dmg`, `.exe`, `.AppImage` and publish them as a GitHub Release. The auto-updater in installed copies detects the new release and shows the update banner.
+Pushing a tag triggers `.github/workflows/build.yml` to build the macOS `.dmg` and `.zip` on a `macos-latest` runner and publish them as a GitHub Release. There is no auto-updater — users download new releases manually.
 
 ### What NOT to Do
 
@@ -261,12 +259,13 @@ Pushing a tag triggers GitHub Actions to build `.dmg`, `.exe`, `.AppImage` and p
 
 | File | Purpose |
 |------|---------|
-| `main.js` | Electron main process — BrowserWindow, IPC handlers, auto-updater, auth gate |
+| `main.js` | Electron main process — BrowserWindow, IPC handlers |
 | `preload.js` | contextBridge — exposes `window.electronAPI` to renderer pages |
-| `auth.js` | Azure AD PKCE OAuth2 flow, token storage via `safeStorage`, refresh logic |
-| `login.html` | Sign-in screen shown when no valid cached token exists |
-| `azure-config.json` | IT fills in `clientId` + `tenantId` from their Azure App Registration |
 | `vendor/pyl0n-native.js` | Native file dialog helpers included in every tool |
+
+The Electron app has no auth, no obfuscation, and no auto-updater. It is a
+thin wrapper that loads `index.html` and exposes five IPC channels for
+native file I/O.
 
 ### IPC Handlers (main.js)
 
@@ -277,84 +276,63 @@ Pushing a tag triggers GitHub Actions to build `.dmg`, `.exe`, `.AppImage` and p
 | `fs:writeFile` | renderer → main | Write file; `encoding='base64'` for binary (xlsx, pdf) |
 | `fs:readFile` | renderer → main | Read file as UTF-8 string |
 | `app:getVersion` | renderer → main | Returns app version string |
-| `auth:getUser` | renderer → main | Returns cached user `{name, email, oid, tid}` or null |
-| `auth:login` | renderer → main | Opens Azure AD login window, returns user on success |
-| `auth:logout` | renderer → main | Clears token, opens Azure logout URL |
-| `auth:success` | renderer → main | Signal from `login.html` after successful login |
-| `app:checkForUpdates` | renderer → main | Manually trigger update check |
-| `app:installUpdate` | renderer → main | Quit and install downloaded update |
-| `update:ready` | main → renderer | Pushed when update is downloaded; triggers banner in `index.html` |
-
-### Auth Flow
-
-1. On launch, `startApp()` reads `azure-config.json`
-2. If `clientId` is a placeholder → skip auth, open app directly (dev mode)
-3. If config is real → check `pyl0n_auth.dat` (encrypted via `safeStorage`)
-4. Valid cached token → open main window directly
-5. No token / expired → show `login.html`
-6. User clicks "Sign in with Microsoft" → `auth:login` IPC → PKCE flow in popup window
-7. Azure redirects to `pyl0n://auth?code=...` → token exchanged, stored, main window opens
-8. Token silently refreshed on next launch using `refresh_token`
 
 ### Build & Packaging
 
 ```bash
 npm run icons          # regenerate build/icon.png/.ico/.icns from SVG geometry
 npm run download-libs  # download all JS libs + fonts into libs/ (run once)
-npm run build:mac      # obfuscate → electron-builder → dist/*.dmg
-npm run build:win      # obfuscate → electron-builder → dist/*.exe
-npm run build:linux    # obfuscate → electron-builder → dist/*.AppImage
+npm run build:mac      # electron-builder → dist/*.dmg + dist/*.zip
 ```
 
-`prebuild:*` scripts run `scripts/obfuscate.js` automatically before electron-builder.
-Obfuscated files land in `dist-src/` — originals are never modified.
-
-### JS Obfuscation (scripts/obfuscate.js)
-
-Runs before every production build. Reads all 11 HTML tool files, extracts inline `<script>` blocks, runs each through `javascript-obfuscator` (hexadecimal identifiers, base64 string encoding, control flow flattening, dead code injection), writes results to `dist-src/`. electron-builder then packages from `dist-src/` instead of the repo root.
-
-Options used: `controlFlowFlattening: true` (threshold 0.4), `deadCodeInjection: true` (threshold 0.2), `stringArrayEncoding: ['base64']`, `renameGlobals: false` (keeps HTML `onclick=` references working), `selfDefending: false` (Electron renderer safe).
+Only macOS builds are supported. The repo has no prebuild / obfuscation step
+— electron-builder packages the repo root (`*.html`, `libs/**`, `vendor/**`,
+`main.js`, `preload.js`, `build/icon.*`) as-is per `package.json > build.files`.
 
 ### Icon Generation (scripts/generate-icons.py)
 
-Pure Python 3 (no dependencies). Renders the PYL0N 4-square navy logo at 16/32/64/128/256/512px using struct+zlib PNG encoding, writes:
-- `build/icon.png` — 512×512, Linux AppImage
-- `build/icon.ico` — multi-size ICO, Windows NSIS
-- `build/icon.icns` — multi-size ICNS, macOS DMG
+Pure Python 3 (no dependencies). Renders the PYL0N 4-square navy logo at
+16/32/64/128/256/512px using struct+zlib PNG encoding, writes:
+- `build/icon.png` — 512×512, general-purpose
+- `build/icon.ico` — multi-size ICO, retained for cross-platform tooling
+- `build/icon.icns` — multi-size ICNS, used by the macOS DMG
 
 Run: `npm run icons` or `python3 scripts/generate-icons.py`
 
-## Azure Deployment
+## Web Deployment
 
-### Azure Static Web Apps
+### Cloudflare Pages
 
-The suite deploys to Azure Static Web Apps via `.github/workflows/deploy-web.yml` on every push to `master`. No build step — HTML files are deployed as-is.
+The suite is deployed as static files via Cloudflare Pages. No build step —
+HTML files are served from the repo as-is. Security headers are enforced by
+the repo-root `_headers` file:
 
-`staticwebapp.config.json` enforces:
-- All routes require `authenticated` role
-- Unauthenticated users are redirected to `/.auth/login/aad` (Azure AD)
-- `403.html` is shown for signed-in users without access
-- Security headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`
+```
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+```
 
-IT controls access via **Entra ID → Enterprise Applications → PYL0N Suite → Users and groups**.
+There is no authentication layer on the web deployment — any visitor with
+the URL can open the tools. Sensitive data never leaves the browser
+(`localStorage` only).
 
 ### GitHub Actions Workflows
 
 | File | Trigger | Purpose |
 |------|---------|---------|
-| `.github/workflows/deploy-web.yml` | Push to `master` | Deploy to Azure Static Web Apps |
-| `.github/workflows/build.yml` | Push tag `v*.*.*` | Build `.dmg`/`.exe`/`.AppImage`, publish GitHub Release |
+| `.github/workflows/build.yml` | Push tag `v*.*.*` (or manual dispatch) | Build `.dmg` + `.zip` on macOS, publish GitHub Release |
 
-The build workflow runs three parallel jobs (mac/win/linux), then a `release` job that collects all artifacts and creates the GitHub Release with download links.
+The single workflow has two jobs: `build-mac` uploads the DMG/ZIP artifacts,
+then `release` downloads them and creates a GitHub Release from the tag.
 
 ## Security & Confidentiality
 
 - **GitHub repo is private** — source not publicly visible
-- **JS obfuscation** — inline scripts in the packaged app are unreadable
-- **Azure AD auth** — only users/groups assigned by IT can open the app (web or desktop)
-- **Token encryption** — auth tokens stored via Electron `safeStorage` (OS keychain / DPAPI / libsecret)
-- **No telemetry** — no analytics, no external API calls, no data leaves the browser/machine
-- **Fully offline** — all libraries and fonts in `libs/`; no CDN calls at runtime
+- **No telemetry** — no analytics, no external API calls, no data leaves the browser/machine at runtime
+- **Fully offline** — all libraries and fonts live in `libs/`; no CDN calls at runtime
+- **Security headers** — Cloudflare Pages deployment sets `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` via `_headers`
 
 ## Tool-Specific Notes
 
@@ -444,7 +422,7 @@ The build workflow runs three parallel jobs (mac/win/linux), then a `release` jo
 - **Fixed vs Estimated split**: CalcCast rows carry `estFix` field (`"Fixed"` or `"Estimated"`); `aggregateDirectCost()` accumulates `fixedDC` / `estimatedDC`; a doughnut chart (`scopeChartInst`, `#scopePieChart`) renders in the Project Scope tab
 - `_byCategory` — object keyed by CalcCast category name → total EUR value; drives factory DC lookup
 - Dark mode supported via `[data-theme="dark"]` on `<html>`
-- External dependency: Chart.js (CDN)
+- External dependency: Chart.js (local `libs/chart.js`)
 
 ### CVCast (`cvcast.html`)
 - Curriculum vitae / résumé generator producing a two-column A4 PDF-ready layout
