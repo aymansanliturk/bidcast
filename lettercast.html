@@ -7,6 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -845,29 +846,28 @@ function loadJSON(input) {
   reader.readAsText(file);
 }
 
-/* ══ Undo / Redo ════════════════════════════════════════════════════════ */
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+/* ══ Undo / Redo (backed by vendor/pyl0n-state.js) ═══════════════════════ */
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist.splice(_histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_lettercast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange:   () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_lettercast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo');
   const r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -876,20 +876,8 @@ function _updateSavedLabel() {
   const s = Math.floor((Date.now() - _lastSaved) / 1000);
   el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
 }
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _histIdx--; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _histIdx++; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+function undo() { _undoStack.undo(); }
+function redo() { _undoStack.redo(); }
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
   if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }
