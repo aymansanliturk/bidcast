@@ -1763,9 +1763,10 @@ function updateLogoUI() {
           ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
             if (k !== 'timecast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
           });
-          if (data.timecast) applyState(data.timecast);
+          if (data.timecast) { PylonValidate.checkImport(data.timecast, 'timecast'); applyState(data.timecast); }
           else alert('No TimeCast data found in this suite file.');
         } else {
+          PylonValidate.checkImport(data, 'timecast');
           applyState(data);
         }
       } catch(err) { console.error('loadJSON error:', err); alert('Invalid .json file: ' + err.message); }

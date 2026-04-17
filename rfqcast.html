@@ -1070,9 +1070,9 @@ function loadJSON(input) {
         ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
           if (k !== 'rfqcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
-        if (data.rfqcast) applyState(data.rfqcast);
+        if (data.rfqcast) { PylonValidate.checkImport(data.rfqcast, 'rfqcast'); applyState(data.rfqcast); }
         else alert('No RFQCast data found in this suite file.');
-      } else { applyState(data); }
+      } else { PylonValidate.checkImport(data, 'rfqcast'); applyState(data); }
     } catch(err) { alert('Invalid .json file.'); }
   };
   reader.readAsText(file); input.value='';

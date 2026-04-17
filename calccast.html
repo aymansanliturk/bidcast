@@ -1152,7 +1152,7 @@ function loadJSON(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    try { applyState(JSON.parse(e.target.result)); } catch { alert('Invalid JSON file.'); }
+    try { const _s = JSON.parse(e.target.result); PylonValidate.checkImport(_s, 'calccast'); applyState(_s); } catch { alert('Invalid JSON file.'); }
   };
   reader.readAsText(file); input.value = '';
 }

@@ -1432,9 +1432,9 @@ function updateLogoUI() {
           ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
             if (k !== 'resourcecast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
           });
-          if (data.resourcecast) applyState(data.resourcecast);
+          if (data.resourcecast) { PylonValidate.checkImport(data.resourcecast, 'resourcecast'); applyState(data.resourcecast); }
           else alert('No ResourceCast data found in this suite file.');
-        } else { applyState(data); }
+        } else { PylonValidate.checkImport(data, 'resourcecast'); applyState(data); }
       } catch(err) { alert('Invalid .json file.'); }
     };
     reader.readAsText(file); input.value='';
