@@ -553,6 +553,13 @@
 </div>
 
 <script>
+/* ── Tool-specific keyboard shortcuts (shown by ? overlay) ── */
+window.PYL0N_TOOL_SHORTCUTS = [
+  { keys: ['G'], desc: 'Generate / refresh chart' },
+  { keys: ['Shift', 'Click'], desc: 'Multi-select tasks' },
+  { keys: ['Del'], desc: 'Delete selected task' },
+];
+
 /* ── Logo (stored in bidcast_logo, shared across all tools) ── */
 function saveLogo(input) {
   const file = input.files[0];
