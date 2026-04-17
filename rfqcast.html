@@ -242,7 +242,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
     <label class="tb-btn" style="cursor:pointer;">↑ Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -291,7 +291,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
     </div>
     <div class="add-row-bar">
       <button class="btn-add-row" onclick="addItem({})">+ Add Item</button>
-      <button class="btn-green" onclick="pushToCalcCast()" title="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
+      <button class="btn-green" onclick="pushToCalcCast()" title="Send winning bids to the Pricing Engine" aria-label="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
     </div>
   </div>
 
@@ -479,7 +479,7 @@ function addItem(data) {
   tr.innerHTML = `
     <td style="white-space: nowrap;">
       <span class="drag-handle" title="Drag to reorder" style="vertical-align: middle;">⋮⋮</span>
-      <button class="expand-btn" title="Click to expand details" style="vertical-align: middle; margin-left: 4px;">
+      <button class="expand-btn" title="Click to expand details" style="vertical-align: middle; margin-left: 4px;" aria-label="Click to expand details">
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
     </td>
@@ -489,7 +489,7 @@ function addItem(data) {
     <td class="v-cell" data-vi="0"></td>
     <td class="v-cell" data-vi="1"></td>
     <td class="v-cell" data-vi="2"></td>
-    <td><button class="btn-del" onclick="deleteRow(this)">×</button></td>`;
+    <td><button class="btn-del" onclick="deleteRow(this)" aria-label="Delete">×</button></td>`;
 
   tbody.appendChild(tr);
 

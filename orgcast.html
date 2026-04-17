@@ -202,7 +202,7 @@
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
     <button class="tb-btn" onclick="exportPNG()">⬇ PNG</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -464,7 +464,7 @@ function updateLogoUI() {
     initDrag(tr);
 
     tr.innerHTML = `
-      <td><span class="drag-handle">⠿</span></td>
+      <td><span class="drag-handle" aria-hidden="true">⠿</span></td>
       <td>${isVac ? '<span class="vacancy-badge-editor">Vacancy</span>' : '<span style="font-size:10px;color:var(--faint);">Person</span>'}</td>
       <td><input class="p-name" type="text" value="${data.name||''}" placeholder="${isVac?'Role to fill':'Full name'}"></td>
       <td><input class="p-title" type="text" value="${data.title||''}" placeholder="e.g. Project Manager"></td>
@@ -477,7 +477,7 @@ function updateLogoUI() {
           <span class="chex">${defClr}</span>
         </div>
       </td>
-      <td><button class="btn-del" onclick="this.closest('tr').remove()">×</button></td>
+      <td><button class="btn-del" onclick="this.closest('tr').remove()" aria-label="Delete">×</button></td>
     `;
 
     tr.querySelector('.p-color').addEventListener('input', function() {
