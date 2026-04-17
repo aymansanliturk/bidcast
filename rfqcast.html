@@ -8,6 +8,7 @@
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1221,42 +1222,28 @@ window.addEventListener('afterprint', function() {
   else { out.setAttribute('style','display:block'); ed.setAttribute('style','display:none'); }
 });
 
-// ── Undo / Redo ──
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+// ── Undo / Redo (backed by vendor/pyl0n-state.js) ──
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist = _hist.slice(0, _histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_rfqcast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _suppHist = true; _histIdx--;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _suppHist = true; _histIdx++;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange: () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_rfqcast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -1274,14 +1261,13 @@ document.addEventListener('keydown', e => {
   }
 });
 (function() {
-  const _rawApply = applyState;
-  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
   const ed = document.getElementById('editor');
   if (ed) {
-    new MutationObserver(() => {
-      if (_suppHist) return;
-      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'], characterData: true, characterDataSubtree: true });
+    new MutationObserver(_scheduleSnap).observe(ed, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ['style'],
+      characterData: true, characterDataSubtree: true,
+    });
     ed.addEventListener('input',  _scheduleSnap);
     ed.addEventListener('change', _scheduleSnap);
   }
