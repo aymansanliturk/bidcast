@@ -1,14 +1,16 @@
 # PYL0N Desktop App — Build Guide
 
-This guide covers building the PYL0N Electron desktop app into distributable
-installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
+This guide covers building the PYL0N Electron desktop app into a macOS `.dmg`
+installer. Browser deployment needs no build — just open the `.html` files.
 
 ## Prerequisites
 
 - **Node.js** 18 or later
-- **Python 3** (icon generation, already run — no action needed)
-- **macOS** is required to build the macOS .dmg
-- **Windows or Linux** can produce the Windows .exe and Linux .AppImage
+- **Python 3** (icon generation; already run — no action needed unless the logo changes)
+- **macOS** — required to build the `.dmg`
+
+Windows and Linux desktop builds are no longer supported. Use the browser
+version or the Cloudflare Pages deployment on those platforms.
 
 ## Quick Start
 
@@ -16,30 +18,29 @@ installers for Windows (.exe), macOS (.dmg), and Linux (.AppImage).
 # 1. Install dependencies (run once after cloning)
 npm install
 
-# 2. Run the app in development mode
+# 2. Download bundled libraries and fonts into libs/ (run once)
+npm run download-libs
+
+# 3. Run the app in development mode
 npm start
 
-# 3. Build for your platform
-npm run build:win      # → dist/PYL0N Setup 1.0.0.exe
-npm run build:mac      # → dist/PYL0N-1.0.0.dmg  (must run on macOS)
-npm run build:linux    # → dist/PYL0N-1.0.0.AppImage
-npm run build          # → all three (cross-compile where supported)
+# 4. Build for macOS
+npm run build:mac      # → dist/PYL0N-1.0.0.dmg
 ```
 
 ## Output Files
 
 After a successful build, `dist/` will contain:
 
-| Platform | File | Notes |
-|----------|------|-------|
-| Windows  | `PYL0N Setup 1.0.0.exe` | NSIS installer, x64 |
-| macOS    | `PYL0N-1.0.0.dmg` | Drag-to-Applications, x64 + Apple Silicon |
-| Linux    | `PYL0N-1.0.0.AppImage` | Portable, x64 |
+| File | Notes |
+|------|-------|
+| `PYL0N-1.0.0.dmg` | Drag-to-Applications, x64 + Apple Silicon |
+| `PYL0N-1.0.0-mac.zip` | Zipped `.app`, x64 + Apple Silicon |
 
 ## Icon Assets
 
-Icons are pre-generated in `build/` using `scripts/generate-icons.py`.
-To regenerate them (e.g. after a logo change):
+Icons are pre-generated in `build/` via `scripts/generate-icons.py`
+(pure Python 3, no dependencies). Regenerate after a logo change:
 
 ```bash
 npm run icons
@@ -48,29 +49,38 @@ python3 scripts/generate-icons.py
 ```
 
 This creates:
-- `build/icon.png`  — 512×512, used by Linux AppImage
-- `build/icon.ico`  — multi-size ICO (16–256px), used by Windows NSIS
-- `build/icon.icns` — multi-size ICNS (16–512px), used by macOS DMG
+- `build/icon.png`  — 512×512, general-purpose
+- `build/icon.ico`  — multi-size ICO, retained for cross-platform tooling
+- `build/icon.icns` — multi-size ICNS, used by the macOS DMG
 
-## Vendor Libraries (Offline Support)
+## Bundled Libraries (offline)
 
-The app loads XLSX, html2pdf.js, and Chart.js from CDN when online.
-For a fully offline build, copy the libraries to `vendor/` before building:
+All libraries and fonts live in `libs/` — no CDN calls at runtime. Populate
+the folder once after cloning:
 
 ```bash
-npm install --save-dev xlsx@0.18.5 html2pdf.js@0.10.1 chart.js
-cp node_modules/xlsx/dist/xlsx.full.min.js       vendor/
-cp node_modules/html2pdf.js/dist/html2pdf.bundle.min.js vendor/
-cp node_modules/chart.js/dist/chart.umd.js       vendor/
+npm run download-libs
+# or directly:
+node scripts/download-libs.js
 ```
 
-Then update the CDN `<script>` tags in each HTML tool to point to
-`vendor/<filename>` instead of cdnjs/jsdelivr URLs.
+This downloads:
+
+| File | Version | Used by |
+|------|---------|---------|
+| `libs/xlsx.full.min.js` | 0.20.3 | All tools with Excel import/export |
+| `libs/html2pdf.bundle.min.js` | 0.10.1 | PDF export in all tools |
+| `libs/html2canvas.min.js` | 1.4.1 | TimeCast / OrgCast PNG export |
+| `libs/chart.js` | latest UMD | CashFlow, W2W Report |
+| `libs/fonts.css` + `libs/fonts/*.woff2` | — | DM Sans + DM Mono |
+
+`libs/` is committed so clones are immediately offline-capable; the download
+script only fetches missing files.
 
 ## macOS Code Signing
 
-For public distribution you need an Apple Developer ID certificate.
-Set these environment variables before `npm run build:mac`:
+For public distribution you need an Apple Developer ID certificate. Set these
+environment variables before `npm run build:mac`:
 
 ```bash
 export CSC_LINK="path/to/Developer-ID-Application.p12"
@@ -80,31 +90,19 @@ export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 export APPLE_TEAM_ID="XXXXXXXXXX"
 ```
 
-Without signing the app will still build and run, but macOS Gatekeeper will
-warn users on first launch (right-click → Open to bypass).
-
-## Windows Code Signing
-
-Set before `npm run build:win`:
-
-```bash
-set WIN_CSC_LINK=path\to\certificate.p12
-set WIN_CSC_KEY_PASSWORD=your-p12-password
-```
-
-Without signing, Windows SmartScreen will show an "Unknown publisher" warning
-on first run.
+Without signing the app still builds and runs, but macOS Gatekeeper warns
+users on first launch (right-click → Open to bypass).
 
 ## Troubleshooting
 
 **`Error: Cannot find module 'electron'`**
 → Run `npm install` first.
 
-**Build fails on Windows for macOS target**
-→ macOS .dmg can only be built on macOS. Use `npm run build:win` on Windows.
+**Build fails with missing asset from `libs/`**
+→ Run `npm run download-libs` to populate the folder.
 
 **Icon not showing correctly**
 → Run `npm run icons` to regenerate icon assets, then rebuild.
 
 **App shows blank window**
-→ Check DevTools console (View → Toggle Developer Tools) for JS errors.
+→ Check DevTools (View → Toggle Developer Tools) for JS errors.
