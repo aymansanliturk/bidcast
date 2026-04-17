@@ -4,7 +4,7 @@
    up-to-date while remaining fully usable offline.
 */
 
-const CACHE_NAME = 'pyl0n-v1';
+const CACHE_NAME = 'pyl0n-v2';
 
 const PRECACHE_URLS = [
   /* ── Shell & dashboard ─────────────────────────────────────────── */
@@ -85,15 +85,31 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(event.request).then(async cached => {
       if (cached) return cached;
 
-      return fetch(event.request).then(response => {
-        // Only cache successful same-origin or CORS responses.
+      // Safari bug: SW must not return redirect responses.
+      // Cloudflare Pages redirects /timecast → /timecast.html (301).
+      // For extensionless navigation URLs, first try the .html variant
+      // already in cache before going to the network.
+      if (event.request.mode === 'navigate') {
+        const url = new URL(event.request.url);
+        const noExt = !url.pathname.includes('.') && !url.pathname.endsWith('/');
+        if (noExt) {
+          const htmlCached = await caches.match(url.origin + url.pathname + '.html');
+          if (htmlCached) return htmlCached;
+        }
+      }
+
+      // redirect:'follow' ensures we always receive a final 200 response,
+      // never a 301/302 — Safari refuses SW redirect responses (WebKitInternal:0).
+      return fetch(event.request, { redirect: 'follow' }).then(response => {
+        // Only cache successful same-origin responses.
         if (
           !response ||
           response.status !== 200 ||
-          response.type === 'opaque'
+          response.type === 'opaque' ||
+          response.type === 'opaqueredirect'
         ) {
           return response;
         }
