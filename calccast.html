@@ -9,6 +9,7 @@
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -923,6 +924,13 @@ function addCostRow(data = {}, insertAfter = null) {
       </div>
     </td>
   `;
+
+  tr.querySelector('.inp-qty').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Quantity'));
+  });
+  tr.querySelector('.inp-unit-price').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Unit price'));
+  });
 
   if (insertAfter && insertAfter.nextSibling) {
     tbody.insertBefore(tr, insertAfter.nextSibling);
