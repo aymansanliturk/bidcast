@@ -145,6 +145,20 @@ const SuiteManager = (() => {
     }
   }
 
+  /* ── Cross-tool breadcrumbs ───────────────────────────────────────────── */
+
+  function setReturnPath(url, toolName) {
+    write({ returnUrl: url, returnName: toolName }, 'breadcrumb');
+  }
+
+  function consumeReturnPath() {
+    const sync = read();
+    if (!sync.returnUrl) return null;
+    const path = { url: sync.returnUrl, name: sync.returnName };
+    write({ returnUrl: null, returnName: null }, 'breadcrumb');
+    return path;
+  }
+
   /* ── Migration (pyl0n_ → bidcast_) ───────────────────────────────────── */
 
   function migrate() {
@@ -172,14 +186,38 @@ const SuiteManager = (() => {
     getCustomerLogo, setCustomerLogo, removeCustomerLogo,
     onUpdate, updateBadge, migrate,
     checkStorageQuota,
+    setReturnPath, consumeReturnPath,
   };
 })();
 
-/* ── PWA Service Worker registration ─────────────────────────────────── */
+/* ── PWA Service Worker registration + Breadcrumb injection ──────────── */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
     navigator.serviceWorker.register('./sw.js').catch(function (err) {
       console.warn('PYL0N SW registration failed:', err);
     });
+
+    // Inject breadcrumb "Return to …" button if a return path was stored
+    const returnPath = SuiteManager.consumeReturnPath();
+    if (returnPath && returnPath.url &&
+        window.location.pathname.indexOf(returnPath.url) === -1) {
+      const tbLeft = document.querySelector('.tb-left');
+      if (tbLeft) {
+        const btn = document.createElement('button');
+        btn.className = 'tb-btn';
+        btn.style.color = 'var(--accent)';
+        btn.style.borderColor = 'var(--accent)';
+        btn.style.fontWeight = '700';
+        btn.setAttribute('aria-label', 'Return to ' + returnPath.name);
+        btn.innerHTML = '\u2190 Return to ' + returnPath.name;
+        btn.onclick = function () { window.location.href = returnPath.url; };
+        const sep = tbLeft.querySelector('.tb-sep');
+        if (sep && sep.nextSibling) {
+          tbLeft.insertBefore(btn, sep.nextSibling);
+        } else {
+          tbLeft.appendChild(btn);
+        }
+      }
+    }
   });
 }

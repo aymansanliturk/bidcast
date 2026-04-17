@@ -2335,6 +2335,7 @@ function runExecReport() {
 document.addEventListener('DOMContentLoaded', () => {
   _applyTheme(localStorage.getItem('bidcast_theme') || 'light');
   SuiteManager.migrate();
+  SuiteManager.setReturnPath(null, null);
   ppLoad();
   ppPopulateSelect();
   refreshStats();
