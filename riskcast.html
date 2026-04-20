@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RiskCast · PYL0N</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 10mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -332,8 +336,8 @@ input[type="text"]:focus { border-color:var(--accent); background:var(--input-bg
 
 <div id="toolbar" class="no-print">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="11" rx="1.5" stroke="white" stroke-width="1.5"/><line x1="5" y1="16" x2="13" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="13" x2="9" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="6"  x2="13" y2="6"  stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="5" y1="9"  x2="10" y2="9"  stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <div class="logo-icon" style="background:#be123c">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
     </div>
     <div>
       <div class="tool-name">RiskCast</div>
@@ -352,7 +356,7 @@ input[type="text"]:focus { border-color:var(--accent); background:var(--input-bg
     <div class="tb-sep"></div>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn primary" onclick="exportPDF()">⬇ Export PDF</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -413,6 +417,7 @@ input[type="text"]:focus { border-color:var(--accent); background:var(--input-bg
         <tbody id="risk-body"></tbody>
       </table>
     </div>
+    <div id="risk-empty" style="display:none;padding:40px 32px;text-align:center;color:var(--faint);font-size:13px;">No risks yet — click <strong>+ Add Risk</strong> to start building your register.</div>
     <div class="add-row-bar no-print">
       <button class="btn-add-risk" onclick="addRisk()">+ Add Risk</button>
     </div>
@@ -427,7 +432,7 @@ input[type="text"]:focus { border-color:var(--accent); background:var(--input-bg
 <!-- ══════════════════ OUTPUT ══════════════════ -->
 <div id="output">
   <div class="print-bar no-print">
-    <button class="pb-btn" onclick="goBack()">← Edit</button>
+    <button class="pb-btn" onclick="goBack()">← Edit Data Data/button>
     <button class="pb-btn export" onclick="exportPDF()">Export PDF</button>
     <button class="pb-btn xl" onclick="exportExcel()">Export Excel</button>
     <button class="pb-btn" onclick="saveJSON()">Save .json</button>
@@ -488,40 +493,6 @@ input[type="text"]:focus { border-color:var(--accent); background:var(--input-bg
 </div><!-- /output -->
 
 <script>
-/* ══ SuiteManager ══════════════════════════════════════════════════
-   Central synchronisation utility — shared across all Bid Forecast tools.
-═══════════════════════════════════════════════════════════════════ */
-const SuiteManager = (() => {
-  const SYNC_KEY = 'bidcast_suite_sync';
-  const LOGO_KEY = 'bidcast_logo';
-  function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
-  function write(patch, source) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
-      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
-      return next;
-    } catch { return {}; }
-  }
-  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
-  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
-  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => {
-      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
-    });
-  }
-  function updateBadge(el) {
-    if (!el) return;
-    const sync = read();
-    if (sync._ts) {
-      const s = Math.round((Date.now() - sync._ts) / 1000);
-      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s/60) + 'm ago');
-      el.style.display = 'inline';
-    }
-  }
-  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
-})();
-
 /* ══ Logo ══════════════════════════════════════════════════════════ */
 function saveLogo(input) {
   const file = input.files[0]; if (!file) return;
@@ -667,7 +638,7 @@ function addRisk(d) {
     <td class="td-score"><span class="exposure-badge emv-neutral">—</span></td>
     <td><input class="risk-input risk-mitigation" type="text" placeholder="Mitigation plan…" value="${esc(d.mitigation||'')}"></td>
     <td><select class="risk-sel risk-status">${optStatus(d.status||'Open')}</select></td>
-    <td><button class="btn-del-row" onclick="removeRisk(this)" title="Remove risk">✕</button></td>
+    <td><button class="btn-del-row" onclick="removeRisk(this)" title="Remove risk" aria-label="Remove risk">✕</button></td>
   `;
 
   tr.querySelector('.sel-lh').addEventListener('change',        () => _refreshScore(tr));
@@ -675,6 +646,12 @@ function addRisk(d) {
   tr.querySelector('.risk-type').addEventListener('change',     () => _refreshScore(tr));
   tr.querySelector('.risk-impact-cost').addEventListener('input', () => { _refreshExposure(tr); _updateSummary(); });
   tr.querySelector('.risk-mitig-cost').addEventListener('input',  () => { _refreshExposure(tr); _updateSummary(); });
+  tr.querySelector('.risk-impact-cost').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Impact cost'));
+  });
+  tr.querySelector('.risk-mitig-cost').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Mitigation cost'));
+  });
 
   // Initial exposure render if loading saved data
   if (d.impactCost || d.mitigCost) setTimeout(() => _refreshExposure(tr), 0);
@@ -683,6 +660,7 @@ function addRisk(d) {
   document.getElementById('risk-body').appendChild(tr);
   _renumberRows();
   _updateSummary();
+  _riskUpdateEmpty();
 }
 
 function _refreshScore(tr) {
@@ -708,6 +686,12 @@ function removeRisk(btn) {
   btn.closest('.risk-row').remove();
   _renumberRows();
   _updateSummary();
+  _riskUpdateEmpty();
+}
+
+function _riskUpdateEmpty() {
+  const el = document.getElementById('risk-empty');
+  if (el) el.style.display = document.querySelectorAll('#risk-body .risk-row').length === 0 ? 'block' : 'none';
 }
 
 function _renumberRows() {
@@ -852,6 +836,7 @@ function applyState(s) {
   document.getElementById('risk-body').innerHTML = '';
   _rowIdx = 0;
   (s.risks || []).forEach(r => addRisk(r));
+  _riskUpdateEmpty();
 }
 
 /* ══ Persistence ════════════════════════════════════════════════════ */
@@ -875,9 +860,10 @@ function loadJSON(input) {
         ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
           if (k !== 'riskcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
-        if (data.riskcast) applyState(data.riskcast);
+        if (data.riskcast) { PylonValidate.checkImport(data.riskcast, 'riskcast'); applyState(data.riskcast); }
         else alert('No RiskCast data found in this suite file.');
       } else {
+        PylonValidate.checkImport(data, 'riskcast');
         applyState(data);
       }
     } catch { alert('Invalid JSON file.'); }
@@ -1144,41 +1130,29 @@ function suiteRead(sync) {
   } catch(e) {}
 }
 
-/* ══ Undo / Redo ════════════════════════════════════════════════════ */
-let _hist = [], _histIdx = -1, _histTimer, _suppHist = false, _lastSaved = null;
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist = _hist.slice(0, _histIdx + 1);
-  _hist.push(s);
-  _histIdx = _hist.length - 1;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_riskcast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 600);
-}
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _suppHist = true; _histIdx--;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _suppHist = true; _histIdx++;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+/* ══ Undo / Redo (backed by vendor/pyl0n-state.js) ═══════════════════════ */
+let _lastSaved = null;
+
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 600,
+  onChange:   () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_riskcast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -1196,14 +1170,13 @@ document.addEventListener('keydown', e => {
   }
 });
 (function() {
-  const _rawApply = applyState;
-  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
   const ed = document.getElementById('editor');
   if (ed) {
-    new MutationObserver(() => {
-      if (_suppHist) return;
-      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, { childList:true, subtree:true });
+    // DOM mutations (row add/remove/reorder) trigger a debounced snapshot.
+    // The undo stack dedups identical states so snapshots during apply() are
+    // no-ops even without an explicit suppress flag.
+    new MutationObserver(_scheduleSnap)
+      .observe(ed, { childList:true, subtree:true });
     ed.addEventListener('input',  _scheduleSnap);
     ed.addEventListener('change', _scheduleSnap);
   }

@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BidScore · PYL0N</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="libs/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="libs/fonts.css">
+  <script src="vendor/pyl0n-native.js"></script>
+  <style>
+    :root {
+      --bg:#f5f4f0; --surface:#fff; --border:#e0ddd6; --text:#1a1916;
+      --accent:#0891b2; --green:#059669; --amber:#d97706; --red:#dc2626;
+      --faint:#9c9a94; --muted:#6b6966;
+    }
+    [data-theme="dark"] {
+      --bg:#111110; --surface:#1c1c1a; --border:#2e2d2a; --text:#f0ede8;
+      --faint:#6b6966; --muted:#9c9a94;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      position:sticky; top:0; z-index:100;
+      background:rgba(255,255,255,0.92); backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--border);
+      padding:10px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    [data-theme="dark"] #toolbar { background:rgba(28,28,26,0.95); }
+    .tb-left  { display:flex; align-items:center; gap:12px; }
+    .tb-right { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .tb-sep   { width:1px; height:22px; background:var(--border); }
+    .logo-icon { width:28px; height:28px; background:var(--accent); border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .logo-icon svg { width:14px; height:14px; }
+    .tool-name { font-size:14px; font-weight:700; letter-spacing:-0.3px; }
+    .tool-tag  { font-size:9px; font-weight:600; color:var(--faint); letter-spacing:1px; text-transform:uppercase; }
+    .tb-btn {
+      font-family:'DM Sans',sans-serif; font-size:11px; font-weight:500;
+      padding:6px 12px; border-radius:7px; border:1.5px solid var(--border);
+      background:var(--bg); color:var(--muted); cursor:pointer; white-space:nowrap; transition:all .15s;
+    }
+    .tb-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--surface); }
+    .tb-btn:disabled { opacity:0.35; pointer-events:none; }
+    .tb-btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+    .tb-btn.primary:hover { opacity:0.9; }
+
+    /* ── Editor ── */
+    #editor { max-width:1100px; margin:0 auto; padding:28px 24px 80px; }
+    .sec-title { font-size:11px; font-weight:700; color:var(--faint); letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+
+    .meta-grid {
+      display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:12px; margin-bottom:28px;
+    }
+    @media(max-width:700px){ .meta-grid { grid-template-columns:1fr 1fr; } }
+    .meta-field label { display:block; font-size:10px; font-weight:600; color:var(--faint); letter-spacing:0.8px; text-transform:uppercase; margin-bottom:4px; }
+    .meta-field input, .meta-field textarea {
+      width:100%; padding:8px 10px; border:1.5px solid var(--border); border-radius:7px;
+      background:var(--surface); color:var(--text); font-size:13px; font-family:inherit; transition:border-color 0.15s;
+    }
+    .meta-field input:focus, .meta-field textarea:focus { outline:none; border-color:var(--accent); }
+    .meta-field.wide { grid-column:1/-1; }
+    .meta-field textarea { resize:vertical; min-height:68px; }
+
+    /* ── Criteria table ── */
+    .crit-wrap { background:var(--surface); border:1.5px solid var(--border); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+
+    .crit-head, .crit-row {
+      display:grid;
+      grid-template-columns:28px 120px 1fr 72px 130px 64px auto;
+      align-items:center; padding:8px 10px; gap:4px;
+    }
+    .crit-head { background:var(--bg); border-bottom:1px solid var(--border); }
+    .crit-head-cell { font-size:10px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:0.8px; }
+    .crit-head-cell.r { text-align:right; }
+
+    .crit-row { border-bottom:1px solid var(--border); transition:background 0.12s; }
+    .crit-row:last-child { border-bottom:none; }
+    .crit-row:hover { background:var(--bg); }
+    .crit-row.dragging { opacity:0.35; }
+    .crit-row.drag-over { border-top:2px solid var(--accent); }
+
+    .drag-handle { cursor:grab; color:var(--faint); font-size:14px; padding:2px 4px; user-select:none; }
+    .drag-handle:active { cursor:grabbing; }
+
+    .ci { /* criteria input */
+      width:100%; padding:5px 7px; border:1.5px solid transparent; border-radius:6px;
+      background:transparent; color:var(--text); font-size:13px; font-family:inherit; transition:border-color 0.15s;
+    }
+    .ci:focus { outline:none; border-color:var(--accent); background:var(--surface); }
+    .ci.cat { font-size:12px; color:var(--muted); }
+    .ci.mono { font-family:'DM Mono',monospace; text-align:right; }
+
+    .score-sel {
+      width:100%; padding:5px 6px; border:1.5px solid var(--border); border-radius:6px;
+      background:var(--surface); color:var(--text); font-size:12px; font-family:inherit; cursor:pointer;
+    }
+    .score-sel:focus { outline:none; border-color:var(--accent); }
+
+    .wtd-cell { font-size:12px; font-weight:600; font-family:'DM Mono',monospace; text-align:right; color:var(--accent); padding:0 4px; }
+
+    .del-btn { color:var(--faint); background:none; border:none; cursor:pointer; font-size:16px; padding:3px 7px; border-radius:5px; transition:all 0.15s; }
+    .del-btn:hover { color:var(--red); background:#fef2f2; }
+
+    .crit-footer {
+      padding:10px 12px; display:flex; align-items:center; justify-content:space-between;
+      background:var(--bg); border-top:1px solid var(--border);
+    }
+    .add-btn {
+      padding:6px 14px; border:1.5px dashed var(--border); border-radius:7px;
+      background:none; color:var(--muted); font-size:12px; font-weight:600;
+      cursor:pointer; transition:all 0.15s; font-family:inherit;
+    }
+    .add-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .weight-total { font-size:12px; font-weight:600; font-family:'DM Mono',monospace; }
+    .weight-total.ok   { color:var(--green); }
+    .weight-total.warn { color:var(--amber); }
+    .weight-total.bad  { color:var(--red); }
+
+    /* ── Live score bar ── */
+    .score-bar {
+      background:var(--surface); border:1.5px solid var(--border); border-radius:12px;
+      padding:16px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    }
+    .score-bar-label { font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px; white-space:nowrap; }
+    .score-bar-track { flex:1; min-width:80px; height:8px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .score-bar-fill  { height:100%; border-radius:4px; transition:width 0.5s ease, background 0.3s; }
+    .score-bar-num   { font-size:20px; font-weight:700; font-family:'DM Mono',monospace; min-width:44px; text-align:right; }
+    .verdict-pill {
+      padding:4px 13px; border-radius:20px; font-size:11px; font-weight:700;
+      letter-spacing:0.5px; text-transform:uppercase; white-space:nowrap;
+    }
+    .v-bid  { background:#dcfce7; color:#15803d; }
+    .v-cond { background:#fef3c7; color:#b45309; }
+    .v-no   { background:#fee2e2; color:#dc2626; }
+
+    .score-hint { font-size:11px; color:var(--faint); text-align:center; margin-top:10px; }
+
+    /* ── Output ── */
+    #output { display:none; max-width:900px; margin:0 auto; padding:28px 24px 80px; }
+
+    .out-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:24px; flex-wrap:wrap; }
+
+    .out-card {
+      background:var(--surface); border:1.5px solid var(--border);
+      border-radius:14px; padding:32px; margin-bottom:20px;
+    }
+    .out-hdr {
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:16px; margin-bottom:24px; padding-bottom:20px; border-bottom:1px solid var(--border);
+    }
+    .out-logo { height:30px; object-fit:contain; display:block; margin-bottom:8px; }
+    .out-proj-name { font-size:22px; font-weight:700; letter-spacing:-0.5px; margin-bottom:4px; }
+    .out-proj-meta { font-size:12px; color:var(--muted); }
+
+    /* Gauge */
+    .gauge-wrap { display:flex; flex-direction:column; align-items:center; padding:8px 0 16px; }
+    .gauge-bg   { fill:none; stroke:var(--border); stroke-width:14; stroke-linecap:round; }
+    .gauge-fill { fill:none; stroke-width:14; stroke-linecap:round; transition:stroke-dasharray 1s cubic-bezier(.4,0,.2,1), stroke .4s; }
+    .gauge-num  { font-size:38px; font-weight:700; font-family:'DM Mono',monospace; text-anchor:middle; }
+    .gauge-sub  { font-size:13px; text-anchor:middle; }
+    .out-verdict { margin-top:10px; font-size:17px; font-weight:700; letter-spacing:0.5px; }
+
+    /* Category breakdown */
+    .cat-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+    .cat-lbl  { width:110px; font-size:13px; font-weight:600; flex-shrink:0; }
+    .cat-track{ flex:1; height:7px; background:var(--border); border-radius:4px; overflow:hidden; }
+    .cat-fill { height:100%; border-radius:4px; }
+    .cat-val  { width:52px; text-align:right; font-size:12px; font-weight:600; font-family:'DM Mono',monospace; color:var(--muted); flex-shrink:0; }
+
+    /* Scoring table */
+    .out-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+    .out-table th { padding:7px 8px; text-align:left; font-size:10px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:.8px; border-bottom:1.5px solid var(--border); white-space:nowrap; }
+    .out-table td { padding:8px 8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .out-table tr:last-child td { border-bottom:none; }
+    .out-table .r { text-align:right; font-family:'DM Mono',monospace; font-weight:600; }
+    .score-dot { display:inline-flex; width:22px; height:22px; border-radius:50%; color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; }
+    .out-total td { font-weight:700; border-top:2px solid var(--border); padding-top:11px; }
+    .out-section { margin-top:22px; padding-top:20px; border-top:1px solid var(--border); }
+    .out-sec-title { font-size:11px; font-weight:700; color:var(--faint); letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+    .out-notes { font-size:13px; line-height:1.65; white-space:pre-wrap; }
+    .out-footer { font-size:10px; color:var(--faint); text-align:center; padding-top:18px; margin-top:20px; border-top:1px solid var(--border); }
+
+    @media print {
+      #toolbar, .out-toolbar { display:none !important; }
+      body { background:#fff; }
+      #output { display:block !important; padding:16px; }
+      #editor { display:none !important; }
+      .out-card { border:none; padding:0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="tb-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 18 18" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round">
+        <circle cx="9" cy="9" r="7"/>
+        <circle cx="9" cy="9" r="4"/>
+        <circle cx="9" cy="9" r="1.2" fill="white" stroke="none"/>
+      </svg>
+    </div>
+    <div>
+      <div class="tool-name">BidScore</div>
+      <div class="tool-tag">Bid / No-Bid Decision Tool</div>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="location.href='index.html'">← Dashboard</button>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn" id="btn-undo" onclick="undo()" disabled>↩ Undo</button>
+    <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="saveJSON()">Save</button>
+    <label class="tb-btn" style="cursor:pointer">Load<input type="file" accept=".json" onchange="loadJSON(this)" style="display:none"></label>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="exportExcel()">Excel</button>
+    <button class="tb-btn" onclick="exportHTML()">HTML</button>
+    <button class="tb-btn" onclick="exportPDF()">PDF</button>
+    <button class="tb-btn primary" onclick="generate()">Preview ›</button>
+  </div>
+</div>
+
+<div id="editor">
+  <div class="sec-title">Project Details</div>
+  <div class="meta-grid">
+    <div class="meta-field">
+      <label>Project Name</label>
+      <input type="text" id="proj-name" placeholder="e.g. ABC Wind Farm EPC" oninput="_scheduleSnap();_suiteWrite()">
+    </div>
+    <div class="meta-field">
+      <label>Bid Reference</label>
+      <input type="text" id="bid-ref" placeholder="e.g. ITT-2024-001" oninput="_scheduleSnap()">
+    </div>
+    <div class="meta-field">
+      <label>Assessment Date</label>
+      <input type="date" id="bid-date" oninput="_scheduleSnap()">
+    </div>
+    <div class="meta-field">
+      <label>Assessed By</label>
+      <input type="text" id="assessed-by" placeholder="Name / Team" oninput="_scheduleSnap()">
+    </div>
+    <div class="meta-field wide">
+      <label>Decision Notes</label>
+      <textarea id="decision-notes" placeholder="Key observations, conditions, or action items…" oninput="_scheduleSnap()"></textarea>
+    </div>
+  </div>
+
+  <div class="sec-title">Scoring Criteria</div>
+  <div class="crit-wrap">
+    <div class="crit-head">
+      <div></div>
+      <div class="crit-head-cell">Category</div>
+      <div class="crit-head-cell">Criterion</div>
+      <div class="crit-head-cell r">Wt %</div>
+      <div class="crit-head-cell">Score</div>
+      <div class="crit-head-cell r">Wtd</div>
+      <div></div>
+    </div>
+    <div id="crit-body"></div>
+    <div class="crit-footer">
+      <button class="add-btn" onclick="addCriterion()">+ Add Criterion</button>
+      <span class="weight-total warn" id="weight-total">Weight: 0%</span>
+    </div>
+  </div>
+
+  <div class="score-bar">
+    <span class="score-bar-label">Overall Score</span>
+    <div class="score-bar-track">
+      <div class="score-bar-fill" id="score-bar-fill" style="width:0%;background:var(--faint)"></div>
+    </div>
+    <span class="score-bar-num" id="score-bar-num" style="color:var(--faint)">—</span>
+    <span class="verdict-pill v-cond" id="live-verdict" style="display:none"></span>
+  </div>
+  <div class="score-hint">
+    Score 1–5: &nbsp; 1 = Very Unfavorable &nbsp;·&nbsp; 3 = Neutral &nbsp;·&nbsp; 5 = Very Favorable to Bid
+    &nbsp;|&nbsp; <strong>BID</strong> ≥65 &nbsp;·&nbsp; <strong>CONDITIONAL</strong> 40–64 &nbsp;·&nbsp; <strong>NO BID</strong> &lt;40
+  </div>
+</div>
+
+<div id="output"></div>
+
+<datalist id="cat-list">
+  <option value="Strategic">
+  <option value="Commercial">
+  <option value="Technical">
+  <option value="Risk">
+</datalist>
+
+<script>
+/* ══ SuiteManager ═════════════════════════════════════════════════════ */
+const SuiteManager = (() => {
+  const SK = 'bidcast_suite_sync', LK = 'bidcast_logo';
+  function read() { try { return JSON.parse(localStorage.getItem(SK)||'{}'); } catch { return {}; } }
+  function write(patch) { try { localStorage.setItem(SK, JSON.stringify({...read(),...patch,_ts:Date.now()})); } catch {} }
+  function getLogo() { return localStorage.getItem(LK)||null; }
+  function onUpdate(cb) { window.addEventListener('storage', e => { if(e.key===SK||e.key===LK) cb(read(),e.key); }); }
+  function migrate() {
+    const mv=[]; for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k?.startsWith('pyl0n_'))mv.push(k);}
+    mv.forEach(k=>{const nk='bidcast_'+k.slice(6);if(!localStorage.getItem(nk))localStorage.setItem(nk,localStorage.getItem(k));localStorage.removeItem(k);});
+  }
+  return { read, write, getLogo, onUpdate, migrate };
+})();
+
+/* ══ Constants ════════════════════════════════════════════════════════ */
+const STATE_KEY = 'bidcast_state_bidscore';
+let _nextId = 100;
+
+const DEFAULT_CRITERIA = [
+  { id:1,  category:'Strategic',  name:'Strategic alignment with company goals',       weight:10, score:3, notes:'' },
+  { id:2,  category:'Strategic',  name:'Reference value and market positioning',       weight:8,  score:3, notes:'' },
+  { id:3,  category:'Strategic',  name:'Customer relationship quality',                weight:7,  score:3, notes:'' },
+  { id:4,  category:'Commercial', name:'Expected EBIT margin potential',               weight:12, score:3, notes:'' },
+  { id:5,  category:'Commercial', name:'Contract type and payment terms',              weight:8,  score:3, notes:'' },
+  { id:6,  category:'Commercial', name:'Order backlog contribution',                   weight:7,  score:3, notes:'' },
+  { id:7,  category:'Technical',  name:'Technical capability and project experience',  weight:12, score:3, notes:'' },
+  { id:8,  category:'Technical',  name:'Team availability and capacity',               weight:8,  score:3, notes:'' },
+  { id:9,  category:'Risk',       name:'Overall project risk level',                   weight:10, score:3, notes:'5 = very low risk' },
+  { id:10, category:'Risk',       name:'Competition intensity',                        weight:8,  score:3, notes:'5 = low competition' },
+  { id:11, category:'Risk',       name:'Schedule and delivery feasibility',            weight:10, score:3, notes:'' },
+];
+
+/* ══ Undo / Redo ══════════════════════════════════════════════════════ */
+let _hist = [], _hIdx = -1, _snapTimer = null;
+
+function _snapshot() {
+  const s = JSON.stringify(collectState());
+  if (_hist[_hIdx] === s) return;
+  _hist = _hist.slice(0, _hIdx + 1);
+  _hist.push(s);
+  if (_hist.length > 60) _hist.shift();
+  _hIdx = _hist.length - 1;
+  _syncUndoUI();
+  _saveLocal();
+}
+function _scheduleSnap() { clearTimeout(_snapTimer); _snapTimer = setTimeout(_snapshot, 600); }
+
+function undo() { if (_hIdx > 0) { _hIdx--; applyState(JSON.parse(_hist[_hIdx])); _syncUndoUI(); } }
+function redo() { if (_hIdx < _hist.length-1) { _hIdx++; applyState(JSON.parse(_hist[_hIdx])); _syncUndoUI(); } }
+
+function _syncUndoUI() {
+  const u = document.getElementById('btn-undo'); if (u) u.disabled = _hIdx <= 0;
+  const r = document.getElementById('btn-redo'); if (r) r.disabled = _hIdx >= _hist.length - 1;
+}
+
+/* ══ State ════════════════════════════════════════════════════════════ */
+function collectState() {
+  return {
+    projName:   document.getElementById('proj-name')?.value    || '',
+    bidRef:     document.getElementById('bid-ref')?.value      || '',
+    bidDate:    document.getElementById('bid-date')?.value     || '',
+    assessedBy: document.getElementById('assessed-by')?.value  || '',
+    notes:      document.getElementById('decision-notes')?.value|| '',
+    criteria:   _getCriteria(),
+  };
+}
+
+function applyState(s) {
+  if (!s) return;
+  document.getElementById('proj-name').value      = s.projName   || '';
+  document.getElementById('bid-ref').value        = s.bidRef     || '';
+  document.getElementById('bid-date').value       = s.bidDate    || '';
+  document.getElementById('assessed-by').value    = s.assessedBy || '';
+  document.getElementById('decision-notes').value = s.notes      || '';
+  document.getElementById('crit-body').innerHTML  = '';
+  (s.criteria || []).forEach(c => addCriterion(c));
+  _refreshLiveScore();
+}
+
+function _saveLocal() {
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(collectState())); } catch {}
+}
+
+function _getCriteria() {
+  return Array.from(document.querySelectorAll('#crit-body .crit-row')).map(row => ({
+    id:       +row.dataset.id || 0,
+    category: row.querySelector('.crit-cat')?.value   || '',
+    name:     row.querySelector('.crit-name')?.value  || '',
+    weight:   parseFloat(row.querySelector('.crit-wt')?.value)  || 0,
+    score:    parseInt(row.querySelector('.score-sel')?.value)  || 3,
+    notes:    row.querySelector('.crit-notes')?.value || '',
+  }));
+}
+
+/* ══ Add / remove criteria ════════════════════════════════════════════ */
+function addCriterion(data) {
+  const id  = data?.id || (_nextId++);
+  const cat = data?.category || '';
+  const nm  = data?.name     || '';
+  const wt  = data?.weight   != null ? data.weight : 10;
+  const sc  = data?.score    != null ? data.score  : 3;
+  const nt  = data?.notes    || '';
+
+  const row = document.createElement('div');
+  row.className = 'crit-row';
+  row.dataset.id = id;
+  row.draggable = true;
+  row.innerHTML =
+    `<span class="drag-handle" title="Drag to reorder">⠿</span>` +
+    `<input class="ci cat crit-cat" type="text" value="${esc(cat)}" placeholder="Category" list="cat-list" oninput="_scheduleSnap();_refreshLiveScore()">` +
+    `<input class="ci crit-name" type="text" value="${esc(nm)}" placeholder="Criterion name" oninput="_scheduleSnap();_refreshLiveScore()">` +
+    `<input class="ci mono crit-wt" type="number" min="0" max="100" step="1" value="${wt}" oninput="_scheduleSnap();_refreshLiveScore()">` +
+    `<select class="score-sel" onchange="_scheduleSnap();_refreshLiveScore()">` +
+      [1,2,3,4,5].map(v=>`<option value="${v}"${v===sc?' selected':''}>${v} — ${_sLabel(v)}</option>`).join('') +
+    `</select>` +
+    `<span class="wtd-cell" id="wtd-${id}">—</span>` +
+    `<div style="display:flex;align-items:center;gap:2px;">` +
+      `<input class="ci crit-notes" type="text" value="${esc(nt)}" placeholder="Notes…" oninput="_scheduleSnap()" style="min-width:80px">` +
+      `<button class="del-btn" onclick="removeCriterion(this)" title="Delete">×</button>` +
+    `</div>`;
+
+  _initDrag(row);
+  document.getElementById('crit-body').appendChild(row);
+  _refreshLiveScore();
+}
+
+function removeCriterion(btn) {
+  btn.closest('.crit-row').remove();
+  _snapshot();
+  _refreshLiveScore();
+}
+
+function _sLabel(v) {
+  return ['','Very Unfav.','Unfavorable','Neutral','Favorable','Very Fav.'][v] || '';
+}
+
+/* ══ Drag and drop ════════════════════════════════════════════════════ */
+let _dragSrc = null;
+function _initDrag(row) {
+  row.addEventListener('dragstart', e => { _dragSrc = row; row.classList.add('dragging'); e.dataTransfer.effectAllowed='move'; });
+  row.addEventListener('dragend',   () => { _dragSrc=null; document.querySelectorAll('.crit-row').forEach(r=>r.classList.remove('dragging','drag-over')); });
+  row.addEventListener('dragover',  e => { e.preventDefault(); if(_dragSrc && _dragSrc!==row) row.classList.add('drag-over'); });
+  row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+  row.addEventListener('drop',      e => { e.preventDefault(); row.classList.remove('drag-over'); if(_dragSrc && _dragSrc!==row){ row.before(_dragSrc); _snapshot(); _refreshLiveScore(); } });
+}
+
+/* ══ Live score ═══════════════════════════════════════════════════════ */
+function computeScore(criteria) {
+  let num = 0, den = 0;
+  (criteria || []).forEach(c => {
+    const w = parseFloat(c.weight) || 0;
+    const s = parseInt(c.score)    || 0;
+    num += w * s; den += w * 5;
+  });
+  return den > 0 ? Math.round(num / den * 100) : 0;
+}
+
+function verdictOf(score) {
+  return score >= 65 ? 'BID' : score >= 40 ? 'CONDITIONAL' : 'NO BID';
+}
+function verdictClass(v) {
+  return v === 'BID' ? 'v-bid' : v === 'CONDITIONAL' ? 'v-cond' : 'v-no';
+}
+function verdictColor(v) {
+  return v === 'BID' ? 'var(--green)' : v === 'CONDITIONAL' ? 'var(--amber)' : 'var(--red)';
+}
+
+function _refreshLiveScore() {
+  const criteria = _getCriteria();
+  const score   = computeScore(criteria);
+  const verdict = verdictOf(score);
+  const color   = verdictColor(verdict);
+
+  // Weight total indicator
+  const totalW = criteria.reduce((a,c) => a + (parseFloat(c.weight)||0), 0);
+  const wtEl   = document.getElementById('weight-total');
+  if (wtEl) {
+    wtEl.textContent = `Weight: ${Math.round(totalW * 10) / 10}%`;
+    wtEl.className   = 'weight-total ' + (Math.abs(totalW-100) < 0.5 ? 'ok' : totalW > 100 ? 'bad' : 'warn');
+  }
+
+  // Per-row weighted contribution
+  criteria.forEach(c => {
+    const el = document.getElementById('wtd-' + c.id);
+    if (!el) return;
+    const w = parseFloat(c.weight) || 0;
+    const s = parseInt(c.score)    || 0;
+    el.textContent = w > 0 ? (w * s / 5).toFixed(1) : '—';
+  });
+
+  // Score bar
+  const fill = document.getElementById('score-bar-fill');
+  const num  = document.getElementById('score-bar-num');
+  const pill = document.getElementById('live-verdict');
+  if (fill) { fill.style.width = score + '%'; fill.style.background = color; }
+  if (num)  { num.textContent = score; num.style.color = color; }
+  if (pill) { pill.style.display = 'inline'; pill.textContent = verdict; pill.className = 'verdict-pill ' + verdictClass(verdict); }
+
+  _saveLocal();
+}
+
+/* ══ Generate output view ═════════════════════════════════════════════ */
+function generate() {
+  const s       = collectState();
+  const score   = computeScore(s.criteria);
+  const verdict = verdictOf(score);
+  const vColor  = verdictColor(verdict);
+  const vClass  = verdictClass(verdict);
+
+  // Category breakdown
+  const catMap = {};
+  s.criteria.forEach(c => {
+    const k = c.category || 'General';
+    if (!catMap[k]) catMap[k] = { wSum:0, wScoreSum:0 };
+    const w = parseFloat(c.weight)||0;
+    const sc = parseInt(c.score)||0;
+    catMap[k].wSum      += w;
+    catMap[k].wScoreSum += w * sc;
+  });
+
+  // SVG gauge: semicircle path M20,110 A80,80 0 0 1 180,110
+  // arc length = π×80 ≈ 251.33
+  const ARC = Math.PI * 80;
+  const filled = +(score / 100 * ARC).toFixed(2);
+
+  const logo    = SuiteManager.getLogo();
+  const dateStr = s.bidDate
+    ? new Date(s.bidDate + 'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})
+    : '—';
+
+  const catRows = Object.entries(catMap).map(([cat, d]) => {
+    const avg = d.wSum > 0 ? d.wScoreSum / d.wSum : 0; // avg score 0-5
+    const pct = Math.round(avg / 5 * 100);
+    return `<div class="cat-row">
+      <div class="cat-lbl">${esc(cat)}</div>
+      <div class="cat-track"><div class="cat-fill" style="width:${pct}%;background:${vColor}"></div></div>
+      <div class="cat-val">${avg.toFixed(1)} / 5</div>
+    </div>`;
+  }).join('');
+
+  const tableRows = s.criteria.map((c, i) => {
+    const w   = parseFloat(c.weight)||0;
+    const sc  = parseInt(c.score)||0;
+    const wtd = w > 0 ? (w * sc / 5).toFixed(1) : '—';
+    const dotBg = sc >= 4 ? 'var(--green)' : sc >= 3 ? 'var(--accent)' : sc >= 2 ? 'var(--amber)' : 'var(--red)';
+    return `<tr>
+      <td>${i+1}</td>
+      <td style="color:var(--muted)">${esc(c.category)}</td>
+      <td>${esc(c.name)}</td>
+      <td class="r">${w}%</td>
+      <td style="text-align:center"><span class="score-dot" style="background:${dotBg}">${sc}</span></td>
+      <td class="r">${wtd}</td>
+      <td style="color:var(--muted);font-size:11px">${esc(c.notes)}</td>
+    </tr>`;
+  }).join('');
+
+  const totalW = s.criteria.reduce((a,c) => a+(parseFloat(c.weight)||0), 0);
+
+  document.getElementById('output').innerHTML = `
+    <div class="out-toolbar">
+      <button class="tb-btn" onclick="goBack()">← Editor</button>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="tb-btn" onclick="exportPDF()">PDF</button>
+        <button class="tb-btn" onclick="exportExcel()">Excel</button>
+        <button class="tb-btn" onclick="exportHTML()">HTML</button>
+      </div>
+    </div>
+
+    <div class="out-card" id="out-printable">
+      <div class="out-hdr">
+        <div>
+          ${logo ? `<img class="out-logo" src="${logo}">` : ''}
+          <div class="out-proj-name">${esc(s.projName || 'Untitled Bid')}</div>
+          <div class="out-proj-meta">
+            ${s.bidRef     ? `Ref: ${esc(s.bidRef)} &nbsp;·&nbsp; ` : ''}
+            Date: ${dateStr}
+            ${s.assessedBy ? ` &nbsp;·&nbsp; By: ${esc(s.assessedBy)}` : ''}
+          </div>
+        </div>
+        <span class="verdict-pill ${vClass}" style="font-size:14px;padding:8px 20px;flex-shrink:0">${verdict}</span>
+      </div>
+
+      <div class="gauge-wrap">
+        <svg viewBox="0 0 200 120" width="240" height="144" style="overflow:visible">
+          <path class="gauge-bg"   d="M20,110 A80,80 0 0 1 180,110"
+            stroke-dasharray="${ARC.toFixed(2)} ${(ARC*2).toFixed(2)}"/>
+          <path class="gauge-fill" d="M20,110 A80,80 0 0 1 180,110"
+            stroke="${vColor}"
+            stroke-dasharray="${filled} ${(ARC*2).toFixed(2)}"/>
+          <text class="gauge-num" x="100" y="100" fill="${vColor}">${score}</text>
+          <text class="gauge-sub" x="100" y="116" fill="var(--muted)">out of 100</text>
+        </svg>
+        <div class="out-verdict" style="color:${vColor}">${verdict}</div>
+      </div>
+
+      ${Object.keys(catMap).length ? `
+      <div class="out-section">
+        <div class="out-sec-title">Category Breakdown</div>
+        ${catRows}
+      </div>` : ''}
+
+      <div class="out-section">
+        <div class="out-sec-title">Scoring Detail</div>
+        <table class="out-table">
+          <thead><tr>
+            <th>#</th><th>Category</th><th>Criterion</th>
+            <th style="text-align:right">Weight</th>
+            <th style="text-align:center">Score</th>
+            <th style="text-align:right">Weighted</th>
+            <th>Notes</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+          <tfoot><tr class="out-total">
+            <td colspan="3">Total</td>
+            <td class="r">${Math.round(totalW * 10)/10}%</td>
+            <td></td>
+            <td class="r">${score}</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+
+      ${s.notes ? `
+      <div class="out-section">
+        <div class="out-sec-title">Decision Notes</div>
+        <div class="out-notes">${esc(s.notes)}</div>
+      </div>` : ''}
+
+      <div class="out-footer">Generated with BidScore · PYL0N Suite</div>
+    </div>`;
+
+  document.getElementById('editor').style.display = 'none';
+  document.getElementById('output').style.display  = 'block';
+  window.scrollTo(0, 0);
+}
+
+function goBack() {
+  document.getElementById('editor').style.display = 'block';
+  document.getElementById('output').style.display  = 'none';
+}
+
+/* ══ Exports ══════════════════════════════════════════════════════════ */
+async function exportPDF() {
+  generate();
+  const el   = document.getElementById('out-printable');
+  const name = (document.getElementById('proj-name')?.value || 'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSavePDF(el, `BidScore_${name}.pdf`, {
+    margin:10, image:{type:'jpeg',quality:0.97},
+    html2canvas:{scale:2}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+  });
+}
+
+async function exportExcel() {
+  const s  = collectState();
+  const wb = XLSX.utils.book_new();
+  const score   = computeScore(s.criteria);
+  const verdict = verdictOf(score);
+  const rows = [
+    ['BidScore — Bid/No-Bid Scorecard'],
+    ['Project:',     s.projName],
+    ['Bid Ref:',     s.bidRef],
+    ['Date:',        s.bidDate],
+    ['Assessed By:', s.assessedBy],
+    [],
+    ['#','Category','Criterion','Weight %','Score (1-5)','Weighted Score','Notes'],
+  ];
+  s.criteria.forEach((c, i) => {
+    const w = parseFloat(c.weight)||0;
+    const sc = parseInt(c.score)||0;
+    rows.push([i+1, c.category, c.name, w, sc, +(w*sc/5).toFixed(2), c.notes]);
+  });
+  const totalW = s.criteria.reduce((a,c)=>a+(parseFloat(c.weight)||0),0);
+  rows.push([], ['','','Total', Math.round(totalW*10)/10+'%', '', score, '']);
+  rows.push([], ['Recommendation:', verdict]);
+  if (s.notes) rows.push(['Notes:', s.notes]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:4},{wch:14},{wch:44},{wch:10},{wch:12},{wch:16},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'BidScore');
+  const name = (s.projName||'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSaveXLSX(wb, `BidScore_${name}.xlsx`);
+}
+
+async function exportHTML() {
+  const s       = collectState();
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(s))));
+  const src     = document.documentElement.outerHTML;
+  const injected = src.replace('</body>',
+    `<script>try{applyState(JSON.parse(decodeURIComponent(escape(atob("${encoded}")))))}catch(e){}<\/script></body>`);
+  const name = (s.projName||'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSaveHTML(`BidScore_${name}.html`, injected);
+}
+async function saveJSON() {
+  const s = collectState();
+  try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch {}
+  const name = (s.projName||'bidscore').replace(/[^a-zA-Z0-9_-]/g,'_');
+  await nativeSaveText(`bidscore_${name}.json`, JSON.stringify(s, null, 2), 'JSON Files', '.json');
+}
+async function loadJSON(input) {
+  const file = input.files[0]; if (!file) return;
+  try { applyState(JSON.parse(await file.text())); _snapshot(); } catch { alert('Invalid JSON file'); }
+  input.value = '';
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _suiteWrite() {
+  const n = document.getElementById('proj-name')?.value || '';
+  if (n) SuiteManager.write({ projectName: n }, 'bidscore');
+}
+
+/* ══ Init ═════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  SuiteManager.migrate();
+
+  const saved = localStorage.getItem(STATE_KEY);
+  if (saved) {
+    try { applyState(JSON.parse(saved)); }
+    catch { DEFAULT_CRITERIA.forEach(c => addCriterion(c)); }
+  } else {
+    DEFAULT_CRITERIA.forEach(c => addCriterion(c));
+    const sync = SuiteManager.read();
+    if (sync.projectName) document.getElementById('proj-name').value = sync.projectName;
+    document.getElementById('bid-date').value = new Date().toISOString().slice(0, 10);
+  }
+
+  _snapshot();
+  _syncUndoUI();
+
+  SuiteManager.onUpdate(sync => {
+    const el = document.getElementById('proj-name');
+    if (el && document.activeElement !== el && sync.projectName) el.value = sync.projectName;
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if (e.key === 'y' || (e.key==='z' && e.shiftKey)) { e.preventDefault(); redo(); }
+      if (e.key === 's') { e.preventDefault(); saveJSON(); }
+    }
+  });
+});
+</script>
+</body>
+</html>

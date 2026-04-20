@@ -5,8 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LetterCast · PYL0N</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -125,7 +129,34 @@
   input:focus, textarea:focus, select:focus { border-color: var(--accent); }
   textarea          { line-height: 1.65; }
   textarea.intro    { min-height: 160px; }
-  textarea.sec-body { min-height: 100px; font-size: 12.5px; }
+
+  /* ── Rich-text section body ── */
+  div.sec-body {
+    min-height: 100px; font-size: 12.5px; line-height: 1.65;
+    padding: 10px 12px; outline: none;
+    color: var(--text); background: var(--surface);
+    cursor: text; word-break: break-word;
+  }
+  div.sec-body:focus { background: var(--input-bg-focus); }
+  div.sec-body ul, div.sec-body ol { padding-left: 20px; margin: 4px 0; }
+  div.sec-body li { margin-bottom: 2px; }
+
+  /* ── Formatting toolbar ── */
+  .fmt-toolbar {
+    display: flex; gap: 2px; flex-wrap: wrap;
+    padding: 4px 8px; background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .fmt-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px;
+    background: none; border: 1px solid transparent;
+    border-radius: 4px; padding: 2px 7px; line-height: 1.6;
+    cursor: pointer; color: var(--text); transition: all .1s;
+    user-select: none;
+  }
+  .fmt-btn:hover  { background: var(--border); border-color: var(--border); }
+  .fmt-btn:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .fmt-sep { width: 1px; background: var(--border); margin: 3px 4px; }
 
   /* ── Logo controls ── */
   .logo-row  { display: flex; gap: 16px; flex-wrap: wrap; }
@@ -274,10 +305,13 @@
     padding-bottom: 5px;
     border-bottom: 1px solid var(--border);
   }
-  .out-sec p {
+  .out-sec .sec-content {
     font-size: 12.5px; line-height: 1.85;
-    color: var(--text); white-space: pre-wrap;
+    color: var(--text);
   }
+  .out-sec .sec-content ul,
+  .out-sec .sec-content ol { padding-left: 22px; margin: 6px 0; }
+  .out-sec .sec-content li { margin-bottom: 3px; }
 
   .out-footer {
     margin-top: 36px;
@@ -311,14 +345,8 @@
 <!-- ── Toolbar ── -->
 <div id="toolbar">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none">
-        <rect x="2" y="2" width="14" height="11" rx="1.5" stroke="white" stroke-width="1.5"/>
-        <line x1="5" y1="16" x2="13" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="9" y1="13" x2="9" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-        <line x1="5" y1="6"  x2="13" y2="6"  stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="5" y1="9"  x2="10" y2="9"  stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
+    <div class="logo-icon" style="background:#0369a1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
     </div>
     <div>
       <div class="tool-name">LetterCast</div>
@@ -329,14 +357,14 @@
   </div>
   <div class="tb-right">
     <input type="file" id="load-file" accept=".json" style="display:none" onchange="loadJSON(this)">
-    <button class="tb-btn" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)">↩ Undo</button>
-    <button class="tb-btn" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)">↪ Redo</button>
+    <button class="tb-btn" id="btn-undo" onclick="undo()" disabled title="Undo (Ctrl+Z)" aria-label="Undo (Ctrl+Z)">↩ Undo</button>
+    <button class="tb-btn" id="btn-redo" onclick="redo()" disabled title="Redo (Ctrl+Y)" aria-label="Redo (Ctrl+Y)">↪ Redo</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="document.getElementById('load-file').click()">↑ Load JSON</button>
     <button class="tb-btn" onclick="saveJSON()">↓ Save JSON</button>
     <button class="tb-btn primary" onclick="generate()">Preview →</button>
     <button class="tb-btn green" onclick="exportPDF()">⬇ Export PDF</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -427,7 +455,10 @@
     </div>
     <div class="section-body">
       <div id="sections-list"></div>
-      <button class="btn-add-sec" onclick="addSection()">+ Add Section</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button class="btn-add-sec" onclick="addSection()">+ Add Section</button>
+        <button class="btn-add-sec" onclick="insertRiskSummary()" title="Pull medium+ risks from RiskCast into a Risks &amp; Deviations section" style="border-color:var(--accent);color:var(--accent);" aria-label="Pull medium+ risks from RiskCast into a Risks &amp; Deviations section">↺ Risks from RiskCast</button>
+      </div>
     </div>
   </div>
 
@@ -436,7 +467,7 @@
 <!-- ── Output toolbar (screen preview) ── -->
 <div id="out-toolbar">
   <div id="out-toolbar-inner">
-    <button class="tb-btn" onclick="goBack()">← Back to Editor</button>
+    <button class="tb-btn" onclick="goBack()">← Edit Data</button>
     <button class="tb-btn green" onclick="exportPDF()">⬇ Print / Export PDF</button>
   </div>
 </div>
@@ -477,33 +508,6 @@ function esc(s) {
 function gv(id)    { return (document.getElementById(id) || {}).value || ''; }
 function sv(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
 function $id(id)   { return document.getElementById(id); }
-
-/* ══ SuiteManager ══════════════════════════════════════════════════════════ */
-const SuiteManager = (() => {
-  const KEY = 'bidcast_suite_sync';
-  function read()  { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } }
-  function write(patch, src) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: src };
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {}
-  }
-  function migrate() {
-    try {
-      Object.keys(localStorage)
-        .filter(k => k.startsWith('pyl0n_'))
-        .forEach(k => {
-          const nk = 'bidcast_' + k.slice(6);
-          if (!localStorage.getItem(nk)) localStorage.setItem(nk, localStorage.getItem(k));
-          localStorage.removeItem(k);
-        });
-    } catch {}
-  }
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => { if (e.key === KEY) cb(read()); });
-  }
-  return { read, write, migrate, onUpdate };
-})();
 
 /* ══ Logo management ══════════════════════════════════════════════════════ */
 const LOGO_KEYS = { co: 'bidcast_logo', cx: 'bidcast_customer_logo' };
@@ -549,6 +553,17 @@ function onProjName() {
 /* ══ Dynamic Sections ══════════════════════════════════════════════════════ */
 let _secCount = 0;
 
+/* Convert legacy plain-text saved content to HTML for the contenteditable editor */
+function _toRichHtml(str) {
+  if (!str) return '';
+  if (/<[a-zA-Z][\s\S]*>/.test(str)) return str; // already HTML
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function _fmt(cmd, val) {
+  document.execCommand(cmd, false, val || null);
+}
+
 function addSection(data) {
   _secCount++;
   const title   = data ? (data.title   || '') : '';
@@ -559,14 +574,26 @@ function addSection(data) {
   block.dataset.id = _secCount;
   block.innerHTML  = `
     <div class="dyn-block-hd">
-      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <span class="drag-handle" title="Drag to reorder" aria-hidden="true">⠿</span>
       <input type="text" value="${esc(title)}" placeholder="Section Title" oninput="autoSave()">
-      <button class="btn-del-sec" onclick="this.closest('.dyn-block').remove();autoSave();" title="Remove">✕</button>
+      <button class="btn-del-sec" onclick="this.closest('.dyn-block').remove();autoSave();" title="Remove" aria-label="Remove">✕</button>
     </div>
-    <div class="dyn-block-body">
-      <textarea class="sec-body" placeholder="Paste your section content here…" oninput="autoSave()">${esc(content)}</textarea>
+    <div class="fmt-toolbar">
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('bold')"            title="Bold (Ctrl+B)" aria-label="Bold (Ctrl+B)"><b>B</b></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('italic')"          title="Italic (Ctrl+I)" aria-label="Italic (Ctrl+I)"><i>I</i></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('underline')"       title="Underline (Ctrl+U)" aria-label="Underline (Ctrl+U)"><u>U</u></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('strikeThrough')"   title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('insertUnorderedList')" title="Bullet list" aria-label="Bullet list">• List</button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('insertOrderedList')"   title="Numbered list" aria-label="Numbered list">1. List</button>
+      <div class="fmt-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();_fmt('removeFormat')"   title="Clear formatting" aria-label="Clear formatting">✕ fmt</button>
+    </div>
+    <div class="dyn-block-body" style="padding:0;">
+      <div class="sec-body" contenteditable="true" spellcheck="true" oninput="autoSave()"></div>
     </div>`;
 
+  block.querySelector('.sec-body').innerHTML = _toRichHtml(content);
   initDrag(block);
   $id('sections-list').appendChild(block);
   autoSave();
@@ -610,10 +637,59 @@ function initDrag(block) {
   });
 }
 
+function insertRiskSummary() {
+  let risks = [];
+  try {
+    const raw = localStorage.getItem('bidcast_state_riskcast');
+    if (raw) risks = JSON.parse(raw).risks || [];
+  } catch {}
+
+  // Medium and above (score >= 8), risks only (not opportunities), sorted by score desc
+  const filtered = risks
+    .filter(r => r.type !== 'opportunity' && (r.score || (r.likelihood * r.impact)) >= 8)
+    .sort((a, b) => (b.score || b.likelihood * b.impact) - (a.score || a.likelihood * a.impact));
+
+  if (!filtered.length) {
+    alert('No medium, high, or critical risks found in RiskCast. Add risks with a score of 8 or above first.');
+    return;
+  }
+
+  function levelLabel(s) {
+    if (s >= 20) return 'CRITICAL';
+    if (s >= 12) return 'HIGH';
+    return 'MEDIUM';
+  }
+
+  const lines = ['The following risks have been identified for this project:\n'];
+  filtered.forEach(r => {
+    const score = r.score || (r.likelihood * r.impact);
+    const lvl   = levelLabel(score);
+    const topic = [r.category, r.topic].filter(Boolean).join(' — ');
+    lines.push(`• [${lvl}] ${topic}`);
+    if (r.desc)       lines.push(`  ${r.desc}`);
+    if (r.mitigation) lines.push(`  Mitigation: ${r.mitigation}`);
+    lines.push('');
+  });
+
+  const content = lines.join('\n').trim();
+  const TITLE   = 'Risks & Deviations';
+
+  // Update existing section if one with this title already exists
+  const existing = [...($id('sections-list')?.querySelectorAll('.dyn-block') || [])].find(
+    b => b.querySelector('input[type=text]')?.value.trim() === TITLE
+  );
+  if (existing) {
+    existing.querySelector('.sec-body').innerHTML = _toRichHtml(content);
+    autoSave();
+  } else {
+    addSection({ title: TITLE, content });
+  }
+}
+
 function getSections() {
   return [...$id('sections-list').querySelectorAll('.dyn-block')].map(b => ({
     title:   b.querySelector('input[type=text]').value,
-    content: b.querySelector('textarea').value,
+    content: b.querySelector('.sec-body').innerHTML,
   }));
 }
 
@@ -659,11 +735,12 @@ function generate() {
     const div  = document.createElement('div');
     div.className = 'out-sec';
     const h3   = document.createElement('h3');
-    const p    = document.createElement('p');
-    h3.textContent = s.title;
-    p.textContent  = s.content;
+    const body = document.createElement('div');
+    h3.textContent  = s.title;
+    body.className  = 'sec-content';
+    body.innerHTML  = s.content;
     div.appendChild(h3);
-    div.appendChild(p);
+    div.appendChild(body);
     container.appendChild(div);
   });
 
@@ -738,36 +815,35 @@ function loadJSON(input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    try   { applyState(JSON.parse(e.target.result)); autoSave(); }
+    try   { const _s = JSON.parse(e.target.result); PylonValidate.checkImport(_s, 'lettercast'); applyState(_s); autoSave(); }
     catch { alert('Invalid JSON file — please check the format.'); }
     finally { input.value = ''; }
   };
   reader.readAsText(file);
 }
 
-/* ══ Undo / Redo ════════════════════════════════════════════════════════ */
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+/* ══ Undo / Redo (backed by vendor/pyl0n-state.js) ═══════════════════════ */
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist.splice(_histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_lettercast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange:   () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_lettercast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo');
   const r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -776,20 +852,8 @@ function _updateSavedLabel() {
   const s = Math.floor((Date.now() - _lastSaved) / 1000);
   el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
 }
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _histIdx--; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _histIdx++; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+function undo() { _undoStack.undo(); }
+function redo() { _undoStack.redo(); }
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
   if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo(); }

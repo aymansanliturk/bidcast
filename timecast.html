@@ -5,10 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TimeCast · PYL0N</title>
 <style id="page-size-style">@page { size: A3 landscape; margin: 12mm; }</style>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="libs/html2canvas.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -395,8 +400,8 @@
 <body>
 <div id="toolbar" class="no-print">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="11" rx="1.5" stroke="white" stroke-width="1.5"/><line x1="5" y1="16" x2="13" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="13" x2="9" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="6"  x2="13" y2="6"  stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="5" y1="9"  x2="10" y2="9"  stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <div class="logo-icon" style="background:#4f46e5">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="15" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="7" y1="5" x2="7" y2="10"/><line x1="17" y1="5" x2="17" y2="10"/><line x1="6" y1="14" x2="14" y2="14"/><line x1="6" y1="17" x2="10" y2="17"/></svg>
     </div>
     <div>
       <div class="tool-name">TimeCast</div>
@@ -420,7 +425,7 @@
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -458,9 +463,9 @@
     <div class="section-title">Timeline Range</div>
     <div class="fields f4">
       <label>Start Month <select id="start-month"></select></label>
-      <label>Start Year  <input type="number" id="start-year" value="2025" min="2000" max="2099" oninput="this.style.outline=(/^20[0-9]{2}$/.test(this.value.trim()))?'':'2px solid #c0392b'"></label>
+      <label>Start Year  <input type="number" id="start-year" value="2025" min="2000" max="2099"></label>
       <label>End Month   <select id="end-month"></select></label>
-      <label>End Year    <input type="number" id="end-year" value="2028" min="2000" max="2099" oninput="this.style.outline=(/^20[0-9]{2}$/.test(this.value.trim()))?'':'2px solid #c0392b'"></label>
+      <label>End Year    <input type="number" id="end-year" value="2028" min="2000" max="2099"></label>
     </div>
     <div style="margin-top:12px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;">
       <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;">
@@ -494,7 +499,7 @@
     <div class="reorder-sidebar no-print">
       <div class="sidebar-actions">
         <button class="sb-btn sb-btn-primary" onclick="refreshChart()">↻ Refresh Chart</button>
-        <button class="sb-btn sb-btn-ghost" onclick="goBack()">← Back to Editor</button>
+        <button class="sb-btn sb-btn-ghost" onclick="goBack()">← Edit Data</button>
         <button class="sb-btn sb-btn-ghost" id="sb-print-btn" onclick="window.print()">🖨 Print</button>
         <button class="sb-btn sb-btn-ghost" onclick="exportPDF()">⬇ PDF</button>
         <button class="sb-btn sb-btn-ghost" style="background:#4f46e5;color:#fff;" onclick="exportPNG()">🖼 PNG</button>
@@ -533,13 +538,13 @@
       <!-- Dynamic time-window control: shift or resize the visible date range -->
       <div id="time-window-ctrl" class="time-window-ctrl no-print">
         <span style="font-size:10px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--faint);flex-shrink:0;">Visible Window</span>
-        <button class="tw-btn" onclick="_shiftWindow(-3)" title="Shift window 3 months earlier">← 3m</button>
-        <button class="tw-btn" onclick="_shiftWindow(-1)" title="Shift window 1 month earlier">← 1m</button>
+        <button class="tw-btn" onclick="_shiftWindow(-3)" title="Shift window 3 months earlier" aria-label="Shift window 3 months earlier">← 3m</button>
+        <button class="tw-btn" onclick="_shiftWindow(-1)" title="Shift window 1 month earlier" aria-label="Shift window 1 month earlier">← 1m</button>
         <input type="range" id="window-slider" min="3" max="48" value="12" step="1"
                oninput="_resizeWindow(parseInt(this.value))" title="Drag to resize visible window (months)">
         <span id="window-label">12 months</span>
-        <button class="tw-btn" onclick="_shiftWindow(1)" title="Shift window 1 month later">1m →</button>
-        <button class="tw-btn" onclick="_shiftWindow(3)" title="Shift window 3 months later">3m →</button>
+        <button class="tw-btn" onclick="_shiftWindow(1)" title="Shift window 1 month later" aria-label="Shift window 1 month later">1m →</button>
+        <button class="tw-btn" onclick="_shiftWindow(3)" title="Shift window 3 months later" aria-label="Shift window 3 months later">3m →</button>
       </div>
       <div class="chart-watermark">Generated with PYL0N Time · Bid Timeline Intelligence</div>
     </div>
@@ -548,45 +553,12 @@
 </div>
 
 <script>
-/* ══ SuiteManager ══════════════════════════════════════════════════
-   Central synchronisation utility for the Bid Forecast Suite.
-   Manages bidcast_suite_sync (project meta, phases, team) and
-   bidcast_logo (company logo as base64 dataURL).
-═══════════════════════════════════════════════════════════════════ */
-const SuiteManager = (() => {
-  const SYNC_KEY = 'bidcast_suite_sync';
-  const LOGO_KEY = 'bidcast_logo';
-  const CUSTOMER_LOGO_KEY = 'bidcast_customer_logo';
-  function read() {
-    try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; }
-  }
-  function write(patch, source) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
-      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
-      return next;
-    } catch { return {}; }
-  }
-  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
-  function getCustomerLogo() { return localStorage.getItem(CUSTOMER_LOGO_KEY) || null; }
-  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
-  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => {
-      if (e.key === SYNC_KEY || e.key === LOGO_KEY || e.key === CUSTOMER_LOGO_KEY) cb(read(), e.key);
-    });
-  }
-  function updateBadge(el) {
-    if (!el) return;
-    const sync = read();
-    if (sync._ts) {
-      const s = Math.round((Date.now() - sync._ts) / 1000);
-      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
-      el.style.display = 'inline';
-    }
-  }
-  return { read, write, getLogo, getCustomerLogo, setLogo, removeLogo, onUpdate, updateBadge };
-})();
+/* ── Tool-specific keyboard shortcuts (shown by ? overlay) ── */
+window.PYL0N_TOOL_SHORTCUTS = [
+  { keys: ['G'], desc: 'Generate / refresh chart' },
+  { keys: ['Shift', 'Click'], desc: 'Multi-select tasks' },
+  { keys: ['Del'], desc: 'Delete selected task' },
+];
 
 /* ── Logo (stored in bidcast_logo, shared across all tools) ── */
 function saveLogo(input) {
@@ -646,6 +618,22 @@ function updateLogoUI() {
       if (id === 'end-month'   && i === 8) o.selected = true;
       sel.appendChild(o);
     });
+  });
+
+  function _validateGlobalRange() {
+    const sy = parseInt(document.getElementById('start-year').value);
+    const sm = parseInt(document.getElementById('start-month').value);
+    const ey = parseInt(document.getElementById('end-year').value);
+    const em = parseInt(document.getElementById('end-month').value);
+    PylonValidate.markField(
+      document.getElementById('end-year'),
+      PylonValidate.monthRange(sy, sm, ey, em, 'Timeline range')
+    );
+  }
+  ['start-month','start-year','end-month','end-year'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', _validateGlobalRange);
+    el.addEventListener('blur',   _validateGlobalRange);
   });
 
   function monthOpts(sel) {
@@ -745,7 +733,7 @@ function updateLogoUI() {
     initDragRow(tr);
 
     tr.innerHTML = `
-      <td style="width:3%"><span class="drag-handle" title="Drag to reorder">⠿</span></td>
+      <td style="width:3%"><span class="drag-handle" title="Drag to reorder" aria-hidden="true">⠿</span></td>
       <td style="width:5%"><span class="type-badge ${isM?'type-mile':'type-bar'}">${isM?'◆':'▬'}</span></td>
       <td style="width:20%"><input class="t-name" type="text" value="${data.name||''}" placeholder="${isM?'Milestone':'Phase'} name"></td>
       <td style="width:11%"><select class="t-sm">${optsFor(scale, smDisp)}</select></td>
@@ -764,7 +752,7 @@ function updateLogoUI() {
       <td style="width:13%"><input class="t-notes" type="text" value="${data.notes||''}" placeholder="Notes..." style="font-size:11px"></td>
       <td style="width:6%"><input class="pct-input" type="number" min="0" max="100" value="${data.pct||0}" style="width:46px;font-size:11px;text-align:center;"><span style="font-size:10px;color:var(--faint);">%</span></td>
       <td style="width:8%">${!isM ? `<button class="btn-baseline-toggle" onclick="toggleBaseline(this)">± Plan</button>` : ''}</td>
-      <td style="width:4%"><button class="btn-del" onclick="removeTaskRow(this)">×</button></td>
+      <td style="width:4%"><button class="btn-del" onclick="removeTaskRow(this)" aria-label="Delete">×</button></td>
     `;
 
     const btr = document.createElement('tr');
@@ -786,6 +774,22 @@ function updateLogoUI() {
     `;
 
     tr.querySelector('.t-color').addEventListener('input', function() { this.nextElementSibling.textContent = this.value; });
+
+    if (!isM) {
+      const tey = tr.querySelector('.t-ey');
+      function _validateTaskRow() {
+        const sm = parseInt(tr.querySelector('.t-sm').value);
+        const sy = parseInt(tr.querySelector('.t-sy').value);
+        const em = parseInt(tr.querySelector('.t-em').value);
+        const ey = parseInt(tey.value);
+        PylonValidate.markField(tey, PylonValidate.monthRange(sy, sm, ey, em));
+      }
+      ['.t-sm', '.t-sy', '.t-em', '.t-ey'].forEach(sel => {
+        tr.querySelector(sel)?.addEventListener('change', _validateTaskRow);
+        tr.querySelector(sel)?.addEventListener('blur',   _validateTaskRow);
+      });
+    }
+
     tbody.appendChild(tr);
     tbody.appendChild(btr);
 
@@ -881,7 +885,7 @@ function updateLogoUI() {
           <input type="color" class="proj-color-inp" value="${color}" onchange="updateProjColor(${id},this.value)">
         </label>
         <input type="text" class="proj-name-inp" id="proj-name-${id}" value="${name}" placeholder="Project name" oninput="onProjNameChange(${id}, this.value)">
-        <button class="btn-del" onclick="removeProject(${id})" title="Remove project">×</button>
+        <button class="btn-del" onclick="removeProject(${id})" title="Remove project" aria-label="Remove project">×</button>
       </div>
       <div class="subsection" id="bid-section-${id}">
         <div class="subsection-title">Bid Phase <span class="pill pill-bid">PM20–PM80</span>
@@ -1125,7 +1129,7 @@ function updateLogoUI() {
           item.innerHTML = `
             <span class="si-dot${t.type==='milestone'?' diamond':''}" style="background:${t.color}"></span>
             <span class="si-name">${t.name}</span>
-            <span class="si-handle">⠿</span>
+            <span class="si-handle" aria-hidden="true">⠿</span>
           `;
           item.addEventListener('dragstart', e => { sbDragSrc = item; item.classList.add('si-dragging'); e.dataTransfer.effectAllowed='move'; });
           item.addEventListener('dragend',   () => { sbDragSrc=null; container.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('si-dragging','si-drag-over')); });
@@ -1768,9 +1772,10 @@ function updateLogoUI() {
           ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
             if (k !== 'timecast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
           });
-          if (data.timecast) applyState(data.timecast);
+          if (data.timecast) { PylonValidate.checkImport(data.timecast, 'timecast'); applyState(data.timecast); }
           else alert('No TimeCast data found in this suite file.');
         } else {
+          PylonValidate.checkImport(data, 'timecast');
           applyState(data);
         }
       } catch(err) { console.error('loadJSON error:', err); alert('Invalid .json file: ' + err.message); }
@@ -1819,43 +1824,29 @@ function updateLogoUI() {
   updateProjWarn();
   updateDelBtns();
 
-  // ── Undo / Redo ──
-  let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+  // ── Undo / Redo (backed by vendor/pyl0n-state.js) ──
+  let _lastSaved = null;
 
-  function _snapshot() {
-    if (_suppHist) return;
-    const s = JSON.stringify(collectState());
-    if (_hist[_histIdx] === s) return;
-    _hist = _hist.slice(0, _histIdx + 1);
-    _hist.push(s);
-    if (_hist.length > 50) _hist.shift(); else _histIdx++;
-    _syncUndoUI();
-    localStorage.setItem('bidcast_state_timecast', s);
-    suiteWrite();
-    _lastSaved = Date.now(); _updateSavedLabel();
-  }
-  function _scheduleSnap() {
-    if (_suppHist) return;
-    clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-  }
-  function undo() {
-    clearTimeout(_histTimer);
-    if (_histIdx <= 0) return;
-    _suppHist = true; _histIdx--;
-    applyState(JSON.parse(_hist[_histIdx]));
-    _suppHist = false; _syncUndoUI();
-  }
-  function redo() {
-    clearTimeout(_histTimer);
-    if (_histIdx >= _hist.length - 1) return;
-    _suppHist = true; _histIdx++;
-    applyState(JSON.parse(_hist[_histIdx]));
-    _suppHist = false; _syncUndoUI();
-  }
+  const _undoStack = PylonState.createUndoStack({
+    collect:    collectState,
+    apply:      applyState,
+    max:        50,
+    debounceMs: 800,
+    onChange: () => {
+      _syncUndoUI();
+      PylonState.safeWriteLS('bidcast_state_timecast', collectState());
+      suiteWrite();
+      _lastSaved = Date.now(); _updateSavedLabel();
+    },
+  });
+  function _snapshot()     { _undoStack.snapshot(); }
+  function _scheduleSnap() { _undoStack.scheduleSnap(); }
+  function undo()          { _undoStack.undo(); }
+  function redo()          { _undoStack.redo(); }
   function _syncUndoUI() {
     const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
-    if (u) u.disabled = _histIdx <= 0;
-    if (r) r.disabled = _histIdx >= _hist.length - 1;
+    if (u) u.disabled = !_undoStack.canUndo;
+    if (r) r.disabled = !_undoStack.canRedo;
   }
   function _updateSavedLabel() {
     const el = document.getElementById('autosave-label');
@@ -1873,14 +1864,9 @@ function updateLogoUI() {
     }
   });
   (function() {
-    const _rawApply = applyState;
-    applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
     const ed = document.getElementById('editor');
     if (ed) {
-      new MutationObserver(() => {
-        if (_suppHist) return;
-        clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-      }).observe(ed, { childList: true, subtree: true });
+      new MutationObserver(_scheduleSnap).observe(ed, { childList: true, subtree: true });
       ed.addEventListener('input', _scheduleSnap);
     }
     setTimeout(_snapshot, 300);

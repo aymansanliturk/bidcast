@@ -4,10 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RFQCast · PYL0N</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -219,8 +224,8 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
 <body>
 <div id="toolbar" class="no-print">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="11" rx="1.5" stroke="white" stroke-width="1.5"/><line x1="5" y1="16" x2="13" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="13" x2="9" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="6"  x2="13" y2="6"  stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="5" y1="9"  x2="10" y2="9"  stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <div class="logo-icon" style="background:#ea580c">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
     </div>
     <div>
       <div class="tool-name">RFQCast</div>
@@ -240,7 +245,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
     <label class="tb-btn" style="cursor:pointer;">↑ Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -287,9 +292,10 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
         <tbody id="rfq-body"></tbody>
       </table>
     </div>
+    <div id="rfq-empty" style="display:none;padding:40px 32px;text-align:center;color:var(--faint);font-size:13px;">No items yet — click <strong>+ Add Item</strong> to start tracking supplier quotes.</div>
     <div class="add-row-bar">
       <button class="btn-add-row" onclick="addItem({})">+ Add Item</button>
-      <button class="btn-green" onclick="pushToCalcCast()" title="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
+      <button class="btn-green" onclick="pushToCalcCast()" title="Send winning bids to the Pricing Engine" aria-label="Send winning bids to the Pricing Engine">→ Push to CalcCast</button>
     </div>
   </div>
 
@@ -330,37 +336,6 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
 
 <script>
 /* ── SUITE MANAGER ── */
-const SuiteManager = (() => {
-  const SYNC_KEY = 'bidcast_suite_sync';
-  const LOGO_KEY = 'bidcast_logo';
-  function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
-  function write(patch, source) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
-      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
-      return next;
-    } catch { return {}; }
-  }
-  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
-  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
-  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => {
-      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
-    });
-  }
-  function updateBadge(el) {
-    if (!el) return;
-    const sync = read();
-    if (sync._ts) {
-      const s = Math.round((Date.now() - sync._ts) / 1000);
-      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
-      el.style.display = 'inline';
-    }
-  }
-  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
-})();
-
 /* ── LOGO VAULT ── */
 function saveLogo(input) {
   const file = input.files[0];
@@ -477,7 +452,7 @@ function addItem(data) {
   tr.innerHTML = `
     <td style="white-space: nowrap;">
       <span class="drag-handle" title="Drag to reorder" style="vertical-align: middle;">⋮⋮</span>
-      <button class="expand-btn" title="Click to expand details" style="vertical-align: middle; margin-left: 4px;">
+      <button class="expand-btn" title="Click to expand details" style="vertical-align: middle; margin-left: 4px;" aria-label="Click to expand details">
         <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </button>
     </td>
@@ -487,7 +462,7 @@ function addItem(data) {
     <td class="v-cell" data-vi="0"></td>
     <td class="v-cell" data-vi="1"></td>
     <td class="v-cell" data-vi="2"></td>
-    <td><button class="btn-del" onclick="deleteRow(this)">×</button></td>`;
+    <td><button class="btn-del" onclick="deleteRow(this)" aria-label="Delete">×</button></td>`;
 
   tbody.appendChild(tr);
 
@@ -523,6 +498,12 @@ function addItem(data) {
     if (e.target.closest('select,input,button,.btn-del')) return;
     toggleDetail(tr);
   });
+  _rfqUpdateEmpty();
+}
+
+function _rfqUpdateEmpty() {
+  const el = document.getElementById('rfq-empty');
+  if (el) el.style.display = document.querySelectorAll('#rfq-body .rfq-row').length === 0 ? 'block' : 'none';
 }
 
 function buildDetailPanel(tr, vendors, requiredMonths) {
@@ -575,6 +556,26 @@ function buildDetailPanel(tr, vendors, requiredMonths) {
   });
   panel.querySelectorAll('.inp-winner').forEach(inp => {
     inp.addEventListener('change', () => { saveDetailToRow(tr); updateVendorPills(tr, getVendorsFromPanel(panel)); });
+  });
+
+  panel.querySelectorAll('[data-key="price"]').forEach(inp => {
+    inp.addEventListener('blur', function() {
+      PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Quote price'));
+    });
+  });
+  panel.querySelectorAll('[data-key="expOffer"]').forEach(end => {
+    end.addEventListener('blur', function() {
+      const vi = this.dataset.vi;
+      const start = panel.querySelector(`[data-vi="${vi}"][data-key="enquiry"]`);
+      PylonValidate.markField(this, PylonValidate.dateRange(start?.value, this.value, 'Enquiry → Expected Offer'));
+    });
+  });
+  panel.querySelectorAll('[data-key="validity"]').forEach(end => {
+    end.addEventListener('blur', function() {
+      const vi = this.dataset.vi;
+      const start = panel.querySelector(`[data-vi="${vi}"][data-key="offerRec"]`);
+      PylonValidate.markField(this, PylonValidate.dateRange(start?.value, this.value, 'Offer → Validity'));
+    });
   });
 }
 
@@ -752,6 +753,7 @@ function deleteRow(btn) {
   const det = document.querySelector(`.detail-row[data-parent="${id}"]`);
   if (det) det.remove();
   tr.remove();
+  _rfqUpdateEmpty();
 }
 
 // ── Drag ──
@@ -843,7 +845,12 @@ function pushToCalcCast() {
   sync._ts = Date.now();
   localStorage.setItem('bidcast_suite_sync', JSON.stringify(sync));
 
-  alert(`Successfully pushed ${pushedCount} winning quote${pushedCount !== 1 ? 's' : ''} to CalcCast!`);
+  if (pushedCount === 0) {
+    alert('No winning quotes to push. Mark a vendor as winner and enter a price first.');
+    return;
+  }
+  SuiteManager.setReturnPath('rfqcast.html', 'RFQCast');
+  window.location.href = 'calccast.html';
 }
 
 
@@ -892,6 +899,7 @@ function applyState(s) {
   document.getElementById('rfq-body').innerHTML = '';
   rowCount = 0;
   (s.items || []).forEach(item => addItem(item));
+  _rfqUpdateEmpty();
 }
 
 // ── Generate (Output View) ──
@@ -1078,9 +1086,9 @@ function loadJSON(input) {
         ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
           if (k !== 'rfqcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
-        if (data.rfqcast) applyState(data.rfqcast);
+        if (data.rfqcast) { PylonValidate.checkImport(data.rfqcast, 'rfqcast'); applyState(data.rfqcast); }
         else alert('No RFQCast data found in this suite file.');
-      } else { applyState(data); }
+      } else { PylonValidate.checkImport(data, 'rfqcast'); applyState(data); }
     } catch(err) { alert('Invalid .json file.'); }
   };
   reader.readAsText(file); input.value='';
@@ -1221,42 +1229,28 @@ window.addEventListener('afterprint', function() {
   else { out.setAttribute('style','display:block'); ed.setAttribute('style','display:none'); }
 });
 
-// ── Undo / Redo ──
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+// ── Undo / Redo (backed by vendor/pyl0n-state.js) ──
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist = _hist.slice(0, _histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_rfqcast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _suppHist = true; _histIdx--;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _suppHist = true; _histIdx++;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange: () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_rfqcast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -1274,14 +1268,13 @@ document.addEventListener('keydown', e => {
   }
 });
 (function() {
-  const _rawApply = applyState;
-  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
   const ed = document.getElementById('editor');
   if (ed) {
-    new MutationObserver(() => {
-      if (_suppHist) return;
-      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'], characterData: true, characterDataSubtree: true });
+    new MutationObserver(_scheduleSnap).observe(ed, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ['style'],
+      characterData: true, characterDataSubtree: true,
+    });
     ed.addEventListener('input',  _scheduleSnap);
     ed.addEventListener('change', _scheduleSnap);
   }

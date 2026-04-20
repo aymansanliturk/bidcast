@@ -4,10 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DORCast · PYL0N</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -242,7 +247,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
 
 <div class="modal-overlay" id="preset-modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">×</button>
+    <button class="modal-close" onclick="closeModal()" title="Close" aria-label="Close">×</button>
     <h3>Load Preset Template</h3>
     <p>Choose a starting template based on your project type. This will replace the current table.</p>
     <div class="modal-btns">
@@ -264,8 +269,8 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
 
 <div id="toolbar" class="no-print">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="11" rx="1.5" stroke="white" stroke-width="1.5"/><line x1="5" y1="16" x2="13" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="13" x2="9" y2="16" stroke="white" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="6"  x2="13" y2="6"  stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="5" y1="9"  x2="10" y2="9"  stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+    <div class="logo-icon" style="background:#d97706">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
     </div>
     <div>
       <div class="tool-name">DORCast</div>
@@ -287,7 +292,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
     <label class="tb-btn" style="cursor:pointer;">↑ Import Excel<input type="file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)"></label>
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -325,6 +330,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
         <tbody id="dor-body"></tbody>
       </table>
     </div>
+    <div id="dor-empty" style="display:none;padding:40px 32px;text-align:center;color:var(--faint);font-size:13px;">No rows yet — add a <strong>Section</strong> then <strong>Items</strong> below to build your responsibility matrix.</div>
     <div class="add-row-bar">
       <button class="btn-add-row" onclick="addRowAt({type:'section'}, null)">+ Section at end</button>
       <button class="btn-add-row" onclick="addRowAt({type:'subsection'}, null)">+ Subsection at end</button>
@@ -342,7 +348,7 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
   <div class="print-bar no-print">
     <button class="btn-secondary" onclick="goBack()">← Edit Data</button>
     <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;" onclick="window.print()">🖨 Print</button>
-    <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;background:#c0392b;" onclick="exportPDF()" title="Opens browser print dialog — choose &quot;Save as PDF&quot; to export. Header repeats on every page.">🖨 Print / PDF</button>
+    <button class="btn-generate" style="flex:none;padding:10px 20px;font-size:13px;background:#c0392b;" onclick="exportPDF()" title="Opens browser print dialog — choose &quot;Save as PDF&quot; to export. Header repeats on every page." aria-label="Opens browser print dialog — choose &quot;Save as PDF&quot; to export. Header repeats on every page.">🖨 Print / PDF</button>
     <button class="pb-btn xl" onclick="exportExcel()" style="margin-left:4px;">Export Excel</button>
   </div>
   <div class="out-header" style="position:relative;">
@@ -362,37 +368,6 @@ input:focus, select:focus { border-color:var(--accent); background:var(--input-b
 
 <script>
 /* ── SUITE MANAGER ── */
-const SuiteManager = (() => {
-  const SYNC_KEY = 'bidcast_suite_sync';
-  const LOGO_KEY = 'bidcast_logo';
-  function read() { try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; } }
-  function write(patch, source) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
-      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
-      return next;
-    } catch { return {}; }
-  }
-  function getLogo() { return localStorage.getItem(LOGO_KEY) || null; }
-  function setLogo(dataUrl) { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
-  function removeLogo() { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => {
-      if (e.key === SYNC_KEY || e.key === LOGO_KEY) cb(read(), e.key);
-    });
-  }
-  function updateBadge(el) {
-    if (!el) return;
-    const sync = read();
-    if (sync._ts) {
-      const s = Math.round((Date.now() - sync._ts) / 1000);
-      el.textContent = '↻ Synced ' + (s < 5 ? 'just now' : s < 60 ? s + 's ago' : Math.round(s / 60) + 'm ago');
-      el.style.display = 'inline';
-    }
-  }
-  return { read, write, getLogo, setLogo, removeLogo, onUpdate, updateBadge };
-})();
-
 /* ── LOGO VAULT ── */
 function saveLogo(input) {
   const file = input.files[0];
@@ -463,7 +438,7 @@ function addParty(data) {
   chip.innerHTML = `
     <input type="color" value="${color}" title="Party colour" onchange="updatePartyColor(this)">
     <input type="text" value="${data.name||''}" placeholder="Party name" style="width:140px;">
-    <button class="del-party" onclick="this.closest('.party-chip').remove();rebuildTableHead()">×</button>
+    <button class="del-party" onclick="this.closest('.party-chip').remove();rebuildTableHead()" aria-label="Delete">×</button>
   `;
   chip.querySelector('input[type="text"]').addEventListener('input', () => rebuildTableHead());
   document.getElementById('parties-wrap').appendChild(chip);
@@ -574,27 +549,27 @@ function addRowAt(data, refTr) {
 
   if (data.type === 'section') {
     tr.innerHTML = `
-      <td><span class="drag-handle">⠿</span></td>
+      <td><span class="drag-handle" aria-hidden="true">⠿</span></td>
       <td colspan="${midSpan}">
         <input class="row-label-inp" type="text" value="${esc(data.label||'')}" placeholder="Section heading (e.g. 1. Administration)" style="font-weight:700;color:var(--accent);">
       </td>
-      <td><button class="btn-del-row" onclick="deleteRow(this)" title="Delete">×</button></td>`;
+      <td><button class="btn-del-row" onclick="deleteRow(this)" title="Delete" aria-label="Delete">×</button></td>`;
   } else if (data.type === 'subsection') {
     tr.innerHTML = `
-      <td><span class="drag-handle">⠿</span></td>
+      <td><span class="drag-handle" aria-hidden="true">⠿</span></td>
       <td colspan="${midSpan}">
         <input class="row-label-inp" type="text" value="${esc(data.label||'')}" placeholder="Subsection (e.g. 1.1. Business Setup)" style="font-weight:600;color:var(--muted);padding-left:12px;">
       </td>
-      <td><button class="btn-del-row" onclick="deleteRow(this)" title="Delete">×</button></td>`;
+      <td><button class="btn-del-row" onclick="deleteRow(this)" title="Delete" aria-label="Delete">×</button></td>`;
   } else {
     tr.innerHTML = `
-      <td><span class="drag-handle">⠿</span></td>
+      <td><span class="drag-handle" aria-hidden="true">⠿</span></td>
       <td><input class="row-num-inp" type="text" value="${esc(data.num||'')}" placeholder="1.1.1"></td>
       <td><input class="row-label-inp" type="text" value="${esc(data.label||'')}" placeholder="Item description"></td>
       <td class="mark-cells-group" style="display:contents;"></td>
       <td class="freq-cell zero">—</td>
       <td><input class="row-comment-inp" type="text" value="${esc(data.comment||'')}" placeholder="Comment..."></td>
-      <td><button class="btn-del-row" onclick="deleteRow(this)">×</button></td>`;
+      <td><button class="btn-del-row" onclick="deleteRow(this)" aria-label="Delete">×</button></td>`;
   }
 
   // Insert after refTr (and its insert-row), or append
@@ -621,6 +596,7 @@ function addRowAt(data, refTr) {
       });
     }
   }
+  _dorUpdateEmpty();
 }
 
 function deleteRow(btn) {
@@ -628,6 +604,12 @@ function deleteRow(btn) {
   const next = tr.nextElementSibling;
   if (next?.classList.contains('insert-row')) next.remove();
   tr.remove();
+  _dorUpdateEmpty();
+}
+
+function _dorUpdateEmpty() {
+  const el = document.getElementById('dor-empty');
+  if (el) el.style.display = document.querySelectorAll('#dor-body .dor-row').length === 0 ? 'block' : 'none';
 }
 
 function createInsertRow(siblingTr) {
@@ -701,6 +683,7 @@ function applyState(s) {
   document.getElementById('dor-body').innerHTML = '';
   rowCount = 0;
   (s.rows||[]).forEach(r => addRow(r));
+  _dorUpdateEmpty();
 }
 
 // ── Generate ──
@@ -818,9 +801,9 @@ function loadJSON(input) {
         ['timecast','resourcecast','orgcast','rfqcast','dorcast','calccast','riskcast'].forEach(k => {
           if (k !== 'dorcast' && data[k]) localStorage.setItem('bidcast_state_' + k, JSON.stringify(data[k]));
         });
-        if (data.dorcast) applyState(data.dorcast);
+        if (data.dorcast) { PylonValidate.checkImport(data.dorcast, 'dorcast'); applyState(data.dorcast); }
         else alert('No DORCast data found in this suite file.');
-      } else { applyState(data); }
+      } else { PylonValidate.checkImport(data, 'dorcast'); applyState(data); }
     } catch(err) { alert('Invalid .json file.'); }
   };
   reader.readAsText(file); input.value='';
@@ -931,42 +914,28 @@ window.addEventListener('afterprint',function(){
   addRow({type:'item',num:'1.1.2',label:'Provision of Progress Reports',marks:['','X'],comment:''});
 })();
 
-// ── Undo / Redo ──
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+// ── Undo / Redo (backed by vendor/pyl0n-state.js) ──
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist = _hist.slice(0, _histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_dorcast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _suppHist = true; _histIdx--;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _suppHist = true; _histIdx++;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange: () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_dorcast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo'), r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -984,14 +953,9 @@ document.addEventListener('keydown', e => {
   }
 });
 (function() {
-  const _rawApply = applyState;
-  applyState = s => { _suppHist = true; _rawApply(s); _suppHist = false; };
   const ed = document.getElementById('editor');
   if (ed) {
-    new MutationObserver(() => {
-      if (_suppHist) return;
-      clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 400);
-    }).observe(ed, { childList: true, subtree: true });
+    new MutationObserver(_scheduleSnap).observe(ed, { childList: true, subtree: true });
     ed.addEventListener('input', _scheduleSnap);
   }
   setTimeout(_snapshot, 300);

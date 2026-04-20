@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CalcCast · PYL0N</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="libs/fonts.css">
 <script src="libs/xlsx.full.min.js"></script>
 <script src="libs/html2pdf.bundle.min.js"></script>
 <script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
 <style id="page-size-style">@page { size: A3 landscape; margin: 8mm; }</style>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -270,17 +274,8 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
 <!-- ══════════════════ TOOLBAR ══════════════════ -->
 <div id="toolbar">
   <div class="tb-left">
-    <div class="logo-icon">
-      <svg viewBox="0 0 18 18" fill="none">
-        <rect x="2.5" y="1.5" width="13" height="15" rx="2" stroke="white" stroke-width="1.4"/>
-        <line x1="5" y1="5.5" x2="13" y2="5.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/>
-        <rect x="4.5" y="8"   width="2.5" height="2" rx="0.5" fill="white"/>
-        <rect x="7.75" y="8"  width="2.5" height="2" rx="0.5" fill="white" opacity="0.7"/>
-        <rect x="11"   y="8"  width="2.5" height="2" rx="0.5" fill="white" opacity="0.5"/>
-        <rect x="4.5"  y="11" width="2.5" height="2" rx="0.5" fill="white" opacity="0.7"/>
-        <rect x="7.75" y="11" width="2.5" height="2" rx="0.5" fill="white" opacity="0.7"/>
-        <rect x="11"   y="11" width="2.5" height="2" rx="0.5" fill="white"/>
-      </svg>
+    <div class="logo-icon" style="background:#6366f1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
     </div>
     <div>
       <div class="tool-name">CalcCast</div>
@@ -293,8 +288,8 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
     <button class="tb-btn" id="btn-undo" onclick="undo()" disabled>↩ Undo</button>
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
-    <button class="tb-btn" onclick="location.href='w2w-report.html'" style="border-color: var(--accent); color: var(--accent);">◱ W2W Report</button>
-    <button class="tb-btn" onclick="location.href='cashflow.html'" style="border-color: var(--green); color: var(--green);">◱ Cash Flow &amp; Risk</button>
+    <button class="tb-btn" onclick="SuiteManager.setReturnPath('calccast.html','CalcCast');location.href='w2w-report.html'" style="border-color: var(--accent); color: var(--accent);">◱ W2W Report</button>
+    <button class="tb-btn" onclick="SuiteManager.setReturnPath('calccast.html','CalcCast');location.href='cashflow.html'" style="border-color: var(--green); color: var(--green);">◱ Cash Flow &amp; Risk</button>
     <label class="tb-btn" style="cursor:pointer;">
       ↑ Load JSON
       <input type="file" accept=".json" style="display:none;" onchange="loadJSON(this)">
@@ -304,7 +299,7 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
     <button class="tb-btn green" onclick="exportExcel()">⬇ Export Excel</button>
     <button class="tb-btn" onclick="exportHTML()">⬇ Export HTML</button>
     <button class="tb-btn" onclick="exportPDF()">⬇ PDF</button>
-    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;">🌙</button>
+    <button class="tb-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
     <div style="position:relative;display:inline-block;"><button class="tb-btn" id="backup-btn" onclick="_showBackups()" style="font-size:11px;">⏱ Backups</button></div>
     <span id="autosave-label" style="font-size:10px;color:var(--faint);"></span>
     <span class="save-confirm" id="save-confirm">✓ Saved!</span>
@@ -433,10 +428,11 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
         </thead>
         <tbody id="cost-tbody"></tbody>
       </table>
+      <div id="cost-empty" style="display:none;padding:32px;text-align:center;color:var(--faint);font-size:13px;">No cost rows yet — click <strong>+ Add Item</strong> to start.</div>
     </div>
 
     <button class="btn-add-item" onclick="addCostRow()">+ Add Item</button>
-    <button class="tb-btn" onclick="addContingencyRow()" title="Add a contingency row that calculates as % of rows above" style="margin-left:8px;">+ Contingency %</button>
+    <button class="tb-btn" onclick="addContingencyRow()" title="Add a contingency row that calculates as % of rows above" style="margin-left:8px;" aria-label="Add a contingency row that calculates as % of rows above">+ Contingency %</button>
   </div>
 
   <!-- Section 4: LoA W2W Consolidated Summary -->
@@ -483,50 +479,6 @@ input[type="number"] { font-family: 'DM Mono', monospace; }
 </div><!-- /editor -->
 
 <script>
-/* ══ SuiteManager ══════════════════════════════════════════════════════
-   Central synchronisation utility — shared across all Bid Forecast tools.
-════════════════════════════════════════════════════════════════════════ */
-const SuiteManager = (() => {
-  const SYNC_KEY = 'bidcast_suite_sync';
-  const LOGO_KEY = 'bidcast_logo';
-
-  function read() {
-    try { return JSON.parse(localStorage.getItem(SYNC_KEY) || '{}'); } catch { return {}; }
-  }
-  function write(patch, source) {
-    try {
-      const next = { ...read(), ...patch, _ts: Date.now(), _src: source };
-      localStorage.setItem(SYNC_KEY, JSON.stringify(next));
-      return next;
-    } catch { return {}; }
-  }
-  function getLogo()           { return localStorage.getItem(LOGO_KEY) || null; }
-  function setLogo(dataUrl)    { localStorage.setItem(LOGO_KEY, dataUrl); write({ _logoTs: Date.now() }, 'logo'); }
-  function removeLogo()        { localStorage.removeItem(LOGO_KEY); write({ _logoTs: Date.now() }, 'logo'); }
-  function migrate() {
-    const toMove = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.startsWith('pyl0n_')) toMove.push(k);
-    }
-    toMove.forEach(k => {
-      const newKey = 'bidcast_' + k.slice('pyl0n_'.length);
-      if (!localStorage.getItem(newKey)) localStorage.setItem(newKey, localStorage.getItem(k));
-      localStorage.removeItem(k);
-    });
-  }
-
-  function onUpdate(cb) {
-    window.addEventListener('storage', e => {
-      if (e.storageArea !== localStorage) return;
-      if (e.key && e.key !== SYNC_KEY && e.key !== LOGO_KEY) return;
-      cb(read(), e.key);
-    });
-  }
-
-  return { read, write, getLogo, setLogo, removeLogo, migrate, onUpdate };
-})();
-
 /* ══ State ═════════════════════════════════════════════════════════════ */
 function collectState() {
   const g = id => document.getElementById(id);
@@ -603,6 +555,8 @@ function getResourceCastTotal() {
 }
 
 function calculateModel() {
+  const empty = document.getElementById('cost-empty');
+  if (empty) empty.style.display = document.querySelectorAll('#cost-tbody .cost-row').length === 0 ? 'block' : 'none';
   // ── 1. Read global parameters ────────────────────────────────────────
   const fxMap = {
     EUR: 1.0,
@@ -744,29 +698,29 @@ function calculateModel() {
   _scheduleSnap();
 }
 
-/* ══ Undo / Redo ════════════════════════════════════════════════════════ */
-let _hist = [], _histIdx = -1, _suppHist = false, _histTimer = null, _lastSaved = null;
+/* ══ Undo / Redo (backed by vendor/pyl0n-state.js) ════════════════════ */
+let _lastSaved = null;
 
-function _snapshot() {
-  if (_suppHist) return;
-  const s = JSON.stringify(collectState());
-  if (_hist[_histIdx] === s) return;
-  _hist.splice(_histIdx + 1);
-  _hist.push(s);
-  if (_hist.length > 50) _hist.shift(); else _histIdx++;
-  _syncUndoUI();
-  localStorage.setItem('bidcast_state_calccast', s);
-  _lastSaved = Date.now(); _updateSavedLabel();
-}
-function _scheduleSnap() {
-  if (_suppHist) return;
-  clearTimeout(_histTimer); _histTimer = setTimeout(_snapshot, 800);
-}
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 800,
+  onChange: () => {
+    _syncUndoUI();
+    PylonState.safeWriteLS('bidcast_state_calccast', collectState());
+    _lastSaved = Date.now(); _updateSavedLabel();
+  },
+});
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
 function _syncUndoUI() {
   const u = document.getElementById('btn-undo');
   const r = document.getElementById('btn-redo');
-  if (u) u.disabled = _histIdx <= 0;
-  if (r) r.disabled = _histIdx >= _hist.length - 1;
+  if (u) u.disabled = !_undoStack.canUndo;
+  if (r) r.disabled = !_undoStack.canRedo;
 }
 function _updateSavedLabel() {
   const el = document.getElementById('autosave-label');
@@ -774,20 +728,6 @@ function _updateSavedLabel() {
   if (!_lastSaved) { el.textContent = ''; return; }
   const s = Math.floor((Date.now() - _lastSaved) / 1000);
   el.textContent = s < 5 ? '● Saved' : s < 60 ? '● Saved ' + s + 's ago' : '● Saved ' + Math.floor(s / 60) + 'm ago';
-}
-function undo() {
-  clearTimeout(_histTimer);
-  if (_histIdx <= 0) return;
-  _histIdx--; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
-}
-function redo() {
-  clearTimeout(_histTimer);
-  if (_histIdx >= _hist.length - 1) return;
-  _histIdx++; _suppHist = true;
-  applyState(JSON.parse(_hist[_histIdx]));
-  _suppHist = false; _syncUndoUI();
 }
 document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
@@ -812,7 +752,7 @@ function addGuarRow(data = {}) {
     <td><input type="number" class="calc-inp num inp-guar-dur"  value="${data.duration ?? 2}" min="0" step="0.5" oninput="calculateModel()"></td>
     <td><input type="number" class="calc-inp num inp-guar-rate" value="${data.rate ?? 1.5}"  min="0" step="0.1" oninput="calculateModel()"></td>
     <td><span class="calc-readonly guar-cost-eur">—</span></td>
-    <td><button class="btn-del-row" onclick="this.closest('.guar-row').remove(); calculateModel();" title="Remove bond">✕</button></td>
+    <td><button class="btn-del-row" onclick="this.closest('.guar-row').remove(); calculateModel();" title="Remove bond" aria-label="Remove bond">✕</button></td>
   `;
   tbody.appendChild(tr);
   calculateModel();
@@ -927,11 +867,18 @@ function addCostRow(data = {}, insertAfter = null) {
     <td><span class="calc-readonly sell-eur">—</span></td>
     <td>
       <div class="row-actions">
-        <button class="btn-add-below" onclick="addCostRow({}, this.closest('.cost-row'))" title="Insert row below">+</button>
-        <button class="btn-del-row" onclick="deleteCostRow(this)" title="Remove row">✕</button>
+        <button class="btn-add-below" onclick="addCostRow({}, this.closest('.cost-row'))" title="Insert row below" aria-label="Insert row below">+</button>
+        <button class="btn-del-row" onclick="deleteCostRow(this)" title="Remove row" aria-label="Remove row">✕</button>
       </div>
     </td>
   `;
+
+  tr.querySelector('.inp-qty').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Quantity'));
+  });
+  tr.querySelector('.inp-unit-price').addEventListener('blur', function() {
+    PylonValidate.markField(this, PylonValidate.nonNegative(this.value, 'Unit price'));
+  });
 
   if (insertAfter && insertAfter.nextSibling) {
     tbody.insertBefore(tr, insertAfter.nextSibling);
@@ -968,7 +915,7 @@ function addContingencyRow(data = {}, insertAfter = null) {
     <td><span class="calc-readonly sell-eur">—</span></td>
     <td>
       <div class="row-actions">
-        <button class="btn-del-row" onclick="deleteCostRow(this)" title="Remove row">✕</button>
+        <button class="btn-del-row" onclick="deleteCostRow(this)" title="Remove row" aria-label="Remove row">✕</button>
       </div>
     </td>
   `;
@@ -1206,7 +1153,7 @@ function loadJSON(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    try { applyState(JSON.parse(e.target.result)); } catch { alert('Invalid JSON file.'); }
+    try { const _s = JSON.parse(e.target.result); PylonValidate.checkImport(_s, 'calccast'); applyState(_s); } catch { alert('Invalid JSON file.'); }
   };
   reader.readAsText(file); input.value = '';
 }
