@@ -1011,6 +1011,24 @@
     <span class="group-label-line"></span>
   </div>
 
+  <a href="forecast.html" class="card" style="--card-color:#c026d3;">
+    <div class="card-icon" style="background:#fdf4ff;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#c026d3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2"  y="13" width="5" height="9"  rx="1"/>
+        <rect x="9"  y="8"  width="5" height="14" rx="1"/>
+        <rect x="16" y="3"  width="5" height="19" rx="1"/>
+        <path d="M4 12 Q11 7 18 2.5" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="card-name">ForeCast</div>
+    <div class="card-tagline">Pipeline &amp; Overlap Monitor</div>
+    <div class="card-desc">Track sales opportunities, calculate weighted pipelines, and visually detect quarterly resource overlaps and bottlenecks before they happen.</div>
+    <div class="card-footer">
+      <span class="feat-tag" id="badge-forecast">Weighted Pipeline · Alarms</span>
+      <span class="card-arrow">→</span>
+    </div>
+  </a>
+
   <a href="cvcast.html" class="card" style="--card-color:#0f766e;">
     <div class="card-icon" style="background:#f0fdfa;">
       <svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1699,6 +1717,27 @@ function refreshStats() {
   _badge('badge-actionlog', al && al.actions?.length
     ? alOpen + ' open' + (alOverdue > 0 ? ' · ⚠ ' + alOverdue + ' overdue' : '')
     : '', 'Actions · Tracker');
+
+  const fc = _load('forecast');
+  if (fc && Array.isArray(fc.opportunities) && fc.opportunities.length) {
+    const fcWt = fc.opportunities.reduce(
+      (s, o) => s + (o.grossValue||0) * ((o.probGo||0)/100) * ((o.probWin||0)/100), 0
+    );
+    const fcCap  = fc.capacityLimit || 0;
+    const fcAlarm = fcCap > 0 && ['Q1','Q2','Q3','Q4'].some(q => {
+      const qWt = fc.opportunities.reduce((s,o) => {
+        if (o.quarter === q || o.quarter === 'Multi')
+          return s + (o.grossValue||0)*((o.probGo||0)/100)*((o.probWin||0)/100);
+        return s;
+      }, 0);
+      return qWt > fcCap;
+    });
+    _badge('badge-forecast',
+      (fcWt >= 1000 ? (fcWt/1000).toFixed(1)+'G' : fcWt.toFixed(1)+'M') +
+        ' wtd · ' + fc.opportunities.length + ' opp' +
+        (fcAlarm ? ' · ⚠ Overlap' : ''),
+      'Weighted Pipeline · Alarms');
+  }
 
   const progressWrap = document.getElementById('progress-wrap');
   if (progressWrap) {
