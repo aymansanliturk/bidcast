@@ -225,6 +225,14 @@ persists user data in the Chromium `persist:pyl0n` session partition.
 3. All CSS and JS is inline — no compilation step
 4. Test export formats (PDF, Excel, JSON, HTML) after logic changes
 
+### Version Badge Convention
+
+The `<footer>` in `index.html` carries a `v2.0.0`-style badge (DM Mono pill, `var(--border)` / `var(--muted)`).
+
+**Rule: bump the patch version (`v2.0.X`) at the end of every feature-phase task.** If the work adds a major new tool or a cross-cutting architectural change, bump the minor version instead (`v2.X.0`). Update the badge in the same commit as the feature work — do not create a separate version-bump commit.
+
+Current version: `v2.0.0` (set Phase 109 — version badge introduction)
+
 ### Git Workflow
 
 - Main branch: `master`
