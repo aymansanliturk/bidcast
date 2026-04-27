@@ -99,7 +99,7 @@ body {
 .tb-btn.primary:hover { background: var(--accent2); }
 
 /* ── Editor container ───────────────────────────────────────────────── */
-#editor { max-width: 1320px; margin: 0 auto; padding: 24px 24px 80px; }
+#editor { max-width: 1500px; margin: 0 auto; padding: 24px 24px 80px; }
 
 /* ── Section title ──────────────────────────────────────────────────── */
 .sec-title {
@@ -218,13 +218,13 @@ body {
   margin-bottom: 16px;
 }
 
-/* 9-column grid: name | customer | quarter | gross | pgo | pwin | weighted | owner | del */
+/* 11-column grid: name | customer | quarter | stage | gross | pgo | pwin | weighted | owner | comments | del */
 .opp-head,
 .opp-row {
   display: grid;
-  grid-template-columns: minmax(140px,2fr) 100px 72px 96px 62px 62px 96px minmax(100px,1.5fr) 32px;
+  grid-template-columns: minmax(140px,1.5fr) 100px 75px 110px 85px 55px 55px 85px 110px minmax(140px,2fr) 30px;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   padding: 7px 10px;
 }
 
@@ -458,11 +458,13 @@ body {
       <div>Opportunity Name</div>
       <div>Customer</div>
       <div>Quarter</div>
+      <div>Stage</div>
       <div class="opp-head-r">Gross (M)</div>
       <div class="opp-head-r">P(Go) %</div>
       <div class="opp-head-r">P(Win) %</div>
       <div class="opp-head-r">Weighted (M)</div>
-      <div>Owner &amp; Notes</div>
+      <div>Owner</div>
+      <div>Comments</div>
       <div></div>
     </div>
 
@@ -532,20 +534,16 @@ function addOpportunity(data = {}) {
   ).join('');
 
   row.innerHTML = `
-    <input type="text"   class="opp-name"     placeholder="Opportunity name…"
-           value="${esc(data.name||'')}"     oninput="onOppInput(event)">
-    <input type="text"   class="opp-customer" placeholder="Customer…"
-           value="${esc(data.customer||'')}" oninput="onOppInput(event)">
+    <input type="text"   class="opp-name"     placeholder="Opportunity name…"  value="${esc(data.name||'')}"      oninput="onOppInput(event)">
+    <input type="text"   class="opp-customer" placeholder="Customer…"           value="${esc(data.customer||'')}"  oninput="onOppInput(event)">
     <select class="opp-quarter" onchange="onOppInput(event)">${qOpts}</select>
-    <input type="number" class="opp-gross"    placeholder="0.0" min="0" step="0.1"
-           value="${esc(gross)}"              oninput="onOppInput(event)">
-    <input type="number" class="opp-go"       placeholder="50"  min="0" max="100"
-           value="${esc(go)}"                 oninput="onOppInput(event)">
-    <input type="number" class="opp-win"      placeholder="30"  min="0" max="100"
-           value="${esc(win)}"                oninput="onOppInput(event)">
+    <input type="text"   class="opp-stage"    placeholder="Stage…"              value="${esc(data.stage||'')}"     oninput="onOppInput(event)">
+    <input type="number" class="opp-gross"    placeholder="0.0" min="0" step="0.1" value="${esc(gross)}"           oninput="onOppInput(event)">
+    <input type="number" class="opp-go"       placeholder="50"  min="0" max="100"  value="${esc(go)}"              oninput="onOppInput(event)">
+    <input type="number" class="opp-win"      placeholder="30"  min="0" max="100"  value="${esc(win)}"             oninput="onOppInput(event)">
     <div   class="weighted-cell" id="wt-${id}">${fmtMFull(wt)}</div>
-    <input type="text"   class="opp-owner"    placeholder="Owner / notes…"
-           value="${esc(data.owner||'')}"    oninput="onOppInput(event)">
+    <input type="text"   class="opp-owner"    placeholder="Owner…"              value="${esc(data.owner||'')}"     oninput="onOppInput(event)">
+    <input type="text"   class="opp-comments" placeholder="Comments…"           value="${esc(data.comments||'')}"  oninput="onOppInput(event)">
     <button class="opp-del" onclick="removeOpportunity(this)" title="Remove">✕</button>
   `;
 
@@ -579,13 +577,15 @@ function _updateRowWeighted(row) {
 function _getOpportunities() {
   return Array.from(document.querySelectorAll('#opp-body .opp-row')).map(r => ({
     id:         Number(r.dataset.id),
-    name:       r.querySelector('.opp-name')?.value     || '',
-    customer:   r.querySelector('.opp-customer')?.value || '',
-    quarter:    r.querySelector('.opp-quarter')?.value  || 'Q1',
+    name:       r.querySelector('.opp-name')?.value      || '',
+    customer:   r.querySelector('.opp-customer')?.value  || '',
+    quarter:    r.querySelector('.opp-quarter')?.value   || 'Q1',
+    stage:      r.querySelector('.opp-stage')?.value     || '',
     grossValue: parseFloat(r.querySelector('.opp-gross')?.value) || 0,
     probGo:     parseFloat(r.querySelector('.opp-go')?.value)    || 0,
     probWin:    parseFloat(r.querySelector('.opp-win')?.value)   || 0,
-    owner:      r.querySelector('.opp-owner')?.value    || '',
+    owner:      r.querySelector('.opp-owner')?.value     || '',
+    comments:   r.querySelector('.opp-comments')?.value  || '',
   }));
 }
 
@@ -768,25 +768,25 @@ function exportExcel() {
   if (!window.XLSX) { alert('XLSX library not loaded.'); return; }
   const opps = _getOpportunities();
   const rows = [
-    ['#','Opportunity Name','Customer','Quarter',
-     'Gross Value (M)','P(Go) %','P(Win) %','Weighted Value (M)','Owner & Notes'],
+    ['#','Opportunity Name','Customer','Quarter','Stage',
+     'Gross Value (M)','P(Go) %','P(Win) %','Weighted Value (M)','Owner','Comments'],
     ...opps.map((o, i) => [
-      i + 1, o.name, o.customer, o.quarter,
+      i + 1, o.name, o.customer, o.quarter, o.stage,
       o.grossValue, o.probGo, o.probWin,
       parseFloat((o.grossValue*(o.probGo/100)*(o.probWin/100)).toFixed(4)),
-      o.owner,
+      o.owner, o.comments,
     ]),
     [],
-    ['','Total Pipeline (M)','','',
+    ['','Total Pipeline (M)','','','',
      opps.reduce((s,o)=>s+o.grossValue,0).toFixed(4),'','',
-     opps.reduce((s,o)=>s+o.grossValue*(o.probGo/100)*(o.probWin/100),0).toFixed(4),''],
+     opps.reduce((s,o)=>s+o.grossValue*(o.probGo/100)*(o.probWin/100),0).toFixed(4),'',''],
     ['','Quarterly Capacity Limit (M)',
      parseFloat(document.getElementById('cap-limit')?.value)||0],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
-    {wch:4},{wch:36},{wch:20},{wch:8},
-    {wch:16},{wch:10},{wch:10},{wch:18},{wch:32},
+    {wch:4},{wch:36},{wch:20},{wch:8},{wch:18},
+    {wch:14},{wch:8},{wch:8},{wch:18},{wch:22},{wch:36},
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'ForeCast');
@@ -948,25 +948,21 @@ async function importSalesforce(input) {
         const pGo  = row['P(Go) %']  !== undefined ? (parseFloat(row['P(Go) %'])  || 0) : 50;
         const pWin = row['P(Win) %'] !== undefined ? (parseFloat(row['P(Win) %']) || 0) : 30;
 
-        // Notes
-        let finalOwner;
-        if (row['Owner & Notes'] !== undefined) {
-          finalOwner = String(row['Owner & Notes'] || '');
-        } else {
-          const sf    = row['Opportunity Owner'] || '';
-          const stage = row['Stage'] || '';
-          const cmts  = row['Sales / Forecast Comments'] || row['Comments'] || '';
-          finalOwner  = `${sf ? '['+sf+'] ' : ''}${stage ? 'Stage: '+stage+' | ' : ''}${cmts}`.substring(0, 150);
-        }
+        // Notes — exact 1-to-1 mapping into dedicated columns
+        const rawOwner    = row['Owner'] || row['Opportunity Owner'] || '';
+        const rawStage    = row['Stage'] || '';
+        const rawComments = row['Comments'] || row['Sales / Forecast Comments'] || '';
 
         addOpportunity({
           name:       oppName,
           customer:   customer,
           quarter:    targetQuarter,
+          stage:      rawStage,
           grossValue: parseFloat(grossInM.toFixed(3)),
           probGo:     pGo,
           probWin:    pWin,
-          owner:      finalOwner,
+          owner:      rawOwner,
+          comments:   rawComments,
         });
 
         importedCount++;
