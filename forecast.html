@@ -859,22 +859,23 @@ async function importSalesforce(input) {
   reader.onload = (e) => {
     try {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
 
-      // Convert to an array of arrays to manually parse the messy structure
-      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
       let headerRowIndex = -1;
+      let rawHeaders = [];
 
-      // 1. Scan for the actual table headers (skip top metadata)
-      for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+      // 1. Scan for the actual table headers
+      for (let i = 0; i < rawRows.length; i++) {
+        const row = rawRows[i];
         if (Array.isArray(row)) {
           const rowStr = row.join(' ').toLowerCase();
           if (rowStr.includes('opportunity') && rowStr.includes('account')) {
             headerRowIndex = i;
+            rawHeaders = row;
             break;
           }
         }
@@ -886,16 +887,37 @@ async function importSalesforce(input) {
         return;
       }
 
-      // Convert array rows to object mapping based on found headers
-      const oppData = XLSX.utils.sheet_to_json(worksheet, { range: headerRowIndex });
+      // 2. Parse from the header row, forcibly trimming headers to remove hidden Salesforce spaces
+      const cleanedHeaders = rawHeaders.map(h => String(h || '').trim());
+      const oppData = XLSX.utils.sheet_to_json(worksheet, {
+        range: headerRowIndex + 1,
+        header: cleanedHeaders,
+      });
 
       let importedCount = 0;
 
-      // 2. Iterate through rows and filter out subtotals/totals
+      // Robust currency parser — handles "1,234,567.89", "1.234.567,89", "1 234.56"
+      const parseCurrency = (val) => {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        let str = String(val).trim();
+        const lastComma  = str.lastIndexOf(',');
+        const lastPeriod = str.lastIndexOf('.');
+        // If comma appears after period it's EU format (e.g. 1.234,56)
+        if (lastComma > lastPeriod && lastComma !== -1) {
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+          str = str.replace(/,/g, ''); // US format (e.g. 1,234.56)
+        }
+        str = str.replace(/[^0-9.-]/g, '');
+        return parseFloat(str) || 0;
+      };
+
+      // 3. Iterate through rows
       oppData.forEach(row => {
-        const oppName = row['Opportunity / Project Name'] || row['Opportunity Name'] || '';
-        const account = row['Account'] || '';
-        const rawAmount = row['Converted Amount'] || row['Forecast Amount'] || 0;
+        const oppName   = row['Opportunity / Project Name'] || row['Opportunity Name'] || '';
+        const account   = row['Account'] || '';
+        const rawAmount = row['Converted Amount'] || row['Forecast Amount'] || row['Amount'] || 0;
 
         // Skip rows that look like Subtotals, Grand Totals, or Grouping Headers
         const rowString = JSON.stringify(row).toLowerCase();
@@ -903,29 +925,27 @@ async function importSalesforce(input) {
           return;
         }
 
-        // 3. Map Data to ForeCast structure
-        // Attempt to extract Q1, Q2, Q3, Q4 from Fiscal Period, default to Q1
         const fiscal = String(row['Fiscal Period'] || '').toUpperCase();
         let targetQuarter = 'Q1';
         if (fiscal.includes('Q2')) targetQuarter = 'Q2';
         else if (fiscal.includes('Q3')) targetQuarter = 'Q3';
         else if (fiscal.includes('Q4')) targetQuarter = 'Q4';
 
-        // Convert amount to Millions (M EUR/USD)
-        const grossInM = parseFloat(rawAmount) / 1000000;
+        const cleanAmount = parseCurrency(rawAmount);
+        // Auto-scale to millions: if > 10 000 it's raw currency (e.g. 1 500 000 → 1.5 M)
+        let grossInM = cleanAmount;
+        if (Math.abs(cleanAmount) > 10000) grossInM = cleanAmount / 1000000;
 
-        // Build Owner & Notes combo
         const owner    = row['Opportunity Owner'] || '';
         const stage    = row['Stage'] || '';
         const comments = row['Sales / Forecast Comments'] || row['Comments'] || '';
         const combinedNotes = `${owner ? '['+owner+'] ' : ''}${stage ? 'Stage: '+stage+' | ' : ''}${comments}`.substring(0, 150);
 
-        // Append to pipeline (default probabilities to 50/30)
         addOpportunity({
           name:       oppName,
           customer:   account,
           quarter:    targetQuarter,
-          grossValue: parseFloat(grossInM.toFixed(2)),
+          grossValue: parseFloat(grossInM.toFixed(3)),
           probGo:     50,
           probWin:    30,
           owner:      combinedNotes,
@@ -941,7 +961,7 @@ async function importSalesforce(input) {
       console.error(error);
       alert('Error parsing the Excel file. Please check the format.');
     } finally {
-      input.value = ''; // Reset input so the same file can be re-imported
+      input.value = ''; // Reset input
     }
   };
   reader.readAsArrayBuffer(file);
