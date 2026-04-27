@@ -218,11 +218,11 @@ body {
   margin-bottom: 16px;
 }
 
-/* 11-column grid: name | customer | quarter | stage | gross | pgo | pwin | weighted | owner | comments | del */
+/* 12-column grid: name | customer | quarter | stage | gross | pgo | pwin | weighted | owner | bid manager | comments | del */
 .opp-head,
 .opp-row {
   display: grid;
-  grid-template-columns: minmax(140px,1.5fr) 100px 75px 110px 85px 55px 55px 85px 110px minmax(140px,2fr) 30px;
+  grid-template-columns: minmax(130px,1.5fr) 90px 70px 90px 80px 55px 55px 80px 100px 100px minmax(130px,2fr) 30px;
   align-items: center;
   gap: 4px;
   padding: 7px 10px;
@@ -432,6 +432,14 @@ body {
 
   </div><!-- /.dash-grid -->
 
+  <!-- Bid Manager Workload -->
+  <div style="background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:20px; margin-bottom:28px;">
+    <div class="sec-title">Bid Manager Workload (Bottlenecks)</div>
+    <div id="bm-workload-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:12px;">
+      <div style="font-size:12px; color:var(--faint);">No data available</div>
+    </div>
+  </div>
+
   <!-- Quarterly chart -->
   <div style="background:var(--surface); border:1.5px solid var(--border); border-radius:12px; padding:20px; margin-bottom:28px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
@@ -452,6 +460,16 @@ body {
 
   <!-- Opportunities table -->
   <div class="sec-title">Pipeline Opportunities</div>
+
+  <div class="filter-bar" style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; align-items:center; background:var(--surface); padding:12px 18px; border-radius:10px; border:1.5px solid var(--border);">
+    <span style="font-size:11px; font-weight:700; color:var(--faint); text-transform:uppercase; letter-spacing:1px;">Filters:</span>
+    <select id="filter-quarter"  onchange="applyFilters()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); font-size:12px; background:var(--bg); color:var(--text); outline:none;"><option value="ALL">All Quarters</option></select>
+    <select id="filter-stage"    onchange="applyFilters()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); font-size:12px; background:var(--bg); color:var(--text); outline:none;"><option value="ALL">All Stages</option></select>
+    <select id="filter-customer" onchange="applyFilters()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); font-size:12px; background:var(--bg); color:var(--text); outline:none;"><option value="ALL">All Customers</option></select>
+    <select id="filter-manager"  onchange="applyFilters()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); font-size:12px; background:var(--bg); color:var(--text); outline:none;"><option value="ALL">All Bid Managers</option></select>
+    <button class="tb-btn" onclick="clearFilters()" style="margin-left:auto;">Reset</button>
+  </div>
+
   <div class="opp-wrap">
 
     <div class="opp-head">
@@ -464,6 +482,7 @@ body {
       <div class="opp-head-r">P(Win) %</div>
       <div class="opp-head-r">Weighted (M)</div>
       <div>Owner</div>
+      <div>Bid Manager</div>
       <div>Comments</div>
       <div></div>
     </div>
@@ -534,16 +553,17 @@ function addOpportunity(data = {}) {
   ).join('');
 
   row.innerHTML = `
-    <input type="text"   class="opp-name"     placeholder="Opportunity name…"  value="${esc(data.name||'')}"      oninput="onOppInput(event)">
-    <input type="text"   class="opp-customer" placeholder="Customer…"           value="${esc(data.customer||'')}"  oninput="onOppInput(event)">
+    <input type="text"   class="opp-name"        placeholder="Opportunity name…" value="${esc(data.name||'')}"          oninput="onOppInput(event)">
+    <input type="text"   class="opp-customer"    placeholder="Customer…"          value="${esc(data.customer||'')}"      oninput="onOppInput(event)">
     <select class="opp-quarter" onchange="onOppInput(event)">${qOpts}</select>
-    <input type="text"   class="opp-stage"    placeholder="Stage…"              value="${esc(data.stage||'')}"     oninput="onOppInput(event)">
-    <input type="number" class="opp-gross"    placeholder="0.0" min="0" step="0.1" value="${esc(gross)}"           oninput="onOppInput(event)">
-    <input type="number" class="opp-go"       placeholder="50"  min="0" max="100"  value="${esc(go)}"              oninput="onOppInput(event)">
-    <input type="number" class="opp-win"      placeholder="30"  min="0" max="100"  value="${esc(win)}"             oninput="onOppInput(event)">
+    <input type="text"   class="opp-stage"       placeholder="Stage…"             value="${esc(data.stage||'')}"         oninput="onOppInput(event)">
+    <input type="number" class="opp-gross"       placeholder="0.0" min="0" step="0.1" value="${esc(gross)}"              oninput="onOppInput(event)">
+    <input type="number" class="opp-go"          placeholder="50"  min="0" max="100"  value="${esc(go)}"                 oninput="onOppInput(event)">
+    <input type="number" class="opp-win"         placeholder="30"  min="0" max="100"  value="${esc(win)}"                oninput="onOppInput(event)">
     <div   class="weighted-cell" id="wt-${id}">${fmtMFull(wt)}</div>
-    <input type="text"   class="opp-owner"    placeholder="Owner…"              value="${esc(data.owner||'')}"     oninput="onOppInput(event)">
-    <input type="text"   class="opp-comments" placeholder="Comments…"           value="${esc(data.comments||'')}"  oninput="onOppInput(event)">
+    <input type="text"   class="opp-owner"       placeholder="Owner…"             value="${esc(data.owner||'')}"         oninput="onOppInput(event)">
+    <input type="text"   class="opp-bid-manager" placeholder="Bid Manager…"       value="${esc(data.bidManager||'')}"    oninput="onOppInput(event)">
+    <input type="text"   class="opp-comments"    placeholder="Comments…"          value="${esc(data.comments||'')}"      oninput="onOppInput(event)">
     <button class="opp-del" onclick="removeOpportunity(this)" title="Remove">✕</button>
   `;
 
@@ -574,24 +594,28 @@ function _updateRowWeighted(row) {
   if (el) el.textContent = fmtMFull(wt);
 }
 
-function _getOpportunities() {
-  return Array.from(document.querySelectorAll('#opp-body .opp-row')).map(r => ({
-    id:         Number(r.dataset.id),
-    name:       r.querySelector('.opp-name')?.value      || '',
-    customer:   r.querySelector('.opp-customer')?.value  || '',
-    quarter:    r.querySelector('.opp-quarter')?.value   || 'Q1',
-    stage:      r.querySelector('.opp-stage')?.value     || '',
-    grossValue: parseFloat(r.querySelector('.opp-gross')?.value) || 0,
-    probGo:     parseFloat(r.querySelector('.opp-go')?.value)    || 0,
-    probWin:    parseFloat(r.querySelector('.opp-win')?.value)   || 0,
-    owner:      r.querySelector('.opp-owner')?.value     || '',
-    comments:   r.querySelector('.opp-comments')?.value  || '',
-  }));
+function _getOpportunities(visibleOnly = false) {
+  return Array.from(document.querySelectorAll('#opp-body .opp-row'))
+    .filter(r => !visibleOnly || r.style.display !== 'none')
+    .map(r => ({
+      id:         Number(r.dataset.id),
+      name:       r.querySelector('.opp-name')?.value        || '',
+      customer:   r.querySelector('.opp-customer')?.value    || '',
+      quarter:    r.querySelector('.opp-quarter')?.value     || 'Q1',
+      stage:      r.querySelector('.opp-stage')?.value       || '',
+      grossValue: parseFloat(r.querySelector('.opp-gross')?.value) || 0,
+      probGo:     parseFloat(r.querySelector('.opp-go')?.value)    || 0,
+      probWin:    parseFloat(r.querySelector('.opp-win')?.value)   || 0,
+      owner:      r.querySelector('.opp-owner')?.value       || '',
+      bidManager: r.querySelector('.opp-bid-manager')?.value || '',
+      comments:   r.querySelector('.opp-comments')?.value    || '',
+    }));
 }
 
 /* ══ Dashboard refresh ═══════════════════════════════════════════════════ */
 function _refreshDashboard() {
-  const opps     = _getOpportunities();
+  const opps     = _getOpportunities(true); // visible rows only — respects active filters
+  const allOpps  = _getOpportunities();
   const capLimit = parseFloat(document.getElementById('cap-limit')?.value) || 0;
 
   let totalGross = 0, totalWt = 0;
@@ -613,7 +637,38 @@ function _refreshDashboard() {
   _setEl('dash-wt-val',    fmtM(totalWt));
   _setEl('foot-gross',     fmtM(totalGross));
   _setEl('foot-wt',        fmtM(totalWt));
-  _setEl('foot-count',     opps.length + ' opportunit' + (opps.length === 1 ? 'y' : 'ies'));
+  const visCount = opps.length, allCount = allOpps.length;
+  _setEl('foot-count', visCount === allCount
+    ? allCount + ' opportunit' + (allCount === 1 ? 'y' : 'ies')
+    : visCount + ' of ' + allCount + ' opportunities (filtered)');
+
+  /* ── Bid Manager workload ────────────────────────────────────────────── */
+  const bmMap = {};
+  opps.forEach(o => {
+    const bm = (o.bidManager || '').trim() || 'Unassigned';
+    if (!bmMap[bm]) bmMap[bm] = { count: 0, wt: 0 };
+    bmMap[bm].count += 1;
+    bmMap[bm].wt += o.grossValue * (o.probGo/100) * (o.probWin/100);
+  });
+  const bmContainer = document.getElementById('bm-workload-container');
+  if (bmContainer) {
+    const entries = Object.entries(bmMap).sort((a, b) => b[1].wt - a[1].wt);
+    bmContainer.innerHTML = entries.length
+      ? entries.map(([bm, d]) => {
+          const isRed  = d.count >= 5;
+          const isWarn = d.count >= 3 && d.count < 5;
+          const bg     = isRed ? '#fff0f0' : isWarn ? '#fffbeb' : 'var(--bg)';
+          const border = isRed ? 'var(--red)' : isWarn ? 'var(--amber)' : 'var(--border)';
+          return `<div style="background:${bg}; border:1.5px solid ${border}; border-radius:8px; padding:12px;">
+            <div style="font-size:12px; font-weight:700; color:var(--text); margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(bm)}">${esc(bm)}</div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted);">
+              <span><strong style="color:var(--text);">${d.count}</strong> opp${d.count !== 1 ? 's' : ''}</span>
+              <span style="font-family:'DM Mono',monospace; font-weight:600; color:var(--accent);">${fmtMFull(d.wt)}</span>
+            </div>
+          </div>`;
+        }).join('')
+      : '<div style="font-size:12px; color:var(--faint);">No data available</div>';
+  }
 
   /* quarter cards */
   const maxQ = Math.max(...Object.values(qw), capLimit || 0, 0.001);
@@ -704,6 +759,58 @@ function _refreshDashboard() {
       });
     }
   }
+
+  populateFilters();
+}
+
+/* ══ Filter bar ═════════════════════════════════════════════════════════ */
+function populateFilters() {
+  const all = _getOpportunities(); // always all rows for dropdown population
+  const getUnique = key => [...new Set(all.map(o => o[key]).filter(Boolean))].sort();
+
+  const fillSelect = (id, options, defaultText) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="ALL">${defaultText}</option>` +
+      options.map(opt => `<option value="${esc(opt)}">${esc(opt)}</option>`).join('');
+    if (options.includes(cur)) sel.value = cur;
+  };
+
+  fillSelect('filter-quarter',  getUnique('quarter'),    'All Quarters');
+  fillSelect('filter-stage',    getUnique('stage'),      'All Stages');
+  fillSelect('filter-customer', getUnique('customer'),   'All Customers');
+  fillSelect('filter-manager',  getUnique('bidManager'), 'All Bid Managers');
+}
+
+function applyFilters() {
+  const fQ = document.getElementById('filter-quarter')?.value  || 'ALL';
+  const fS = document.getElementById('filter-stage')?.value    || 'ALL';
+  const fC = document.getElementById('filter-customer')?.value || 'ALL';
+  const fM = document.getElementById('filter-manager')?.value  || 'ALL';
+
+  document.querySelectorAll('#opp-body .opp-row').forEach(row => {
+    const q = row.querySelector('.opp-quarter')?.value    || '';
+    const s = row.querySelector('.opp-stage')?.value      || '';
+    const c = row.querySelector('.opp-customer')?.value   || '';
+    const m = row.querySelector('.opp-bid-manager')?.value || '';
+
+    const match = (fQ === 'ALL' || q === fQ) &&
+                  (fS === 'ALL' || s === fS) &&
+                  (fC === 'ALL' || c === fC) &&
+                  (fM === 'ALL' || m === fM);
+    row.style.display = match ? 'grid' : 'none';
+  });
+
+  _refreshDashboard();
+}
+
+function clearFilters() {
+  ['filter-quarter', 'filter-stage', 'filter-customer', 'filter-manager'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = 'ALL';
+  });
+  applyFilters();
 }
 
 /* ══ State management ════════════════════════════════════════════════════ */
@@ -769,24 +876,24 @@ function exportExcel() {
   const opps = _getOpportunities();
   const rows = [
     ['#','Opportunity Name','Customer','Quarter','Stage',
-     'Gross Value (M)','P(Go) %','P(Win) %','Weighted Value (M)','Owner','Comments'],
+     'Gross Value (M)','P(Go) %','P(Win) %','Weighted Value (M)','Owner','Bid Manager','Comments'],
     ...opps.map((o, i) => [
       i + 1, o.name, o.customer, o.quarter, o.stage,
       o.grossValue, o.probGo, o.probWin,
       parseFloat((o.grossValue*(o.probGo/100)*(o.probWin/100)).toFixed(4)),
-      o.owner, o.comments,
+      o.owner, o.bidManager, o.comments,
     ]),
     [],
     ['','Total Pipeline (M)','','','',
      opps.reduce((s,o)=>s+o.grossValue,0).toFixed(4),'','',
-     opps.reduce((s,o)=>s+o.grossValue*(o.probGo/100)*(o.probWin/100),0).toFixed(4),'',''],
+     opps.reduce((s,o)=>s+o.grossValue*(o.probGo/100)*(o.probWin/100),0).toFixed(4),'','',''],
     ['','Quarterly Capacity Limit (M)',
      parseFloat(document.getElementById('cap-limit')?.value)||0],
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [
     {wch:4},{wch:36},{wch:20},{wch:8},{wch:18},
-    {wch:14},{wch:8},{wch:8},{wch:18},{wch:22},{wch:36},
+    {wch:14},{wch:8},{wch:8},{wch:18},{wch:20},{wch:20},{wch:36},
   ];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'ForeCast');
@@ -922,7 +1029,7 @@ async function importSalesforce(input) {
 
       oppData.forEach(row => {
         const oppName  = row['Opportunity Name'] || row['Opportunity / Project Name'] || '';
-        const customer = row['Customer'] || row['Account'] || '';
+        const customer = row['Account Name'] || row['Account'] || row['Customer'] || '';
 
         const rowString = JSON.stringify(row).toLowerCase();
         if (!oppName || rowString.includes('total pipeline') || rowString.includes('subtotal') || rowString.includes('grand total')) {
@@ -937,9 +1044,9 @@ async function importSalesforce(input) {
         else if (rawQ.includes('Q3')) targetQuarter = 'Q3';
         else if (rawQ.includes('Q4')) targetQuarter = 'Q4';
 
-        // Amount — native "Gross Value (M)" is already in millions; skip the /1 000 000 scaling
+        // Amount — "Amount in EUR" first (SF), then native "Gross Value (M)" (already in millions)
         const isNativeScale = row['Gross Value (M)'] !== undefined;
-        const rawAmount = row['Gross Value (M)'] || row['Converted Amount'] || row['Forecast Amount'] || row['Amount'] || 0;
+        const rawAmount = row['Amount in EUR'] || row['Amount'] || row['Converted Amount'] || row['Gross Value (M)'] || 0;
         const cleanAmount = parseCurrency(rawAmount);
         let grossInM = cleanAmount;
         if (!isNativeScale && Math.abs(cleanAmount) > 10000) grossInM = cleanAmount / 1000000;
@@ -948,10 +1055,11 @@ async function importSalesforce(input) {
         const pGo  = row['P(Go) %']  !== undefined ? (parseFloat(row['P(Go) %'])  || 0) : 50;
         const pWin = row['P(Win) %'] !== undefined ? (parseFloat(row['P(Win) %']) || 0) : 30;
 
-        // Notes — exact 1-to-1 mapping into dedicated columns
-        const rawOwner    = row['Owner'] || row['Opportunity Owner'] || '';
-        const rawStage    = row['Stage'] || '';
-        const rawComments = row['Comments'] || row['Sales / Forecast Comments'] || '';
+        // Exact 1-to-1 column mapping
+        const rawStage      = row['Stage'] || '';
+        const rawOwner      = row['Opportunity Owner'] || row['Owner'] || '';
+        const rawBidManager = row['Proposal Manager'] || row['Bid Manager'] || '';
+        const rawComments   = row['Sales Comments'] || row['Comments'] || row['Sales / Forecast Comments'] || '';
 
         addOpportunity({
           name:       oppName,
@@ -962,6 +1070,7 @@ async function importSalesforce(input) {
           probGo:     pGo,
           probWin:    pWin,
           owner:      rawOwner,
+          bidManager: rawBidManager,
           comments:   rawComments,
         });
 
