@@ -35,6 +35,10 @@ const LIBS = [
     name: 'chart.js',
     url:  'https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js',
   },
+  {
+    name: 'msal-browser.min.js',
+    url:  'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js',
+  },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
