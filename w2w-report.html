@@ -839,7 +839,14 @@ function aggregateDirectCost(s) {
   let estimatedDC   = 0;
   const byCategory  = {};
 
-  (s.costRows || []).forEach(row => {
+  // STEP 0: sort for deterministic floating-point accumulation
+  const rows = [...(s.costRows || [])].sort((a, b) => {
+    const ka = (a.category || '') + '|' + (a.desc || a.description || '') + '|' + (a.rfqId || '');
+    const kb = (b.category || '') + '|' + (b.desc || b.description || '') + '|' + (b.rfqId || '');
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
+
+  rows.forEach(row => {
     if (row.rowType === 'contingency') {
       if (row.scope !== 'excluded') {
         const pct     = parseFloat(row.contingencyPct) || 0;
@@ -872,59 +879,89 @@ function _addToCat(map, cat, val) {
   map[cat] = (map[cat] || 0) + val;
 }
 
-/* ══ Math Engine ═══════════════════════════════════════════════════════════
-   Sequential markup formula as specified:
-     afterRisk  = DC       * (1 + risk / 100)
-     afterSGA   = afterRisk * (1 + sga  / 100)
-     afterEXU   = afterSGA  * (1 + exu  / 100)
-     afterBA    = afterEXU  * (1 + ba   / 100)
-     sellPrice  = afterBA   * (1 + ebit / 100)
-     custPrice  = sellPrice * (1 + neg  / 100)
+/* ══ Math Engine — deterministic denominator-solve (spec Steps 4–6) ═════════
+   All KPI percentages are DECIMALS (e.g. 0.05 = 5%).
+   CRITICAL: negotiation margin is solved via the denominator — never added
+   after pricing.  If denom ≤ 0 the function returns null (IFERROR equiv.).
+   Rounding is applied only at display time; core math is full-precision.
 ═══════════════════════════════════════════════════════════════════════════ */
-function computeKpis(dc, risk, sga, exu, ba, ebit, neg) {
-  const afterRisk = dc        * (1 + risk / 100);
-  const afterSGA  = afterRisk  * (1 + sga  / 100);
-  const afterEXU  = afterSGA   * (1 + exu  / 100);
-  const afterBA   = afterEXU   * (1 + ba   / 100);
-  const sellPrice = afterBA    * (1 + ebit / 100);
-  const custPrice = sellPrice  * (1 + neg  / 100);
+function _runEngine(dc, kpis) {
+  const { rs, ru, w, s, hqExu, hqBa, ebit, neg } = kpis;
 
-  // Layer provisions (absolute EUR added at each step)
-  const riskProv = afterRisk - dc;
-  const sgaProv  = afterSGA  - afterRisk;
-  const exuProv  = afterEXU  - afterSGA;
-  const baProv   = afterBA   - afterEXU;
-  const ebitProv = sellPrice - afterBA;
-  const negProv  = custPrice - sellPrice;
+  // Step 4 — solve price
+  const hq    = hqExu + hqBa;
+  const denom = 1 - (rs + ru + w + s + hq + ebit + neg);
+  if (denom <= 0) return null;
 
-  // Derived KPIs
-  const funcCost       = sgaProv + exuProv + baProv;  // SG&A + EXU + BA overhead
-  const salesMargin    = sellPrice - dc;
-  const salesMarginPct = sellPrice > 0 ? (salesMargin / sellPrice) * 100 : 0;
-  const profit         = salesMargin - funcCost;
-  const profitPct      = sellPrice > 0 ? (profit / sellPrice) * 100 : 0;
+  const P = dc / denom;                               // customerPriceInclNegotiation
+
+  // Step 5 — derive components
+  const riskSpecifiedAmt         = P * rs;
+  const riskUnspecifiedAmt       = P * ru;
+  const warrantyAmt              = P * w;
+  const totalOrderCost           = dc + riskSpecifiedAmt + riskUnspecifiedAmt + warrantyAmt;
+  const sgaAmt                   = P * s;
+  const totalCostOfSalesInclOpex = totalOrderCost + sgaAmt;
+  const hqAddersAmt              = P * hq;
+  const ebitAmt                  = P * ebit;
+  const customerPriceExclNeg     = totalCostOfSalesInclOpex + hqAddersAmt + ebitAmt;
+  const negotiationMarginAmt     = P * neg;
+
+  // Step 6 — LoA kEUR roll-up
+  const revenueKEUR         = P / 1000;
+  const cogsKEUR            = totalOrderCost / 1000;
+  const salesMarginKEUR     = revenueKEUR - cogsKEUR;
+  const salesMarginPct      = revenueKEUR > 0 ? (salesMarginKEUR / revenueKEUR) * 100 : 0;
+  const riskSpecifiedKEUR   = revenueKEUR * rs;
+  const riskUnspecifiedKEUR = revenueKEUR * ru;
+  const warrantyKEUR        = revenueKEUR * w;
+  const riskContingencyKEUR = riskSpecifiedKEUR + riskUnspecifiedKEUR + warrantyKEUR;
+  const sgaKEUR             = revenueKEUR * s;
+  const hqExuKEUR           = revenueKEUR * hqExu;
+  const hqBaKEUR            = revenueKEUR * hqBa;
+  const functionalCostKEUR  = sgaKEUR + hqExuKEUR + hqBaKEUR;
+  const profitKEUR          = revenueKEUR * ebit;
 
   return {
-    dc, afterRisk, afterSGA, afterEXU, afterBA, sellPrice, custPrice,
-    riskProv, sgaProv, exuProv, baProv, ebitProv, negProv, funcCost,
-    salesMargin, salesMarginPct, profit, profitPct,
+    dc, P,
+    riskSpecifiedAmt, riskUnspecifiedAmt, warrantyAmt,
+    totalOrderCost, sgaAmt, totalCostOfSalesInclOpex,
+    hqAddersAmt, ebitAmt, customerPriceExclNeg, negotiationMarginAmt,
+    loa: {
+      revenueKEUR, cogsKEUR, salesMarginKEUR, salesMarginPct,
+      riskContingencyKEUR, riskSpecifiedKEUR, riskUnspecifiedKEUR, warrantyKEUR,
+      functionalCostKEUR, sgaKEUR, hqExuKEUR, hqBaKEUR,
+      profitKEUR, profitPct: ebit * 100,
+    },
   };
 }
 
-/* ── Read current KPI inputs ── */
+/* ── Read current KPI inputs — returns decimals (0.05 = 5%) ── */
 function readKpis(prefix) {
   const p = prefix || 'w';
-  const v = id => parseFloat(document.getElementById(p + '-' + id)?.value) || 0;
-  // For the main 'w' prefix, risk is split into spec + unspec
-  const risk = (p === 'w')
-    ? v('spec-risk') + v('unspec-risk')
-    : v('risk');
+  const pct = id => (parseFloat(document.getElementById(p + '-' + id)?.value) || 0) / 100;
+  if (p === 'w') {
+    return {
+      rs:    pct('spec-risk'),
+      ru:    pct('unspec-risk'),
+      w:     pct('warranty'),
+      s:     pct('sga'),
+      hqExu: pct('exu'),
+      hqBa:  pct('ba'),
+      ebit:  pct('ebit'),
+      neg:   pct('neg'),
+    };
+  }
+  // Scenario B — combined risk input (no spec/unspec split)
   return {
-    risk, sga: v('sga'), exu: v('exu'),
-    ba:   v('ba'),   ebit: v('ebit'), neg: v('neg'),
-    specRisk:   p === 'w' ? v('spec-risk')   : 0,
-    unspecRisk: p === 'w' ? v('unspec-risk') : 0,
-    warranty:   p === 'w' ? v('warranty')    : 0,
+    rs:    pct('risk'),
+    ru:    0,
+    w:     0,
+    s:     pct('sga'),
+    hqExu: pct('exu'),
+    hqBa:  pct('ba'),
+    ebit:  pct('ebit'),
+    neg:   pct('neg'),
   };
 }
 
@@ -937,29 +974,37 @@ const $     = id => document.getElementById(id);
 /* ══ Master update ═════════════════════════════════════════════════════════ */
 function updateAll() {
   const k = readKpis('w');
-  const r = computeKpis(_directCost, k.risk, k.sga, k.exu, k.ba, k.ebit, k.neg);
+  const r = _runEngine(_directCost, k);
   _lastResults = r;
 
-  updateOverview(r);
+  updateOverview(r, k);
   updateKpiStack(r, k);
   updateLoaTab(r);
   updateScenarios();
 }
 
 /* ══ Tab 1: Overview ═══════════════════════════════════════════════════════ */
-function updateOverview(r) {
+function updateOverview(r, k) {
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
 
-  set('ov-sell-price',  fmtK(r.sellPrice));
-  set('ov-cust-price',  fmtK(r.custPrice));
-  set('ov-margin-eur',  fmtK(r.salesMargin));
-  set('ov-margin-pct',  fmtP(r.salesMarginPct));
-  set('ov-profit-eur',  fmtK(r.profit));
-  set('ov-profit-pct',  fmtP(r.profitPct));
+  if (!r) {
+    ['ov-sell-price','ov-cust-price','ov-margin-eur','ov-margin-pct',
+     'ov-profit-eur','ov-profit-pct'].forEach(id => set(id, '—'));
+    const mc = $('bm-margin-chip'); if (mc) mc.style.display = 'none';
+    const pc = $('bm-profit-chip'); if (pc) pc.style.display = 'none';
+    return;
+  }
+
+  set('ov-sell-price', fmtK(r.customerPriceExclNeg));
+  set('ov-cust-price', fmtK(r.P));
+  set('ov-margin-eur', fmtK(r.loa.salesMarginKEUR * 1000));
+  set('ov-margin-pct', fmtP(r.loa.salesMarginPct));
+  set('ov-profit-eur', fmtK(r.ebitAmt));
+  set('ov-profit-pct', fmtP(r.loa.profitPct));
 
   // Benchmark vs targets
-  const md = r.salesMarginPct - 17.5;
-  const pd = r.profitPct      - 13.0;
+  const md = r.loa.salesMarginPct - 17.5;
+  const pd = r.loa.profitPct      - 13.0;
 
   const mc = $('bm-margin-chip'); if (mc) mc.style.display = 'flex';
   const pc = $('bm-profit-chip'); if (pc) pc.style.display = 'flex';
@@ -974,7 +1019,6 @@ function updateOverview(r) {
     pv.textContent = (pd >= 0 ? '+' : '') + pd.toFixed(1) + '%';
     pv.style.color = pd >= 0 ? 'var(--green)' : 'var(--red)';
   }
-
 }
 
 /* ══ Tab 2: Project Scope ══════════════════════════════════════════════════ */
@@ -1078,12 +1122,19 @@ function renderScope() {
 
 /* ══ Tab 3: KPI Stack ══════════════════════════════════════════════════════ */
 function updateKpiStack(r, k) {
-  // Direct cost display in the inputs card
   const dcel = $('kpi-direct-cost');
-  if (dcel) dcel.textContent = fmtK(r.dc);
+  if (dcel) dcel.textContent = r ? fmtK(r.dc) : '—';
 
   const stack = $('kpi-stack');
   if (!stack) return;
+
+  if (!r) {
+    stack.innerHTML = '<div class="ksr" style="color:var(--red);padding:12px 16px;">⚠ Invalid KPI combination — denominator ≤ 0. Reduce the total KPI stack below 100%.</div>';
+    return;
+  }
+
+  const totalRiskAmt = r.riskSpecifiedAmt + r.riskUnspecifiedAmt + r.warrantyAmt;
+  const afterHQ      = r.totalCostOfSalesInclOpex + r.hqAddersAmt;
 
   const rows = [
     {
@@ -1096,50 +1147,42 @@ function updateKpiStack(r, k) {
     },
     {
       label: 'After Risk',
-      sub:   `Spec. ${fmtP(k.specRisk || 0)} + Unspec. ${fmtP(k.unspecRisk || 0)} = ${fmtP(k.risk)}`,
-      val:   r.afterRisk,
-      add:   r.riskProv,
-      pct:   k.risk,
+      sub:   `Spec. ${fmtP(k.rs*100)} + Unspec. ${fmtP(k.ru*100)} + Warranty ${fmtP(k.w*100)}`,
+      val:   r.totalOrderCost,
+      add:   totalRiskAmt,
+      pct:   (k.rs + k.ru + k.w) * 100,
       hi:    false,
     },
     {
       label: 'After SG&A',
-      sub:   `SG&A markup applied (${fmtP(k.sga)})`,
-      val:   r.afterSGA,
-      add:   r.sgaProv,
-      pct:   k.sga,
+      sub:   `SG&A (${fmtP(k.s*100)} of revenue)`,
+      val:   r.totalCostOfSalesInclOpex,
+      add:   r.sgaAmt,
+      pct:   k.s * 100,
       hi:    false,
     },
     {
-      label: 'After EXU',
-      sub:   `HQ Adders EXU markup (${fmtP(k.exu)})`,
-      val:   r.afterEXU,
-      add:   r.exuProv,
-      pct:   k.exu,
+      label: 'After HQ Adders',
+      sub:   `EXU ${fmtP(k.hqExu*100)} + BA ${fmtP(k.hqBa*100)} (of revenue)`,
+      val:   afterHQ,
+      add:   r.hqAddersAmt,
+      pct:   (k.hqExu + k.hqBa) * 100,
       hi:    false,
     },
     {
-      label: 'After BA',
-      sub:   `HQ Adders BA markup (${fmtP(k.ba)})`,
-      val:   r.afterBA,
-      add:   r.baProv,
-      pct:   k.ba,
-      hi:    false,
-    },
-    {
-      label: 'Customer Price (no Neg.)',
-      sub:   `EBIT markup applied (${fmtP(k.ebit)})`,
-      val:   r.sellPrice,
-      add:   r.ebitProv,
-      pct:   k.ebit,
+      label: 'Customer Price (excl. Neg.)',
+      sub:   `EBIT (${fmtP(k.ebit*100)} of revenue)`,
+      val:   r.customerPriceExclNeg,
+      add:   r.ebitAmt,
+      pct:   k.ebit * 100,
       hi:    true,
     },
     {
       label: 'Customer Price incl. Neg.',
-      sub:   `Negotiation buffer (${fmtP(k.neg)})`,
-      val:   r.custPrice,
-      add:   r.negProv,
-      pct:   k.neg,
+      sub:   `Negotiation solved via denominator (${fmtP(k.neg*100)})`,
+      val:   r.P,
+      add:   r.negotiationMarginAmt,
+      pct:   k.neg * 100,
       hi:    true,
     },
   ];
@@ -1160,54 +1203,67 @@ function updateKpiStack(r, k) {
 /* ══ Tab 4: LoA W2W ════════════════════════════════════════════════════════ */
 function updateLoaTab(r) {
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
+  const NA_IDS = ['loa-revenue','loa-cogs','loa-sm-eur','loa-sm-pct',
+    'loa-risk-prov','loa-sga-prov','loa-func-cost','loa-ebit-prov',
+    'loa-profit-eur','loa-profit-pct','loa-risk-total',
+    'rs-specified-eur','rs-unspecified-eur','rs-warranty-eur'];
 
-  set('loa-revenue',    fmtK(r.sellPrice));
-  set('loa-cogs',       fmtK(r.dc));
-  set('loa-sm-eur',     fmtK(r.salesMargin));
-  set('loa-sm-pct',     fmtP(r.salesMarginPct));
-  set('loa-risk-prov',  fmtK(r.riskProv));
-  set('loa-sga-prov',   fmtK(r.sgaProv));
-  set('loa-func-cost',  fmtK(r.funcCost));
-  set('loa-ebit-prov',  fmtK(r.ebitProv));
-  set('loa-profit-eur', fmtK(r.profit));
-  set('loa-profit-pct', fmtP(r.profitPct));
-  set('loa-risk-total', fmtK(r.riskProv));
+  if (!r) { NA_IDS.forEach(id => set(id, '—')); return; }
 
-  // Risk contingency breakdown — derived directly from Direct Cost × KPI %
-  const specPct   = parseFloat($('w-spec-risk')?.value)   || 0;
-  const unspecPct = parseFloat($('w-unspec-risk')?.value) || 0;
-  const warrPct   = parseFloat($('w-warranty')?.value)    || 0;
-  set('rs-specified-eur',   fmtK(_directCost * (specPct   / 100)));
-  set('rs-unspecified-eur', fmtK(_directCost * (unspecPct / 100)));
-  set('rs-warranty-eur',    fmtK(_directCost * (warrPct   / 100)));
+  const l = r.loa;
+  set('loa-revenue',    fmtK(r.P));
+  set('loa-cogs',       fmtK(r.totalOrderCost));
+  set('loa-sm-eur',     fmtK(l.salesMarginKEUR * 1000));
+  set('loa-sm-pct',     fmtP(l.salesMarginPct));
+  set('loa-risk-prov',  fmtK(l.riskContingencyKEUR * 1000));
+  set('loa-sga-prov',   fmtK(r.sgaAmt));
+  set('loa-func-cost',  fmtK(l.functionalCostKEUR * 1000));
+  set('loa-ebit-prov',  fmtK(r.ebitAmt));
+  set('loa-profit-eur', fmtK(l.profitKEUR * 1000));
+  set('loa-profit-pct', fmtP(l.profitPct));
+  set('loa-risk-total', fmtK(l.riskContingencyKEUR * 1000));
+
+  // Risk breakdown — P × KPI % per spec Step 5
+  set('rs-specified-eur',   fmtK(r.riskSpecifiedAmt));
+  set('rs-unspecified-eur', fmtK(r.riskUnspecifiedAmt));
+  set('rs-warranty-eur',    fmtK(r.warrantyAmt));
 }
 
 /* ══ Tab 5: Scenarios ══════════════════════════════════════════════════════ */
 function updateScenarios() {
   const kA = readKpis('w');
-  const rA = computeKpis(_directCost, kA.risk, kA.sga, kA.exu, kA.ba, kA.ebit, kA.neg);
+  const rA = _runEngine(_directCost, kA);
 
   const kB = readKpis('sb');
-  const rB = computeKpis(_directCost, kB.risk, kB.sga, kB.exu, kB.ba, kB.ebit, kB.neg);
+  const rB = _runEngine(_directCost, kB);
 
-  // Mirror Scenario A inputs (read-only display)
-  ['risk','sga','exu','ba','ebit','neg'].forEach(key => {
+  // Mirror Scenario A inputs into read-only display fields
+  const saMap = { risk: (kA.rs + kA.ru) * 100, sga: kA.s * 100,
+    exu: kA.hqExu * 100, ba: kA.hqBa * 100, ebit: kA.ebit * 100, neg: kA.neg * 100 };
+  Object.entries(saMap).forEach(([key, val]) => {
     const el = $('sa-' + key);
-    if (el) el.value = kA[key].toFixed(1);
+    if (el) el.value = val.toFixed(1);
   });
 
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
-  set('sa-price',  fmtK(rA.custPrice));
-  set('sa-margin', fmtP(rA.salesMarginPct));
-  set('sb-price',  fmtK(rB.custPrice));
-  set('sb-margin', fmtP(rB.salesMarginPct));
+  set('sa-price',  rA ? fmtK(rA.P) : '—');
+  set('sa-margin', rA ? fmtP(rA.loa.salesMarginPct) : '—');
+  set('sb-price',  rB ? fmtK(rB.P) : '—');
+  set('sb-margin', rB ? fmtP(rB.loa.salesMarginPct) : '—');
 
-  // Delta pill
-  const delta      = rB.custPrice - rA.custPrice;
-  const absDelta   = Math.abs(delta);
-  const cls        = absDelta < 0.5 ? 'dp-zero' : delta > 0 ? 'dp-pos' : 'dp-neg';
-  const pillHTML   = `<span class="delta-pill ${cls}">Delta: ${fmtKd(delta)}</span>`;
-  const wrap       = $('delta-pill-wrap');
+  if (!rA || !rB) {
+    const wrap = $('delta-pill-wrap');
+    if (wrap) wrap.innerHTML = '<span class="delta-pill dp-zero">Cannot compare — invalid KPI combination</span>';
+    const bar = $('sc-delta-bar');
+    if (bar) bar.innerHTML = 'Comparing A vs B &nbsp;·&nbsp; <span class="delta-pill dp-zero">Cannot compare</span>';
+    return;
+  }
+
+  const delta    = rB.P - rA.P;
+  const absDelta = Math.abs(delta);
+  const cls      = absDelta < 0.5 ? 'dp-zero' : delta > 0 ? 'dp-pos' : 'dp-neg';
+  const pillHTML = `<span class="delta-pill ${cls}">Delta: ${fmtKd(delta)}</span>`;
+  const wrap     = $('delta-pill-wrap');
   if (wrap) wrap.innerHTML = pillHTML;
 
   const bar = $('sc-delta-bar');
@@ -1216,10 +1272,13 @@ function updateScenarios() {
 
 function cloneToB() {
   const kA = readKpis('w');
-  ['risk','sga','exu','ba','ebit','neg'].forEach(key => {
-    const el = $('sb-' + key);
-    if (el) el.value = kA[key].toFixed(1);
-  });
+  const setv = (id, val) => { const el = $(id); if (el) el.value = val.toFixed(1); };
+  setv('sb-risk', (kA.rs + kA.ru) * 100);
+  setv('sb-sga',  kA.s * 100);
+  setv('sb-exu',  kA.hqExu * 100);
+  setv('sb-ba',   kA.hqBa * 100);
+  setv('sb-ebit', kA.ebit * 100);
+  setv('sb-neg',  kA.neg * 100);
   updateScenarios();
 }
 
@@ -1267,35 +1326,46 @@ function updateFactoryKpi(id, key, val) {
   renderW2WTable();
 }
 
-function _computeFactory(dc, kpis) {
-  const riskProv = dc * (kpis.rw  || 0) / 100;
-  const afterRisk = dc + riskProv;
-  const afterSGA  = afterRisk * (1 + (kpis.sga  || 0) / 100);
-  const afterEXU  = afterSGA  * (1 + (kpis.exu  || 0) / 100);
-  const afterBA   = afterEXU  * (1 + (kpis.ba   || 0) / 100);
-  const transfer  = afterBA   * (1 + (kpis.ebit || 0) / 100);
-  const sgaProv   = afterSGA  - afterRisk;
-  const exuProv   = afterEXU  - afterSGA;
-  const baProv    = afterBA   - afterEXU;
-  const ebitProv  = transfer  - afterBA;
-  const salesMargin = transfer - dc;
-  const funcCost    = sgaProv + exuProv + baProv;
-  const profit      = salesMargin - funcCost;
+/* ── Factory engine — spec Step 2 (reverse waterfall from CP) ──────────────
+   CP = customerPriceFactory = includedBase = dc for this factory.
+   KPI percentages are stored as % points (e.g. 5 = 5%); divided here.
+   Factory blocks are reporting-only; they do NOT drive the overall price.
+─────────────────────────────────────────────────────────────────────────── */
+function _computeFactory(cp, kpis) {
+  const rw   = (kpis.rw   || 0) / 100;
+  const sga  = (kpis.sga  || 0) / 100;
+  const exu  = (kpis.exu  || 0) / 100;
+  const ba   = (kpis.ba   || 0) / 100;
+  const ebit = (kpis.ebit || 0) / 100;
+
+  const riskProv = cp * rw;
+  const sgaProv  = cp * sga;
+  const exuProv  = cp * exu;
+  const baProv   = cp * ba;
+  const ebitProv = cp * ebit;
+
+  // Spec Step 2 derived totals (exact order)
+  const totalCostOfSalesF = cp - baProv - exuProv - ebitProv;
+  const totalOrderCostF   = totalCostOfSalesF - sgaProv;
+  const totalDirectCostF  = cp - exuProv - baProv - sgaProv - ebitProv;
+
   return {
-    dc, afterRisk, afterSGA, afterEXU, afterBA, transfer,
+    dc: cp,                          // includedBase == customerPriceFactory
     riskProv, sgaProv, exuProv, baProv, ebitProv,
-    salesMargin, funcCost, profit,
+    totalCostOfSalesF, totalOrderCostF, totalDirectCostF,
+    transfer: cp,                    // no external markup on factory
   };
 }
 
 function _factoryStackHTML(r) {
   const rows = [
-    { label: 'Base Direct Cost',       val: r.dc        },
-    { label: 'After Risk + Warranty',  val: r.afterRisk },
-    { label: 'After SG&A',            val: r.afterSGA  },
-    { label: 'After EXU',             val: r.afterEXU  },
-    { label: 'After BA',              val: r.afterBA   },
-    { label: 'Factory Transfer Price', val: r.transfer,  hi: true },
+    { label: 'Factory Customer Price', val: r.dc,               hi: true  },
+    { label: 'Risk + Warranty',        val: r.riskProv                     },
+    { label: 'SG&A',                   val: r.sgaProv                      },
+    { label: 'HQ Adders EXU',         val: r.exuProv                      },
+    { label: 'HQ Adders BA',          val: r.baProv                       },
+    { label: 'EBIT Provision',         val: r.ebitProv                     },
+    { label: 'Total Direct Cost',      val: r.totalDirectCostF, hi: true  },
   ];
   return rows.map(row =>
     `<div class="fsr${row.hi ? ' fhi' : ''}">
@@ -1391,32 +1461,28 @@ function renderW2WTable() {
     return;
   }
 
-  // ── Compute per-factory results ──
+  // ── Compute per-factory results (spec Step 2 — reporting only) ──
   const results = factories.map(f => ({
     f,
     r: _computeFactory(_byCategory[f.category] || 0, f.kpis),
   }));
 
-  // ── Business Area (BA) totals ──
+  // ── Business Area (BA) totals — sum per-factory outputs ──
   const ba = {
-    dc:        results.reduce((s, x) => s + x.r.dc,         0),
-    transfer:  results.reduce((s, x) => s + x.r.transfer,   0),
-    riskProv:  results.reduce((s, x) => s + x.r.riskProv,   0),
-    sgaProv:   results.reduce((s, x) => s + x.r.sgaProv,    0),
-    exuProv:   results.reduce((s, x) => s + x.r.exuProv,    0),
-    baProv:    results.reduce((s, x) => s + x.r.baProv,     0),
-    ebitProv:  results.reduce((s, x) => s + x.r.ebitProv,   0),
+    dc:               results.reduce((s, x) => s + x.r.dc,               0),
+    transfer:         results.reduce((s, x) => s + x.r.transfer,          0),
+    riskProv:         results.reduce((s, x) => s + x.r.riskProv,          0),
+    sgaProv:          results.reduce((s, x) => s + x.r.sgaProv,           0),
+    exuProv:          results.reduce((s, x) => s + x.r.exuProv,           0),
+    baProv:           results.reduce((s, x) => s + x.r.baProv,            0),
+    ebitProv:         results.reduce((s, x) => s + x.r.ebitProv,          0),
+    totalDirectCostF: results.reduce((s, x) => s + x.r.totalDirectCostF,  0),
+    totalOrderCostF:  results.reduce((s, x) => s + x.r.totalOrderCostF,   0),
+    totalCostOfSalesF:results.reduce((s, x) => s + x.r.totalCostOfSalesF, 0),
   };
 
-  ba.afterRisk   = ba.dc       + ba.riskProv;
-  ba.afterSGA    = ba.afterRisk + ba.sgaProv;
-  ba.afterEXU    = ba.afterSGA  + ba.exuProv;
-  ba.afterBA     = ba.afterEXU  + ba.baProv;
-  ba.salesMargin = ba.transfer - ba.dc;
-  ba.funcCost    = ba.sgaProv + ba.exuProv + ba.baProv;
-  ba.profit      = ba.salesMargin - ba.funcCost;
-
   // ── Helper: format a pair of cells (kEUR, %) relative to a base ──
+  // % denominator defaults to r.dc (= factory CP per spec Step 2)
   function cells(val, base, cls = '') {
     if (val === null) return `<td class="w2w-grey" colspan="2"></td>`;
     const pct = base > 0 ? (val / base) * 100 : 0;
@@ -1433,11 +1499,9 @@ function renderW2WTable() {
   ).join('');
 
   // ── Row builder ──
-  // baseFn(r): optional — returns the denominator for the % column.
-  //   Defaults to r.transfer (revenue). Pass the prior-step base for markup rows
-  //   so the % matches the KPI % the user entered.
+  // baseFn(r): denominator for the % column — defaults to r.dc (factory CP).
   function row(label, valFn, opts = {}) {
-    const { cls = '', sub = false, spacer = false, hi = false, sep = false, total = false, baseFn = null } = opts;
+    const { sub = false, spacer = false, hi = false, sep = false, total = false, baseFn = null } = opts;
     if (spacer) return `<tr class="w2w-row-spacer"><td colspan="${2 + results.length * 2 + 2}"></td></tr>`;
 
     let rowCls = '';
@@ -1450,12 +1514,12 @@ function renderW2WTable() {
 
     const subsysCells = results.map(({ r }) => {
       const val  = valFn(r);
-      const base = baseFn ? baseFn(r) : r.transfer;
+      const base = baseFn ? baseFn(r) : r.dc;
       return cells(val, base, cellCls);
     }).join('');
 
     const baVal   = valFn(ba);
-    const baBase  = baseFn ? baseFn(ba) : ba.transfer;
+    const baBase  = baseFn ? baseFn(ba) : ba.dc;
     const baCells = cells(baVal, baBase, cellCls);
 
     return `<tr class="${rowCls}">
@@ -1464,8 +1528,6 @@ function renderW2WTable() {
       ${baCells}
     </tr>`;
   }
-
-  // (ba computed fields already set above)
 
   const tableHTML = `
     <div class="w2w-tbl-meta">
@@ -1492,20 +1554,17 @@ function renderW2WTable() {
         </tr>
       </thead>
       <tbody>
-        ${row('Revenue (Factory Transfer Price)', r => r.transfer, { hi: true })}
+        ${row('Factory Customer Price (CP)', r => r.dc, { hi: true })}
         ${row('', null, { spacer: true })}
-        ${row('Cost of Goods Sold (Direct Cost)', r => r.dc, { sep: true })}
-        ${row('Sales Margin', r => r.transfer - r.dc, { total: true })}
+        ${row('Risk + Warranty',    r => r.riskProv,          { sep: true, total: true })}
+        ${row('SG&A',              r => r.sgaProv,            { sub: true })}
+        ${row('HQ Adders — EXU',   r => r.exuProv,            { sub: true })}
+        ${row('HQ Adders — BA',    r => r.baProv,             { sub: true })}
+        ${row('EBIT Provision',    r => r.ebitProv,            { sub: true })}
         ${row('', null, { spacer: true })}
-        ${row('Functional Cost', r => r.sgaProv + r.exuProv + r.baProv, { sep: true, total: true })}
-        ${row('SG&A',            r => r.sgaProv,  { sub: true, baseFn: r => r.afterRisk })}
-        ${row('HQ Adders — EXU', r => r.exuProv,  { sub: true, baseFn: r => r.afterSGA  })}
-        ${row('HQ Adders — BA',  r => r.baProv,   { sub: true, baseFn: r => r.afterEXU  })}
-        ${row('Profit (Sales Margin − Func. Cost)', r => r.profit, { total: true, sep: true })}
-        ${row('', null, { spacer: true })}
-        ${row('EBIT Provision',  r => r.ebitProv,  { sep: true, total: true, baseFn: r => r.afterBA })}
-        ${row('', null, { spacer: true })}
-        ${row('Risk + Warranty', r => r.riskProv,  { sep: true, total: true, baseFn: r => r.dc      })}
+        ${row('Total Order Cost',  r => r.totalOrderCostF,   { sep: true, total: true })}
+        ${row('Total Cost of Sales', r => r.totalCostOfSalesF, { sep: true })}
+        ${row('Total Direct Cost', r => r.totalDirectCostF,   { sep: true, hi: true  })}
       </tbody>
     </table>`;
 
