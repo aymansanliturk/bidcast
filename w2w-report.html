@@ -374,6 +374,69 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
   .ksr { grid-template-columns: 1fr 1fr; }
   .ksr-add, .ksr-pct { display: none; }
 }
+
+/* ── Project Lines Table ── */
+.pl-tbl { width: 100%; border-collapse: collapse; }
+.pl-tbl th {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--faint); border-bottom: 2px solid var(--border); padding: 8px 10px; text-align: left;
+}
+.pl-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.pl-tbl tbody tr:last-child td { border-bottom: none; }
+.pl-input {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; background: var(--bg);
+  border: 1.5px solid var(--border); border-radius: 6px; padding: 5px 8px;
+  outline: none; width: 100%; transition: border-color .15s; color: var(--text);
+}
+.pl-input:focus { border-color: var(--accent); background: var(--input-bg-focus); }
+.pl-select {
+  font-family: 'DM Sans', sans-serif; font-size: 12px; background: var(--bg);
+  border: 1.5px solid var(--border); border-radius: 6px; padding: 5px 8px;
+  outline: none; color: var(--text); cursor: pointer; width: 100%;
+}
+.pl-select:focus { border-color: var(--accent); }
+.pl-del {
+  background: none; border: none; cursor: pointer; color: var(--faint);
+  font-size: 14px; padding: 3px 7px; border-radius: 4px; transition: color .15s;
+}
+.pl-del:hover { color: var(--red); }
+.pl-toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.btn-pl-add {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 6px 14px; border-radius: 7px; border: 1.5px solid var(--accent);
+  background: var(--accent); color: #fff; cursor: pointer; transition: all .15s;
+}
+.btn-pl-add:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-pl-import {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+  padding: 6px 14px; border-radius: 7px; border: 1.5px solid var(--border);
+  background: var(--bg); color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.btn-pl-import:hover { border-color: var(--accent); color: var(--accent); background: #fff; }
+
+/* ── Engine Error Banner ── */
+.engine-error {
+  display: none; background: #fef2f2; border: 1.5px solid #fca5a5;
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 18px;
+  color: #991b1b; font-size: 12px; font-weight: 600;
+}
+.engine-error.visible { display: flex; align-items: center; gap: 10px; }
+[data-theme="dark"] .engine-error { background: #2e1515; border-color: #7f1d1d; color: #fca5a5; }
+
+/* ── Results Stack (section D) ── */
+.results-stack { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.rsr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 8px;
+}
+.rsr:last-child { border-bottom: none; }
+.rsr.rhi { background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%); }
+.rsr-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.rsr.rhi .rsr-label { color: rgba(255,255,255,.7); }
+.rsr-val { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text); }
+.rsr.rhi .rsr-val { color: #fff; }
+.rsr-pct { font-size: 10px; color: var(--faint); min-width: 42px; text-align: right; }
+.rsr.rhi .rsr-pct { color: rgba(255,255,255,.45); }
 </style>
 </head>
 <body>
@@ -397,6 +460,7 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
     <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="saveJSON()">Save</button>
+    <button class="tb-btn" onclick="loadJSONFile()">Load</button>
     <div class="tb-sep"></div>
     <button class="tb-btn" onclick="refreshAll()">↻ Refresh from CalcCast</button>
     <span id="proj-name-display"></span>
@@ -406,18 +470,118 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
 
 <!-- ════════════════════════════════ TAB NAV ════════════════════════════════ -->
 <div id="tab-nav">
-  <button class="tab-btn active"  onclick="showTab('overview',   this)">① Overview</button>
-  <button class="tab-btn"         onclick="showTab('scope',      this)">② Project Scope</button>
-  <button class="tab-btn"         onclick="showTab('kpis',       this)">③ W2W KPIs</button>
-  <button class="tab-btn"         onclick="showTab('loa',        this)">④ LoA W2W</button>
-  <button class="tab-btn"         onclick="showTab('scenarios',  this)">⑤ Scenarios</button>
+  <button class="tab-btn active"  onclick="showTab('inputs',     this)">① Inputs</button>
+  <button class="tab-btn"         onclick="showTab('overview',   this)">② Overview</button>
+  <button class="tab-btn"         onclick="showTab('scope',      this)">③ Project Scope</button>
+  <button class="tab-btn"         onclick="showTab('kpis',       this)">④ KPI Stack</button>
+  <button class="tab-btn"         onclick="showTab('loa',        this)">⑤ LoA W2W</button>
+  <button class="tab-btn"         onclick="showTab('scenarios',  this)">⑥ Scenarios</button>
 </div>
 
 <!-- ══════════════════════════ MAIN CONTENT ═════════════════════════════════ -->
 <div id="main-content">
 
-  <!-- ── Tab 1: Overview ──────────────────────────────────────────────────── -->
-  <div id="tab-overview" class="tab-panel active">
+  <!-- ── Tab 1: Inputs ───────────────────────────────────────────────────── -->
+  <div id="tab-inputs" class="tab-panel active">
+
+    <!-- Engine error banner -->
+    <div class="engine-error" id="engine-error-banner">
+      <span>⚠</span>
+      <span id="engine-error-msg">Invalid KPI combination — denominator ≤ 0. Reduce the total KPI stack below 100%.</span>
+    </div>
+
+    <!-- Section A: Project Metadata -->
+    <div class="card">
+      <div class="card-title"><div class="card-title-bar"></div>A — Project Metadata</div>
+      <div class="fields f3">
+        <label>Project Name
+          <input type="text" id="meta-project-name" placeholder="e.g. Wind Farm Package A" oninput="_scheduleSnap()">
+        </label>
+        <label>Country Code
+          <input type="text" id="meta-country-code" placeholder="e.g. DE" maxlength="4" oninput="_scheduleSnap()">
+        </label>
+        <label>Currency Base
+          <input type="text" id="meta-currency-base" value="EUR" maxlength="3" oninput="_scheduleSnap()">
+        </label>
+      </div>
+    </div>
+
+    <!-- Section B: Project Lines -->
+    <div class="card">
+      <div class="card-title"><div class="card-title-bar"></div>B — Project Lines (Direct Cost)</div>
+      <div class="pl-toolbar">
+        <button class="btn-pl-add" onclick="addProjectLine()">+ Add Line</button>
+        <button class="btn-pl-import" onclick="importLinesFromCalcCast()">⇩ Import from CalcCast</button>
+        <span id="pl-total-display" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-left:auto;"></span>
+      </div>
+      <div id="pl-table-wrap">
+        <table class="pl-tbl">
+          <thead>
+            <tr>
+              <th style="width:30%">Category Key</th>
+              <th style="width:20%">Line ID</th>
+              <th style="width:16%">Scope</th>
+              <th style="width:24%;text-align:right;">Cost Price (EUR)</th>
+              <th style="width:10%;text-align:center;"></th>
+            </tr>
+          </thead>
+          <tbody id="pl-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="two-col">
+
+      <!-- Section C: Overall KPIs -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-bar"></div>C — Overall KPIs</div>
+        <div class="fields" style="gap:10px;">
+          <label>Specified Risk %
+            <input type="number" id="w-spec-risk" value="2.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>Unspecified Risk %
+            <input type="number" id="w-unspec-risk" value="3.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>Warranty %
+            <input type="number" id="w-warranty" value="1.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>SG&amp;A %
+            <input type="number" id="w-sga" value="4.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>HQ Adders EXU %
+            <input type="number" id="w-exu" value="3.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>HQ Adders BA %
+            <input type="number" id="w-ba" value="2.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>EBIT %
+            <input type="number" id="w-ebit" value="8.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+          <label>Negotiation Margin %
+            <input type="number" id="w-neg" value="5.0" min="0" step="0.1" oninput="runEngineAndUpdateUI();_scheduleSnap()">
+          </label>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">Total DC from Project Lines</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--text);" id="kpi-direct-cost">—</div>
+        </div>
+      </div>
+
+      <!-- Section D: Results -->
+      <div class="card">
+        <div class="card-title"><div class="card-title-bar"></div>D — Results</div>
+        <div id="results-stack-wrap">
+          <div class="empty-state" style="padding:30px 0;">
+            <p>Enter project lines and KPIs to see results.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /two-col -->
+  </div><!-- /tab-inputs -->
+
+  <!-- ── Tab 2: Overview ──────────────────────────────────────────────────── -->
+  <div id="tab-overview" class="tab-panel">
 
     <div class="summary-banner">
       <div class="sb-item">
@@ -492,51 +656,16 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
     </div>
   </div>
 
-  <!-- ── Tab 3: W2W KPIs ──────────────────────────────────────────────────── -->
+  <!-- ── Tab 4: KPI Stack ─────────────────────────────────────────────────── -->
   <div id="tab-kpis" class="tab-panel">
-    <div class="three-col">
-
-      <div class="card">
-        <div class="card-title"><div class="card-title-bar"></div>KPI Inputs</div>
-        <div class="fields" style="gap:10px;">
-          <label>Specified Risk %
-            <input type="number" id="w-spec-risk" value="2.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>Unspecified Risk %
-            <input type="number" id="w-unspec-risk" value="3.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>SG&amp;A %
-            <input type="number" id="w-sga" value="4.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>HQ Adders EXU %
-            <input type="number" id="w-exu" value="3.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>HQ Adders BA %
-            <input type="number" id="w-ba" value="2.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>EBIT %
-            <input type="number" id="w-ebit" value="8.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>Negotiation Margin %
-            <input type="number" id="w-neg" value="5.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-          <label>Warranty %
-            <input type="number" id="w-warranty" value="1.0" min="0" step="0.1" oninput="updateAll();_scheduleSnap()">
-          </label>
-        </div>
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
-          <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);margin-bottom:8px;">Direct Cost (from CalcCast)</div>
-          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--text);" id="kpi-direct-cost">—</div>
-        </div>
+    <div class="card">
+      <div class="card-title"><div class="card-title-bar"></div>W2W Sequential Stack</div>
+      <div style="font-size:11px;color:var(--faint);margin-bottom:14px;line-height:1.65;">
+        Denominator-solve pricing: <em>P = DC / (1 − Σ KPI%)</em>. Negotiation margin is baked into the denominator — never added after pricing. Edit KPI inputs in the <strong>① Inputs</strong> tab.
       </div>
-
-      <div class="card">
-        <div class="card-title"><div class="card-title-bar"></div>W2W Sequential Stack</div>
-        <div class="kpi-stack" id="kpi-stack">
-          <!-- populated by JS -->
-        </div>
+      <div class="kpi-stack" id="kpi-stack">
+        <!-- populated by JS -->
       </div>
-
     </div>
   </div><!-- /tab-kpis -->
 
@@ -704,30 +833,44 @@ table.w2w-tbl tr.w2w-row-spacer td { height: 6px; background: var(--bg); padding
 <script>
 /* ══ Module-level state ════════════════════════════════════════════════════ */
 let _ccState     = {};   // raw CalcCast localStorage state
-let _directCost  = 0;    // total EUR direct cost (included rows only)
-let _byCategory  = {};   // { categoryName: totalEUR }
-let _fixedDC     = 0;    // EUR sum of rows explicitly marked fixed
-let _estimatedDC = 0;    // EUR sum of all other included rows
-let _lastResults = null; // last computeKpis() result (Scenario A)
+let _directCost  = 0;    // total EUR direct cost (synced from engine output)
+let _byCategory  = {};   // { categoryName: totalEUR } synced from engine output
+let _fixedDC     = 0;    // EUR sum of fixed rows (for scope pie chart)
+let _estimatedDC = 0;    // EUR sum of estimated rows (for scope pie chart)
+let _lastOutputs = null; // last W2wEngine.run() outputs
 
 /* ══ State key ═════════════════════════════════════════════════════════════ */
-const STATE_KEY = 'bidcast_state_w2wreport';
-let _w2wState = { factories: [] };
+const STATE_KEY = 'bidcast_state_w2w';
+let _w2wState    = { factories: [] };
+let _projectLines = [];   // array of { lineId, categoryKey, scope, costPriceEur }
+let _lineCounter  = 0;    // auto-increment for new line IDs
 
 /* ══ collectState / applyState ═════════════════════════════════════════════ */
 function collectState() {
-  const v = id => parseFloat(document.getElementById(id)?.value) || 0;
+  const pct = id => (parseFloat(document.getElementById(id)?.value) || 0) / 100;
+  const gv  = id => (document.getElementById(id)?.value || '').trim();
+  const fv  = id => parseFloat(document.getElementById(id)?.value) || 0;
   return {
-    version: 1,
-    kpisA: {
-      specRisk:  v('w-spec-risk'), unspecRisk: v('w-unspec-risk'),
-      sga:       v('w-sga'),       exu:        v('w-exu'),
-      ba:        v('w-ba'),        ebit:       v('w-ebit'),
-      neg:       v('w-neg'),       warranty:   v('w-warranty'),
+    version: 2,
+    projectMeta: {
+      projectName:  gv('meta-project-name'),
+      countryCode:  gv('meta-country-code'),
+      currencyBase: gv('meta-currency-base') || 'EUR',
+    },
+    projectLines: _projectLines.slice(),
+    overallKpis: {
+      riskSpecifiedPct:    pct('w-spec-risk'),
+      riskUnspecifiedPct:  pct('w-unspec-risk'),
+      warrantyPct:         pct('w-warranty'),
+      sgaPct:              pct('w-sga'),
+      hqExuPct:            pct('w-exu'),
+      hqBaPct:             pct('w-ba'),
+      ebitPct:             pct('w-ebit'),
+      negotiationMarginPct: pct('w-neg'),
     },
     kpisB: {
-      risk: v('sb-risk'), sga:  v('sb-sga'), exu:  v('sb-exu'),
-      ba:   v('sb-ba'),   ebit: v('sb-ebit'), neg:  v('sb-neg'),
+      risk: fv('sb-risk'), sga: fv('sb-sga'), exu: fv('sb-exu'),
+      ba:   fv('sb-ba'),   ebit: fv('sb-ebit'), neg: fv('sb-neg'),
     },
     factories: _w2wState.factories,
   };
@@ -736,21 +879,49 @@ function collectState() {
 function applyState(s) {
   if (!s) return;
   const setV = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-  if (s.kpisA) {
+  const p2s = v => ((v || 0) * 100).toFixed(1);   // decimal → display string
+
+  // Section A: project metadata
+  if (s.projectMeta) {
+    setV('meta-project-name',  s.projectMeta.projectName  || '');
+    setV('meta-country-code',  s.projectMeta.countryCode  || '');
+    setV('meta-currency-base', s.projectMeta.currencyBase || 'EUR');
+  }
+
+  // Section B: project lines
+  if (Array.isArray(s.projectLines)) {
+    _projectLines = s.projectLines;
+    _lineCounter  = _projectLines.length;
+    renderProjectLines();
+  }
+
+  // Section C: overall KPIs — new schema (decimals) or legacy (% points)
+  if (s.overallKpis) {
+    const k = s.overallKpis;
+    setV('w-spec-risk',  p2s(k.riskSpecifiedPct));
+    setV('w-unspec-risk', p2s(k.riskUnspecifiedPct));
+    setV('w-warranty',    p2s(k.warrantyPct));
+    setV('w-sga',         p2s(k.sgaPct));
+    setV('w-exu',         p2s(k.hqExuPct));
+    setV('w-ba',          p2s(k.hqBaPct));
+    setV('w-ebit',        p2s(k.ebitPct));
+    setV('w-neg',         p2s(k.negotiationMarginPct));
+  } else if (s.kpisA) {
+    // legacy v1 format — values already in % points
     setV('w-spec-risk',  s.kpisA.specRisk);   setV('w-unspec-risk', s.kpisA.unspecRisk);
     setV('w-sga',        s.kpisA.sga);         setV('w-exu',         s.kpisA.exu);
     setV('w-ba',         s.kpisA.ba);          setV('w-ebit',        s.kpisA.ebit);
     setV('w-neg',        s.kpisA.neg);         setV('w-warranty',    s.kpisA.warranty);
   }
+
   if (s.kpisB) {
     setV('sb-risk', s.kpisB.risk); setV('sb-sga',  s.kpisB.sga);  setV('sb-exu',  s.kpisB.exu);
     setV('sb-ba',   s.kpisB.ba);   setV('sb-ebit', s.kpisB.ebit); setV('sb-neg',  s.kpisB.neg);
   }
   if (s.factories) {
     _w2wState = { factories: s.factories };
-    renderFactories();
   }
-  updateAll();
+  runEngineAndUpdateUI();
 }
 
 /* ══ Undo / Redo (backed by vendor/pyl0n-state.js) ═════════════════════════ */
@@ -777,21 +948,40 @@ async function saveJSON() {
   await nativeSaveText('w2w_backup.json', JSON.stringify(collectState(), null, 2), 'JSON', '.json');
 }
 
+function loadJSONFile() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        applyState(parsed);
+        _snapshot();
+      } catch { alert('Invalid JSON file.'); }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
 /* ══ Data Ingestion ════════════════════════════════════════════════════════ */
 function loadCalcCastData(seedKpis) {
   try {
     _ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{}');
-  } catch {
-    _ccState = {};
-  }
+  } catch { _ccState = {}; }
 
-  // Project name in toolbar
+  // Project name in toolbar / metadata field
   const pn = _ccState.projName || SuiteManager.read().projectName || '';
   const el = document.getElementById('proj-name-display');
-  if (el) el.textContent = pn ? pn : '';
+  if (el && pn) el.textContent = pn;
+  const metaEl = document.getElementById('meta-project-name');
+  if (metaEl && !metaEl.value && pn) metaEl.value = pn;
 
-  // Seed KPI inputs from CalcCast only on first run (no saved w2wreport state)
   if (seedKpis) {
+    // First run: seed KPI defaults from CalcCast + import project lines
     const kpiMap = [
       ['w-spec-risk',   'kpiSpecRisk',   2.0],
       ['w-unspec-risk', 'kpiUnspecRisk', 3.0],
@@ -806,22 +996,208 @@ function loadCalcCastData(seedKpis) {
       const inp = document.getElementById(elId);
       if (inp) inp.value = parseFloat(_ccState[key] ?? def);
     });
+    importLinesFromCalcCast(true);   // silent import on first run
+    return;                          // importLinesFromCalcCast calls runEngineAndUpdateUI
   }
 
-  // Compute aggregated direct cost
-  const computed  = aggregateDirectCost(_ccState);
-  _directCost     = computed.totalDC;
-  _byCategory     = computed.byCategory;
-  _fixedDC        = computed.fixedDC;
-  _estimatedDC    = computed.estimatedDC;
-
-  updateAll();
-  renderScope();
-  renderFactories();
+  // Refresh: re-sync fixed/estimated for scope pie then re-run engine
+  const computed = aggregateDirectCost(_ccState);
+  _fixedDC     = computed.fixedDC;
+  _estimatedDC = computed.estimatedDC;
+  runEngineAndUpdateUI();
 }
 
 function refreshAll() {
-  loadCalcCastData(false);
+  importLinesFromCalcCast(true);   // true = silent (no alert on empty)
+}
+
+/* ══ Project Lines ═════════════════════════════════════════════════════════ */
+function _buildCategoryModel(lines) {
+  const cats = [...new Set(
+    (lines || []).filter(l => l.scope !== 'excluded')
+                 .map(l => l.categoryKey || 'Uncategorized')
+  )].sort();
+  return cats.map(cat => ({
+    factoryId: cat, label: cat,
+    includedBaseCategories: [cat],
+    totalViewCategories:    [cat],
+  }));
+}
+
+function _buildFactoryKpis(factories) {
+  const out = {};
+  (factories || []).forEach(f => { out[f.category] = f.kpis; });
+  return out;
+}
+
+function addProjectLine(data) {
+  const id = 'L' + (++_lineCounter);
+  _projectLines.push({
+    lineId:       (data && data.lineId)       || id,
+    categoryKey:  (data && data.categoryKey)  || '',
+    scope:        (data && data.scope)        || 'included',
+    costPriceEur: (data && data.costPriceEur) || 0,
+  });
+  renderProjectLines();
+  runEngineAndUpdateUI();
+  _scheduleSnap();
+}
+
+function removeProjectLine(idx) {
+  _projectLines.splice(idx, 1);
+  renderProjectLines();
+  runEngineAndUpdateUI();
+  _scheduleSnap();
+}
+
+function _plValue(idx, field, val) {
+  if (!_projectLines[idx]) return;
+  _projectLines[idx][field] = (field === 'costPriceEur') ? (parseFloat(val) || 0) : val;
+  _updatePLTotal();
+  runEngineAndUpdateUI();
+  _scheduleSnap();
+}
+
+function renderProjectLines() {
+  const tbody = document.getElementById('pl-tbody');
+  if (!tbody) return;
+  if (_projectLines.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--faint);font-size:12px;">No project lines yet. Click + Add Line or ⇩ Import from CalcCast.</td></tr>';
+    _updatePLTotal();
+    return;
+  }
+  tbody.innerHTML = _projectLines.map((line, idx) => `
+    <tr>
+      <td><input class="pl-input" type="text" value="${_esc(line.categoryKey)}" placeholder="e.g. Electrical"
+           onchange="_plValue(${idx},'categoryKey',this.value)" oninput="_plValue(${idx},'categoryKey',this.value)"></td>
+      <td><input class="pl-input" type="text" value="${_esc(line.lineId)}" placeholder="auto"
+           onchange="_plValue(${idx},'lineId',this.value)"></td>
+      <td><select class="pl-select" onchange="_plValue(${idx},'scope',this.value)">
+            <option value="included"${line.scope !== 'excluded' ? ' selected' : ''}>Included</option>
+            <option value="excluded"${line.scope === 'excluded' ? ' selected' : ''}>Excluded</option>
+          </select></td>
+      <td><input class="pl-input" type="number" style="text-align:right;"
+           value="${line.costPriceEur || ''}" min="0" step="1" placeholder="0"
+           onchange="_plValue(${idx},'costPriceEur',this.value)"
+           oninput="_plValue(${idx},'costPriceEur',this.value)"></td>
+      <td style="text-align:center;"><button class="pl-del" onclick="removeProjectLine(${idx})" title="Remove">✕</button></td>
+    </tr>`).join('');
+  _updatePLTotal();
+}
+
+function _updatePLTotal() {
+  const total = _projectLines
+    .filter(l => l.scope !== 'excluded')
+    .reduce((s, l) => s + (parseFloat(l.costPriceEur) || 0), 0);
+  const el = document.getElementById('pl-total-display');
+  if (el) el.textContent = total > 0 ? 'Total DC: ' + fmtK(total) : '';
+}
+
+function importLinesFromCalcCast(silent) {
+  let ccState = {};
+  try { ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{}'); } catch {}
+  const computed = aggregateDirectCost(ccState);
+  const newLines = Object.entries(computed.byCategory)
+    .filter(([, v]) => v > 0)
+    .map(([cat, val]) => ({
+      lineId:       'CC_' + cat.replace(/[^A-Za-z0-9]/g, '_').toUpperCase(),
+      categoryKey:  cat,
+      scope:        'included',
+      costPriceEur: Math.round(val),
+    }));
+  if (newLines.length === 0) {
+    if (!silent) alert('No CalcCast data found. Open CalcCast and add cost rows first.');
+    return;
+  }
+  _projectLines = newLines;
+  _lineCounter  = newLines.length;
+  // Also pick up fixed/estimated split for scope pie
+  _fixedDC     = computed.fixedDC;
+  _estimatedDC = computed.estimatedDC;
+  renderProjectLines();
+  runEngineAndUpdateUI();
+  _snapshot();
+}
+
+/* ══ Engine runner ═════════════════════════════════════════════════════════ */
+function runEngineAndUpdateUI() {
+  const state         = collectState();
+  const categoryModel = _buildCategoryModel(state.projectLines);
+  const factoryKpis   = _buildFactoryKpis(_w2wState.factories);
+
+  const engine = new W2wEngine({ version: '1.0.0', inputs: {
+    projectLines:  state.projectLines,
+    factoryKpis,
+    overallKpis:   state.overallKpis,
+    categoryModel,
+    engineOptions: {},
+  }});
+  const outputs = engine.run();
+  _lastOutputs = outputs;
+
+  // Sync derived aggregates used by renderScope / renderFactories / Scenarios
+  _directCost = outputs.totalDC || 0;
+  _byCategory = outputs.catTotals || {};
+
+  _updateErrorBanner(outputs.errors);
+  _updateResultsPanel(outputs, state.overallKpis);
+  updateOverview(outputs);
+  updateKpiStack(outputs, state.overallKpis);
+  updateLoaTab(outputs.overallStack, outputs.loaReport);
+  updateScenarios();
+  renderScope();
+  renderFactories();
+  _updatePLTotal();
+
+  // Keep toolbar project name in sync
+  const pn = state.projectMeta.projectName ||
+             (_ccState && _ccState.projName) ||
+             SuiteManager.read().projectName || '';
+  const el = document.getElementById('proj-name-display');
+  if (el) el.textContent = pn;
+}
+
+function updateAll() { runEngineAndUpdateUI(); }
+
+/* ── Error banner ── */
+function _updateErrorBanner(errors) {
+  const banner = document.getElementById('engine-error-banner');
+  const msg    = document.getElementById('engine-error-msg');
+  if (!banner) return;
+  const errs = (errors || []).filter(e => e.code === 'DENOM_NEGATIVE');
+  if (errs.length > 0) {
+    banner.classList.add('visible');
+    if (msg) msg.textContent = errs[0].message;
+  } else {
+    banner.classList.remove('visible');
+  }
+}
+
+/* ── Results panel (section D) ── */
+function _updateResultsPanel(outputs, kpis) {
+  const wrap = document.getElementById('results-stack-wrap');
+  if (!wrap) return;
+  const s = outputs.overallStack;
+  const l = outputs.loaReport;
+  if (!s || !l) {
+    wrap.innerHTML = `<div style="text-align:center;padding:30px 0;color:var(--faint);font-size:12px;">
+      ${(outputs.errors || []).length > 0 ? '⚠ Invalid KPI combination — see error banner above.' : 'Enter project lines and KPIs to see results.'}</div>`;
+    return;
+  }
+  const rows = [
+    { label: 'Direct Cost (DC)',             val: s.dc,               pct: null, hi: false },
+    { label: 'Total Order Cost',             val: s.totalOrderCost,   pct: null, hi: false },
+    { label: 'Customer Price (excl. Neg.)',  val: s.customerPriceExclNeg, pct: null, hi: true  },
+    { label: 'Customer Price incl. Neg.',   val: s.P,                 pct: null, hi: true  },
+    { label: 'Sales Margin',                val: l.salesMarginKEUR * 1000, pct: l.salesMarginPct, hi: false },
+    { label: 'Profit (EBIT)',               val: s.ebitAmt,           pct: l.profitPct, hi: false },
+  ];
+  wrap.innerHTML = `<div class="results-stack">${rows.map(r => `
+    <div class="rsr${r.hi ? ' rhi' : ''}">
+      <span class="rsr-label">${r.label}</span>
+      <span class="rsr-val">${fmtK(r.val)}</span>
+      <span class="rsr-pct">${r.pct != null ? fmtP(r.pct) : ''}</span>
+    </div>`).join('')}</div>`;
 }
 
 /* ── Aggregate cost rows into EUR totals ── */
@@ -879,11 +1255,153 @@ function _addToCat(map, cat, val) {
   map[cat] = (map[cat] || 0) + val;
 }
 
-/* ══ Math Engine — deterministic denominator-solve (spec Steps 4–6) ═════════
+/* ══ W2wEngine — spec Steps 0–6 ═══════════════════════════════════════════
+   Wraps the full deterministic pricing pipeline as a class.
+   inputs.overallKpis values are DECIMALS (0.05 = 5%).
+   factory kpis values are % POINTS (5 = 5%) for backward compat.
+   denom ≤ 0 → errors array, overallStack/loaReport = null (IFERROR equiv.).
+═══════════════════════════════════════════════════════════════════════════ */
+class W2wEngine {
+  constructor(payload) {
+    this.version = (payload && payload.version) || '1.0.0';
+    this.inputs  = (payload && payload.inputs)  || {};
+  }
+
+  run() {
+    const {
+      projectLines    = [],
+      factoryKpis     = {},
+      overallKpis     = {},
+      categoryModel   = [],
+    } = this.inputs;
+    const errors = [];
+
+    // Step 0 — sort project lines for deterministic floating-point accumulation
+    const sorted = [...projectLines].sort((a, b) => {
+      const ka = (a.categoryKey || '') + '|' + (a.lineId || '');
+      const kb = (b.categoryKey || '') + '|' + (b.lineId || '');
+      return ka < kb ? -1 : ka > kb ? 1 : 0;
+    });
+
+    // Accumulate per-category totals (included lines only)
+    const catTotals = {};
+    for (const line of sorted) {
+      if (line.scope === 'excluded') continue;
+      const cat = line.categoryKey || 'Uncategorized';
+      catTotals[cat] = (catTotals[cat] || 0) + (parseFloat(line.costPriceEur) || 0);
+    }
+    const totalDC = Object.values(catTotals).reduce((s, v) => s + v, 0);
+
+    // Steps 1–2 — factory included base + KPI block (reverse waterfall, reporting only)
+    const factoryBlocks = categoryModel.map(block => {
+      const fid         = block.factoryId;
+      const includedBase = (block.includedBaseCategories || [])
+        .reduce((s, cat) => s + (catTotals[cat] || 0), 0);
+      const kpis  = factoryKpis[fid] || { rw: 0, sga: 0, exu: 0, ba: 0, ebit: 0 };
+      const rw    = (kpis.rw   || 0) / 100;
+      const sga   = (kpis.sga  || 0) / 100;
+      const exu   = (kpis.exu  || 0) / 100;
+      const ba    = (kpis.ba   || 0) / 100;
+      const ebit  = (kpis.ebit || 0) / 100;
+      const cp    = includedBase;
+      const riskProv           = cp * rw;
+      const sgaProv            = cp * sga;
+      const exuProv            = cp * exu;
+      const baProv             = cp * ba;
+      const ebitProv           = cp * ebit;
+      const totalCostOfSalesF  = cp - baProv - exuProv - ebitProv;
+      const totalOrderCostF    = totalCostOfSalesF - sgaProv;
+      const totalDirectCostF   = cp - exuProv - baProv - sgaProv - ebitProv;
+      return {
+        factoryId: fid, label: block.label || fid, includedBase, kpis,
+        riskProv, sgaProv, exuProv, baProv, ebitProv,
+        totalCostOfSalesF, totalOrderCostF, totalDirectCostF, transfer: cp,
+        dc: cp,
+      };
+    });
+
+    // Step 3 — Total W2W view (sum factory blocks)
+    const totalW2wView = factoryBlocks.reduce((acc, fb) => {
+      acc.dc               += fb.includedBase;
+      acc.riskProv         += fb.riskProv;
+      acc.sgaProv          += fb.sgaProv;
+      acc.exuProv          += fb.exuProv;
+      acc.baProv           += fb.baProv;
+      acc.ebitProv         += fb.ebitProv;
+      acc.totalCostOfSalesF += fb.totalCostOfSalesF;
+      acc.totalOrderCostF  += fb.totalOrderCostF;
+      acc.totalDirectCostF += fb.totalDirectCostF;
+      return acc;
+    }, { dc:0, riskProv:0, sgaProv:0, exuProv:0, baProv:0, ebitProv:0,
+         totalCostOfSalesF:0, totalOrderCostF:0, totalDirectCostF:0 });
+
+    // Steps 4–5 — overall denominator-solve
+    const rs  = overallKpis.riskSpecifiedPct    || 0;
+    const ru  = overallKpis.riskUnspecifiedPct  || 0;
+    const w   = overallKpis.warrantyPct         || 0;
+    const s   = overallKpis.sgaPct              || 0;
+    const hqE = overallKpis.hqExuPct            || 0;
+    const hqB = overallKpis.hqBaPct             || 0;
+    const eb  = overallKpis.ebitPct             || 0;
+    const neg = overallKpis.negotiationMarginPct || 0;
+    const hq  = hqE + hqB;
+    const denom = 1 - (rs + ru + w + s + hq + eb + neg);
+
+    let overallStack = null;
+    let loaReport    = null;
+
+    if (denom <= 0) {
+      errors.push({ code: 'DENOM_NEGATIVE',
+        message: 'KPI total ≥ 100% — denominator ≤ 0. Reduce the KPI stack.' });
+    } else {
+      const P                        = totalDC / denom;
+      const riskSpecifiedAmt         = P * rs;
+      const riskUnspecifiedAmt       = P * ru;
+      const warrantyAmt              = P * w;
+      const totalOrderCost           = totalDC + riskSpecifiedAmt + riskUnspecifiedAmt + warrantyAmt;
+      const sgaAmt                   = P * s;
+      const totalCostOfSalesInclOpex = totalOrderCost + sgaAmt;
+      const hqAddersAmt              = P * hq;
+      const ebitAmt                  = P * eb;
+      const customerPriceExclNeg     = totalCostOfSalesInclOpex + hqAddersAmt + ebitAmt;
+      const negotiationMarginAmt     = P * neg;
+      overallStack = {
+        dc: totalDC, P,
+        riskSpecifiedAmt, riskUnspecifiedAmt, warrantyAmt,
+        totalOrderCost, sgaAmt, totalCostOfSalesInclOpex,
+        hqAddersAmt, ebitAmt, customerPriceExclNeg, negotiationMarginAmt,
+      };
+
+      // Step 6 — LoA kEUR roll-up
+      const revenueKEUR         = P / 1000;
+      const cogsKEUR            = totalOrderCost / 1000;
+      const salesMarginKEUR     = revenueKEUR - cogsKEUR;
+      const salesMarginPct      = revenueKEUR > 0 ? (salesMarginKEUR / revenueKEUR) * 100 : 0;
+      const riskSpecifiedKEUR   = revenueKEUR * rs;
+      const riskUnspecifiedKEUR = revenueKEUR * ru;
+      const warrantyKEUR        = revenueKEUR * w;
+      const riskContingencyKEUR = riskSpecifiedKEUR + riskUnspecifiedKEUR + warrantyKEUR;
+      const sgaKEUR             = revenueKEUR * s;
+      const hqExuKEUR           = revenueKEUR * hqE;
+      const hqBaKEUR            = revenueKEUR * hqB;
+      const functionalCostKEUR  = sgaKEUR + hqExuKEUR + hqBaKEUR;
+      const profitKEUR          = revenueKEUR * eb;
+      loaReport = {
+        revenueKEUR, cogsKEUR, salesMarginKEUR, salesMarginPct,
+        riskContingencyKEUR, riskSpecifiedKEUR, riskUnspecifiedKEUR, warrantyKEUR,
+        functionalCostKEUR, sgaKEUR, hqExuKEUR, hqBaKEUR,
+        profitKEUR, profitPct: eb * 100,
+      };
+    }
+
+    return { catTotals, totalDC, factoryBlocks, totalW2wView, overallStack, loaReport, errors };
+  }
+}
+
+/* ══ Math Engine — legacy single-call helper (used by Scenarios) ════════════
    All KPI percentages are DECIMALS (e.g. 0.05 = 5%).
    CRITICAL: negotiation margin is solved via the denominator — never added
    after pricing.  If denom ≤ 0 the function returns null (IFERROR equiv.).
-   Rounding is applied only at display time; core math is full-precision.
 ═══════════════════════════════════════════════════════════════════════════ */
 function _runEngine(dc, kpis) {
   const { rs, ru, w, s, hqExu, hqBa, ebit, neg } = kpis;
@@ -971,23 +1489,13 @@ const fmtP  = n  => n.toFixed(1) + '%';
 const fmtKd = n  => { const v = Math.round(n / 1000); return (v >= 0 ? '+' : '') + v.toLocaleString('en-GB') + '\u202fkEUR'; };
 const $     = id => document.getElementById(id);
 
-/* ══ Master update ═════════════════════════════════════════════════════════ */
-function updateAll() {
-  const k = readKpis('w');
-  const r = _runEngine(_directCost, k);
-  _lastResults = r;
-
-  updateOverview(r, k);
-  updateKpiStack(r, k);
-  updateLoaTab(r);
-  updateScenarios();
-}
-
-/* ══ Tab 1: Overview ═══════════════════════════════════════════════════════ */
-function updateOverview(r, k) {
+/* ══ Tab 2: Overview ═══════════════════════════════════════════════════════ */
+function updateOverview(outputs) {
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
+  const r = outputs && outputs.overallStack;
+  const l = outputs && outputs.loaReport;
 
-  if (!r) {
+  if (!r || !l) {
     ['ov-sell-price','ov-cust-price','ov-margin-eur','ov-margin-pct',
      'ov-profit-eur','ov-profit-pct'].forEach(id => set(id, '—'));
     const mc = $('bm-margin-chip'); if (mc) mc.style.display = 'none';
@@ -997,14 +1505,13 @@ function updateOverview(r, k) {
 
   set('ov-sell-price', fmtK(r.customerPriceExclNeg));
   set('ov-cust-price', fmtK(r.P));
-  set('ov-margin-eur', fmtK(r.loa.salesMarginKEUR * 1000));
-  set('ov-margin-pct', fmtP(r.loa.salesMarginPct));
+  set('ov-margin-eur', fmtK(l.salesMarginKEUR * 1000));
+  set('ov-margin-pct', fmtP(l.salesMarginPct));
   set('ov-profit-eur', fmtK(r.ebitAmt));
-  set('ov-profit-pct', fmtP(r.loa.profitPct));
+  set('ov-profit-pct', fmtP(l.profitPct));
 
-  // Benchmark vs targets
-  const md = r.loa.salesMarginPct - 17.5;
-  const pd = r.loa.profitPct      - 13.0;
+  const md = l.salesMarginPct - 17.5;
+  const pd = l.profitPct      - 13.0;
 
   const mc = $('bm-margin-chip'); if (mc) mc.style.display = 'flex';
   const pc = $('bm-profit-chip'); if (pc) pc.style.display = 'flex';
@@ -1120,71 +1627,54 @@ function renderScope() {
   });
 }
 
-/* ══ Tab 3: KPI Stack ══════════════════════════════════════════════════════ */
-function updateKpiStack(r, k) {
+/* ══ Tab 4: KPI Stack ══════════════════════════════════════════════════════ */
+function updateKpiStack(outputs, overallKpis) {
   const dcel = $('kpi-direct-cost');
-  if (dcel) dcel.textContent = r ? fmtK(r.dc) : '—';
+  const dc   = outputs && outputs.totalDC;
+  if (dcel) dcel.textContent = dc > 0 ? fmtK(dc) : '—';
 
   const stack = $('kpi-stack');
   if (!stack) return;
+
+  const r = outputs && outputs.overallStack;
+  const k = overallKpis || {};
 
   if (!r) {
     stack.innerHTML = '<div class="ksr" style="color:var(--red);padding:12px 16px;">⚠ Invalid KPI combination — denominator ≤ 0. Reduce the total KPI stack below 100%.</div>';
     return;
   }
 
+  const rs  = k.riskSpecifiedPct    || 0;
+  const ru  = k.riskUnspecifiedPct  || 0;
+  const w   = k.warrantyPct         || 0;
+  const s   = k.sgaPct              || 0;
+  const hqE = k.hqExuPct            || 0;
+  const hqB = k.hqBaPct             || 0;
+  const eb  = k.ebitPct             || 0;
+  const neg = k.negotiationMarginPct || 0;
+
   const totalRiskAmt = r.riskSpecifiedAmt + r.riskUnspecifiedAmt + r.warrantyAmt;
   const afterHQ      = r.totalCostOfSalesInclOpex + r.hqAddersAmt;
 
   const rows = [
-    {
-      label: 'Direct Cost',
-      sub:   'Supplier procurement · EUR-adjusted',
-      val:   r.dc,
-      add:   null,
-      pct:   null,
-      hi:    false,
-    },
-    {
-      label: 'After Risk',
-      sub:   `Spec. ${fmtP(k.rs*100)} + Unspec. ${fmtP(k.ru*100)} + Warranty ${fmtP(k.w*100)}`,
-      val:   r.totalOrderCost,
-      add:   totalRiskAmt,
-      pct:   (k.rs + k.ru + k.w) * 100,
-      hi:    false,
-    },
-    {
-      label: 'After SG&A',
-      sub:   `SG&A (${fmtP(k.s*100)} of revenue)`,
-      val:   r.totalCostOfSalesInclOpex,
-      add:   r.sgaAmt,
-      pct:   k.s * 100,
-      hi:    false,
-    },
-    {
-      label: 'After HQ Adders',
-      sub:   `EXU ${fmtP(k.hqExu*100)} + BA ${fmtP(k.hqBa*100)} (of revenue)`,
-      val:   afterHQ,
-      add:   r.hqAddersAmt,
-      pct:   (k.hqExu + k.hqBa) * 100,
-      hi:    false,
-    },
-    {
-      label: 'Customer Price (excl. Neg.)',
-      sub:   `EBIT (${fmtP(k.ebit*100)} of revenue)`,
-      val:   r.customerPriceExclNeg,
-      add:   r.ebitAmt,
-      pct:   k.ebit * 100,
-      hi:    true,
-    },
-    {
-      label: 'Customer Price incl. Neg.',
-      sub:   `Negotiation solved via denominator (${fmtP(k.neg*100)})`,
-      val:   r.P,
-      add:   r.negotiationMarginAmt,
-      pct:   k.neg * 100,
-      hi:    true,
-    },
+    { label: 'Direct Cost',
+      sub:   'Project lines total · EUR',
+      val:   r.dc, add: null, pct: null, hi: false },
+    { label: 'After Risk',
+      sub:   `Spec. ${fmtP(rs*100)} + Unspec. ${fmtP(ru*100)} + Warranty ${fmtP(w*100)}`,
+      val:   r.totalOrderCost, add: totalRiskAmt, pct: (rs+ru+w)*100, hi: false },
+    { label: 'After SG&A',
+      sub:   `SG&A (${fmtP(s*100)} of revenue)`,
+      val:   r.totalCostOfSalesInclOpex, add: r.sgaAmt, pct: s*100, hi: false },
+    { label: 'After HQ Adders',
+      sub:   `EXU ${fmtP(hqE*100)} + BA ${fmtP(hqB*100)} (of revenue)`,
+      val:   afterHQ, add: r.hqAddersAmt, pct: (hqE+hqB)*100, hi: false },
+    { label: 'Customer Price (excl. Neg.)',
+      sub:   `EBIT (${fmtP(eb*100)} of revenue)`,
+      val:   r.customerPriceExclNeg, add: r.ebitAmt, pct: eb*100, hi: true },
+    { label: 'Customer Price incl. Neg.',
+      sub:   `Negotiation solved via denominator (${fmtP(neg*100)})`,
+      val:   r.P, add: r.negotiationMarginAmt, pct: neg*100, hi: true },
   ];
 
   stack.innerHTML = rows.map(row => `
@@ -1194,23 +1684,24 @@ function updateKpiStack(r, k) {
         <div class="ksr-sub">${row.sub}</div>
       </div>
       <div class="ksr-val">${fmtK(row.val)}</div>
-      <div class="ksr-add">${row.add !== null ? '+\u202f' + fmtK(row.add) : ''}</div>
+      <div class="ksr-add">${row.add !== null ? '+ ' + fmtK(row.add) : ''}</div>
       <div class="ksr-pct">${row.pct !== null ? fmtP(row.pct) : ''}</div>
     </div>`
   ).join('');
 }
 
-/* ══ Tab 4: LoA W2W ════════════════════════════════════════════════════════ */
-function updateLoaTab(r) {
+/* ══ Tab 5: LoA W2W ════════════════════════════════════════════════════════ */
+function updateLoaTab(overallStack, loaReport) {
   const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
   const NA_IDS = ['loa-revenue','loa-cogs','loa-sm-eur','loa-sm-pct',
     'loa-risk-prov','loa-sga-prov','loa-func-cost','loa-ebit-prov',
     'loa-profit-eur','loa-profit-pct','loa-risk-total',
     'rs-specified-eur','rs-unspecified-eur','rs-warranty-eur'];
 
-  if (!r) { NA_IDS.forEach(id => set(id, '—')); return; }
+  if (!overallStack || !loaReport) { NA_IDS.forEach(id => set(id, '—')); return; }
 
-  const l = r.loa;
+  const r = overallStack;
+  const l = loaReport;
   set('loa-revenue',    fmtK(r.P));
   set('loa-cogs',       fmtK(r.totalOrderCost));
   set('loa-sm-eur',     fmtK(l.salesMarginKEUR * 1000));
@@ -1222,8 +1713,6 @@ function updateLoaTab(r) {
   set('loa-profit-eur', fmtK(l.profitKEUR * 1000));
   set('loa-profit-pct', fmtP(l.profitPct));
   set('loa-risk-total', fmtK(l.riskContingencyKEUR * 1000));
-
-  // Risk breakdown — P × KPI % per spec Step 5
   set('rs-specified-eur',   fmtK(r.riskSpecifiedAmt));
   set('rs-unspecified-eur', fmtK(r.riskUnspecifiedAmt));
   set('rs-warranty-eur',    fmtK(r.warrantyAmt));
@@ -1614,31 +2103,41 @@ document.addEventListener('DOMContentLoaded', () => {
   SuiteManager.migrate();
   _applyTheme(localStorage.getItem('bidcast_theme') || 'light');
 
-  // Load saved state first; only seed KPI defaults from CalcCast on first run
   const saved = PylonState.safeReadLS(STATE_KEY);
-  if (saved && typeof saved === 'object' && saved.version) {
+  if (saved && typeof saved === 'object') {
     applyState(saved);
-    loadCalcCastData(false);
+    // If save had no project lines, silently try to import from CalcCast
+    if (!saved.projectLines || saved.projectLines.length === 0) {
+      try { _ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{}'); } catch {}
+      importLinesFromCalcCast(true);
+    }
   } else {
+    // First run: seed KPI defaults from CalcCast + import lines
     loadCalcCastData(true);
   }
   _snapshot();
 
-  // Live sync: reload DC data when CalcCast state changes from another tab
+  // Live sync: re-run engine when CalcCast state changes in another tab
   window.addEventListener('storage', e => {
     if (e.storageArea !== localStorage) return;
-    if (e.key === 'bidcast_state_calccast') loadCalcCastData(false);
+    if (e.key === 'bidcast_state_calccast') {
+      try { _ccState = JSON.parse(localStorage.getItem('bidcast_state_calccast') || '{}'); } catch {}
+      const computed = aggregateDirectCost(_ccState);
+      _fixedDC     = computed.fixedDC;
+      _estimatedDC = computed.estimatedDC;
+      runEngineAndUpdateUI();
+    }
   });
 
   // Suite sync (project name, theme)
-  SuiteManager.onUpdate((sync) => {
+  SuiteManager.onUpdate(sync => {
     if (sync && sync.theme) _applyTheme(sync.theme);
-    const pn = sync.projectName || '';
+    const pn = sync && sync.projectName || '';
     const el = $('proj-name-display');
     if (el && pn) el.textContent = pn;
   });
 
-  // Validate project-level KPI % inputs (0–100)
+  // Validate KPI % inputs (0–100)
   ['w-spec-risk','w-unspec-risk','w-sga','w-exu','w-ba','w-ebit','w-neg','w-warranty',
    'sb-risk','sb-sga','sb-exu','sb-ba','sb-ebit','sb-neg'].forEach(id => {
     const inp = document.getElementById(id);
