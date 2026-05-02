@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estimator · PYL0N</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="libs/fonts.css">
+<script src="libs/xlsx.full.min.js"></script>
+<script src="vendor/pyl0n-native.js"></script>
+<script src="vendor/pyl0n-suite.js"></script>
+<script src="vendor/pyl0n-state.js"></script>
+<script src="vendor/pyl0n-validate.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f4f0; --surface: #ffffff; --border: #e0ddd6;
+  --text: #1a1916; --muted: #6b6860; --faint: #a8a49e;
+  --accent: #2c4e87; --accent2: #1e3a6b; --green: #107c41; --green-dk: #0a6032;
+  --red: #c0392b; --amber: #b45309;
+  --input-bg: #fffdf0; --input-bg-focus: #ffffff;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1917; --surface: #242320; --border: #3a3835;
+  --text: #e8e6e1; --muted: #9b9891; --faint: #6b6860;
+  --accent: #5b82c4; --accent2: #4a6da8;
+  --green: #22a85a; --green-dk: #1a8a47;
+  --red: #e05a47; --amber: #d97706;
+  --input-bg: #2a2825; --input-bg-focus: #333230;
+}
+[data-theme="dark"] #toolbar { background: rgba(36,35,32,0.95); }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+
+/* ── Toolbar ── */
+#toolbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.tb-left  { display: flex; align-items: center; gap: 12px; }
+.tb-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.logo-icon {
+  width: 28px; height: 28px; background: var(--accent2); border-radius: 7px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.logo-icon svg { width: 16px; height: 16px; }
+.tool-name { font-size: 14px; font-weight: 700; letter-spacing: -0.3px; }
+.tool-tag  { font-size: 9px; font-weight: 600; color: var(--faint); letter-spacing: 1px; text-transform: uppercase; }
+.tb-sep    { width: 1px; height: 22px; background: var(--border); }
+.tb-btn {
+  font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+  padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
+  background: var(--bg); color: var(--muted); cursor: pointer; white-space: nowrap;
+  transition: all .15s; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.tb-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+.tb-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+/* ── Editor ── */
+#editor { max-width: 1400px; margin: 0 auto; padding: 28px 28px 80px; }
+
+/* ── Two-column layout ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Panel card ── */
+.panel {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px 22px; margin-bottom: 14px;
+}
+.panel-title {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--faint); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Form controls ── */
+.field { margin-bottom: 14px; }
+.field:last-child { margin-bottom: 0; }
+.field-label {
+  display: block; font-size: 11px; font-weight: 600;
+  color: var(--muted); margin-bottom: 5px; letter-spacing: 0.2px;
+}
+.field-input {
+  width: 100%; font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: var(--text); background: var(--input-bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 9px 12px; outline: none; transition: border-color .15s;
+  appearance: none; -webkit-appearance: none;
+}
+.field-input:focus { border-color: var(--accent); background: var(--input-bg-focus); }
+.field-row { display: flex; gap: 8px; }
+.field-row .field-input { flex: 1; }
+.field-unit {
+  display: flex; align-items: center; padding: 9px 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  font-size: 11px; font-weight: 700; color: var(--muted); white-space: nowrap;
+  font-family: 'DM Mono', monospace; letter-spacing: 0.5px;
+}
+
+/* ── Database upload ── */
+.db-upload-label {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 11px 14px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+  border-radius: 8px; border: 1.5px dashed var(--border);
+  background: var(--bg); color: var(--muted); transition: all .15s;
+}
+.db-upload-label:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+
+.db-status {
+  margin-top: 10px; padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg);
+  display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted);
+  transition: all .2s;
+}
+.db-status.loaded { border-color: var(--green); background: #ecfdf5; color: #065f46; }
+.db-status.error  { border-color: var(--red);   background: #fff1f2; color: #9f1239; }
+.db-status.loading { border-color: var(--accent); background: #eff4ff; color: var(--accent); }
+.db-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  background: var(--faint); transition: background .2s;
+}
+.db-status.loaded  .db-dot { background: var(--green); }
+.db-status.error   .db-dot { background: var(--red); }
+.db-status.loading .db-dot { background: var(--accent); animation: pulse-dot 1.2s ease-in-out infinite; }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+}
+.db-status-text { flex: 1; line-height: 1.4; }
+.db-record-count {
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700;
+  flex-shrink: 0; opacity: 0.85;
+}
+
+/* ── Calculate button ── */
+#btn-calculate {
+  width: 100%; padding: 13px; font-family: 'DM Sans', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
+  border-radius: 10px; border: none; cursor: pointer;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .15s;
+}
+#btn-calculate:hover { background: var(--accent2); }
+#btn-calculate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Results panel ── */
+.results-placeholder {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 280px;
+  gap: 12px; color: var(--faint); text-align: center;
+}
+.results-placeholder p { font-size: 12px; max-width: 260px; line-height: 1.65; color: var(--muted); }
+
+.result-primary {
+  text-align: center; padding: 24px 0 22px;
+  border-bottom: 1px solid var(--border); margin-bottom: 20px;
+}
+.result-eyebrow {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--faint); margin-bottom: 8px;
+}
+.result-price {
+  font-family: 'DM Mono', monospace; font-size: 40px; font-weight: 700;
+  color: var(--accent); line-height: 1; letter-spacing: -1px;
+}
+.result-price-sub { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+.meta-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.meta-row:last-of-type { border-bottom: none; }
+.meta-key { color: var(--muted); font-weight: 500; }
+.meta-val { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; }
+
+.confidence-badge {
+  font-size: 10px; font-weight: 700; padding: 3px 10px;
+  border-radius: 20px; letter-spacing: 0.3px; display: inline-block;
+}
+.confidence-badge.pending { background: var(--bg); color: var(--faint); border: 1px solid var(--border); }
+.confidence-badge.high    { background: #ecfdf5; color: #065f46; }
+.confidence-badge.medium  { background: #fffbeb; color: #92400e; }
+.confidence-badge.low     { background: #fff1f2; color: #9f1239; }
+
+.refs-title {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--faint); margin: 20px 0 10px;
+}
+.ref-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.ref-table th {
+  font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--faint); padding: 5px 8px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.ref-table td {
+  padding: 7px 8px; border-bottom: 1px solid var(--border);
+  color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-empty {
+  text-align: center; padding: 24px 0; color: var(--faint); font-size: 11px;
+}
+
+.warn-banner {
+  padding: 12px 16px; border-radius: 8px; font-size: 12px; line-height: 1.5;
+  border: 1px solid var(--amber); background: #fffbeb; color: #92400e;
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="tb-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="1" width="6" height="6" rx="1.5" fill="white" fill-opacity="0.9"/>
+        <rect x="9" y="1" width="6" height="6" rx="1.5" fill="white" fill-opacity="0.9"/>
+        <rect x="1" y="9" width="6" height="6" rx="1.5" fill="white" fill-opacity="0.9"/>
+        <rect x="9" y="9" width="6" height="6" rx="1.5" fill="white" fill-opacity="0.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="tool-name">Estimator</div>
+      <div class="tool-tag">Pricing Engine</div>
+    </div>
+    <a href="index.html" class="tb-btn">← Suite</a>
+  </div>
+  <div class="tb-right">
+    <button class="tb-btn" id="btn-undo" onclick="undo()" disabled>↩ Undo</button>
+    <button class="tb-btn" id="btn-redo" onclick="redo()" disabled>↪ Redo</button>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="saveJSON()">💾 Save</button>
+    <label class="tb-btn" style="cursor:pointer;">↑ Load<input type="file" accept=".json" style="display:none" onchange="loadJSON(this)"></label>
+    <div class="tb-sep"></div>
+    <span id="save-confirm" style="font-size:11px;color:var(--green);display:none;">Saved ✓</span>
+    <button class="tb-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:14px;padding:4px 8px;border:none;background:transparent;cursor:pointer;" aria-label="Toggle dark mode">🌙</button>
+  </div>
+</div>
+
+<main id="editor">
+  <div class="two-col">
+
+    <!-- ── Left Panel: Inputs ─────────────────────────────────────────────── -->
+    <div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Pricing Database
+        </div>
+        <label class="db-upload-label">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Local Database (.xlsx)
+          <input type="file" accept=".xlsx,.xls" style="display:none"
+            onchange="handleDatabaseUpload(this.files[0]); this.value='';">
+        </label>
+        <div class="db-status" id="db-status">
+          <span class="db-dot"></span>
+          <span class="db-status-text" id="db-status-text">No database loaded — upload an offline Excel file</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+          Technical Parameters
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="eq-type">Equipment Type</label>
+          <select class="field-input" id="eq-type" onchange="_scheduleSnap()">
+            <option value="">— Select type —</option>
+            <option value="transformer">Transformer</option>
+            <option value="gis">GIS (Gas-Insulated Switchgear)</option>
+            <option value="breaker">Circuit Breaker</option>
+            <option value="switchgear-ais">Switchgear (Air-Insulated)</option>
+            <option value="cable">Cable</option>
+            <option value="motor">Motor / Generator</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="volt-level">Voltage Level</label>
+          <select class="field-input" id="volt-level" onchange="_scheduleSnap()">
+            <option value="">— Select voltage —</option>
+            <option value="lv">LV — Below 1 kV</option>
+            <option value="mv">MV — 1 kV to 36 kV</option>
+            <option value="hv">HV — 36 kV to 245 kV</option>
+            <option value="ehv">EHV — Above 245 kV</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="pwr-rating">Power Rating</label>
+          <div class="field-row">
+            <input type="number" class="field-input" id="pwr-rating"
+              placeholder="e.g. 100" min="0" step="any"
+              oninput="_scheduleSnap()">
+            <select class="field-input" id="pwr-unit" style="max-width:76px;" onchange="_scheduleSnap()">
+              <option value="MVA">MVA</option>
+              <option value="MW">MW</option>
+              <option value="kVA">kVA</option>
+              <option value="kW">kW</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-calculate" onclick="calculate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        Search &amp; Calculate
+      </button>
+
+    </div>
+
+    <!-- ── Right Panel: Results ───────────────────────────────────────────── -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Estimation Results
+        </div>
+        <div id="results-body">
+          <div class="results-placeholder">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.2;">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              <line x1="6" y1="8" x2="10" y2="8"/><line x1="6" y1="11" x2="14" y2="11"/>
+            </svg>
+            <p>Upload a pricing database, configure the technical parameters on the left, then click <strong>Search &amp; Calculate</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+/* ══ EstimatorEngine ═══════════════════════════════════════════════════════ */
+
+class EstimatorEngine {
+  constructor(databaseJson) {
+    this.db = databaseJson; // The parsed Excel data
+  }
+
+  /**
+   * BLACKBOX LOGIC: To be implemented by Internal Company AI.
+   * Calculates the estimated price based on proprietary historical models.
+   */
+  calculateEstimation(technicalSpecs) {
+    // TODO: Internal AI will inject proprietary filtering and pricing logic here.
+    // For now, return a dummy structure.
+    return {
+      estimatedPriceEur:  0,
+      confidenceScore:    'Pending Logic',
+      matchedReferences:  [],
+    };
+  }
+}
+
+/* ══ State ══════════════════════════════════════════════════════════════════ */
+
+const STATE_KEY = 'bidcast_state_estimator';
+
+function collectState() {
+  return {
+    version:       1,
+    equipmentType: document.getElementById('eq-type').value,
+    voltageLevel:  document.getElementById('volt-level').value,
+    powerRating:   document.getElementById('pwr-rating').value,
+    powerUnit:     document.getElementById('pwr-unit').value,
+  };
+}
+
+function applyState(s) {
+  if (!s) return;
+  if (s.equipmentType != null) document.getElementById('eq-type').value    = s.equipmentType;
+  if (s.voltageLevel  != null) document.getElementById('volt-level').value = s.voltageLevel;
+  if (s.powerRating   != null) document.getElementById('pwr-rating').value = s.powerRating;
+  if (s.powerUnit     != null) document.getElementById('pwr-unit').value   = s.powerUnit;
+}
+
+const _undoStack = PylonState.createUndoStack({
+  collect:    collectState,
+  apply:      applyState,
+  max:        50,
+  debounceMs: 600,
+  onChange: () => {
+    const u = document.getElementById('btn-undo');
+    const r = document.getElementById('btn-redo');
+    if (u) u.disabled = !_undoStack.canUndo;
+    if (r) r.disabled = !_undoStack.canRedo;
+    PylonState.safeWriteLS(STATE_KEY, collectState());
+  },
+});
+
+function _snapshot()     { _undoStack.snapshot(); }
+function _scheduleSnap() { _undoStack.scheduleSnap(); }
+function undo()          { _undoStack.undo(); }
+function redo()          { _undoStack.redo(); }
+
+/* ══ Database upload ════════════════════════════════════════════════════════ */
+
+function handleDatabaseUpload(file) {
+  if (!file) return;
+  _setDbStatus('loading', 'Reading file…', '');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb    = XLSX.read(e.target.result, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      window._tempPricingDB = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      const count = window._tempPricingDB.length;
+      _setDbStatus('loaded', file.name, count.toLocaleString() + ' records');
+    } catch {
+      window._tempPricingDB = null;
+      _setDbStatus('error', 'Could not parse file — verify format and try again.', '');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function _setDbStatus(state, text, count) {
+  const el      = document.getElementById('db-status');
+  const textEl  = document.getElementById('db-status-text');
+  el.className  = 'db-status ' + state;
+  textEl.textContent = text;
+
+  let countEl = el.querySelector('.db-record-count');
+  if (count) {
+    if (!countEl) { countEl = document.createElement('span'); countEl.className = 'db-record-count'; el.appendChild(countEl); }
+    countEl.textContent = count;
+  } else if (countEl) {
+    countEl.remove();
+  }
+}
+
+/* ══ Calculation ════════════════════════════════════════════════════════════ */
+
+function calculate() {
+  if (!window._tempPricingDB || window._tempPricingDB.length === 0) {
+    _renderWarning('No pricing database is loaded. Upload a local Excel file before running the estimation.');
+    return;
+  }
+
+  const technicalSpecs = {
+    equipmentType: document.getElementById('eq-type').value,
+    voltageLevel:  document.getElementById('volt-level').value,
+    powerRating:   parseFloat(document.getElementById('pwr-rating').value) || 0,
+    powerUnit:     document.getElementById('pwr-unit').value,
+  };
+
+  const engine = new EstimatorEngine(window._tempPricingDB);
+  const result = engine.calculateEstimation(technicalSpecs);
+  _renderResults(result, technicalSpecs);
+  _snapshot();
+}
+
+function _renderWarning(message) {
+  document.getElementById('results-body').innerHTML =
+    '<div class="warn-banner">' + _esc(message) + '</div>' +
+    '<div class="results-placeholder" style="min-height:160px;"><p>Resolve the issue above, then try again.</p></div>';
+}
+
+function _renderResults(result, specs) {
+  const price = result.estimatedPriceEur || 0;
+  const conf  = result.confidenceScore  || 'Pending Logic';
+  const refs  = Array.isArray(result.matchedReferences) ? result.matchedReferences : [];
+
+  const confClass =
+    conf === 'High'   ? 'high'   :
+    conf === 'Medium' ? 'medium' :
+    conf === 'Low'    ? 'low'    : 'pending';
+
+  const priceStr = price > 0
+    ? '€ ' + Math.round(price).toLocaleString('en-US')
+    : '—';
+
+  const specLabel = [
+    specs.equipmentType, specs.voltageLevel,
+    specs.powerRating ? (specs.powerRating + ' ' + specs.powerUnit) : '',
+  ].filter(Boolean).join(' · ');
+
+  let refsHtml;
+  if (refs.length === 0) {
+    refsHtml = '<div class="ref-empty">No matched references returned by the engine.</div>';
+  } else {
+    const cols = Object.keys(refs[0]);
+    refsHtml =
+      '<table class="ref-table"><thead><tr>' +
+        cols.map(c => '<th>' + _esc(c) + '</th>').join('') +
+      '</tr></thead><tbody>' +
+        refs.map(row =>
+          '<tr>' + cols.map(c => '<td>' + _esc(String(row[c] ?? '')) + '</td>').join('') + '</tr>'
+        ).join('') +
+      '</tbody></table>';
+  }
+
+  document.getElementById('results-body').innerHTML =
+    '<div class="result-primary">' +
+      '<div class="result-eyebrow">Estimated Price</div>' +
+      '<div class="result-price">' + _esc(priceStr) + '</div>' +
+      (specLabel ? '<div class="result-price-sub">' + _esc(specLabel) + '</div>' : '') +
+    '</div>' +
+    '<div class="meta-row"><span class="meta-key">Confidence Level</span>' +
+      '<span class="confidence-badge ' + confClass + '">' + _esc(conf) + '</span></div>' +
+    '<div class="meta-row"><span class="meta-key">Database Records</span>' +
+      '<span class="meta-val">' + (window._tempPricingDB ? window._tempPricingDB.length.toLocaleString() : '—') + '</span></div>' +
+    '<div class="refs-title">Matched Historical References</div>' +
+    refsHtml;
+}
+
+function _esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* ══ File I/O ═══════════════════════════════════════════════════════════════ */
+
+async function saveJSON() {
+  const state = collectState();
+  const name  = 'Estimator_params';
+  await nativeSaveText(name + '.json', JSON.stringify(state, null, 2), 'JSON Files', 'json');
+  const c = document.getElementById('save-confirm');
+  if (c) { c.style.display = 'inline'; setTimeout(() => c.style.display = 'none', 2000); }
+  _writeBackup();
+}
+
+function loadJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const s = JSON.parse(e.target.result);
+      PylonValidate.checkImport(s, 'estimator');
+      applyState(s);
+      _snapshot();
+    } catch { alert('Invalid JSON file — please check the format.'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function _writeBackup() {
+  const state = PylonState.safeReadLS(STATE_KEY);
+  if (!state) return;
+  const stateStr = JSON.stringify(state);
+  localStorage.setItem('bidcast_backup_estimator_' + Date.now(), stateStr);
+  const prefix = 'bidcast_backup_estimator_';
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(prefix)).sort();
+  while (keys.length > 5) localStorage.removeItem(keys.shift());
+}
+
+/* ══ Theme ══════════════════════════════════════════════════════════════════ */
+
+function _applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : 'light');
+  const btn = document.getElementById('theme-btn');
+  if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next    = current === 'dark' ? 'light' : 'dark';
+  _applyTheme(next);
+  localStorage.setItem('bidcast_theme', next);
+  const sync = JSON.parse(localStorage.getItem('bidcast_suite_sync') || '{}');
+  sync.theme = next;
+  localStorage.setItem('bidcast_suite_sync', JSON.stringify(sync));
+}
+
+/* ══ Suite sync ══════════════════════════════════════════════════════════════ */
+
+function suiteRead(sync) {
+  if (!sync) return;
+  if (sync.theme) _applyTheme(sync.theme);
+}
+
+/* ══ Boot ════════════════════════════════════════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  SuiteManager.migrate();
+  _applyTheme(localStorage.getItem('bidcast_theme') || 'light');
+
+  const saved = PylonState.safeReadLS(STATE_KEY);
+  if (saved) { try { applyState(saved); } catch { /* ignore corrupt state */ } }
+
+  _snapshot();
+
+  suiteRead(SuiteManager.read());
+  SuiteManager.onUpdate(sync => { if (sync && sync.theme) _applyTheme(sync.theme); });
+
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+      if (e.key === 's') { e.preventDefault(); saveJSON(); }
+    }
+  });
+});
+</script>
+</body>
+</html>
