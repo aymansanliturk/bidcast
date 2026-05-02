@@ -16,6 +16,7 @@ const PRECACHE_ASSETS = [
   './vendor/pyl0n-validate.js',
   './libs/fonts.css',
   './libs/pptxgen.bundle.js',
+  './vendor/estimator-engine.js',
   './vendor/pyl0n-cloud.js',
   './libs/msal-browser.min.js',
   './libs/html2pdf.bundle.min.js',
