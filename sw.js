@@ -29,7 +29,7 @@ const PAGES = [
   'timecast', 'resourcecast', 'orgcast', 'rfqcast',
   'dorcast', 'riskcast', 'calccast', 'lettercast',
   'cashflow', 'w2w-report', 'cvcast',
-  'bidpack', 'bidscore', 'actionlog', 'forecast',
+  'bidpack', 'bidscore', 'actionlog', 'forecast', 'estimator',
 ];
 
 self.addEventListener('install', event => {
