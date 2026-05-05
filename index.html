@@ -471,6 +471,20 @@
     .er-page + .er-page { border-top: none; }
   }
 
+  .header-tagline {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .header-tagline span { color: var(--accent); }
+  @media (max-width: 768px) { .header-tagline { display: none; } }
+
   @media (max-width: 1024px) {
     .dash-sidebar { display: none; }
     .tab-nav-wrap { display: none; }
@@ -498,6 +512,8 @@
     </div>
     <span class="site-name">PYL0N<span class="dot">.</span></span>
   </a>
+  <div class="header-tagline">Bid Management, <span>simplified.</span></div>
+
   <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:15px;padding:3px 6px;border:none;background:transparent;cursor:pointer;color:inherit;" aria-label="Toggle dark mode">🌙</button>
   <div class="tb-progress-strip" id="tb-progress-strip">
     <div class="tb-progress-fill" id="tb-progress-fill-hd" style="width:0%"></div>
