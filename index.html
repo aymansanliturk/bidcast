@@ -49,403 +49,178 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Header ── */
+  /* ── Unified Top Bar ── */
   header {
-    padding: 14px 48px;
+    height: 54px;
+    padding: 0 32px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: rgba(255, 255, 255, 0.85);
+    gap: 10px;
+    background: rgba(255,255,255,0.96);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 1000;
-  }
-
-  .logo-wrap { display: flex; align-items: center; gap: 10px; }
-  .logo-text { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
-
-  .logo-icon {
-    width: 34px; height: 34px;
-    background: var(--navy);
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
+    overflow: visible;
   }
-  .logo-icon svg { width: 18px; height: 18px; }
+  .tb-logo { display:flex; align-items:center; gap:8px; flex-shrink:0; text-decoration:none; }
+  .logo-icon {
+    width: 28px; height: 28px; background: var(--navy);
+    border-radius: 7px; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .logo-icon svg { width: 15px; height: 15px; }
+  .site-name { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; line-height: 1; }
+  .site-name .dot { opacity: 0.3; }
 
-  .site-name {
-    font-size: 15px; font-weight: 600;
-    color: var(--text); white-space: nowrap; letter-spacing: -0.3px;
-    line-height: 1;
-  }
-  .site-name .dot { opacity: 0.35; }
+  .tb-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
 
-  .header-meta {
-    font-family: 'DM Mono', monospace; font-size: 8.5px;
-    color: var(--faint); text-align: left; line-height: 1;
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
-
-  /* ── Workspace Bar ── */
-  .workspace-bar {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 48px;
-  }
-  .wb-inner {
-    max-width: 1400px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 12px 0;
-    flex-wrap: wrap;
-  }
-  .wb-label {
-    font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; color: var(--faint);
-    white-space: nowrap; flex-shrink: 0;
-  }
-  .wb-fields {
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1;
-  }
+  .tb-project { display:flex; align-items:center; gap:5px; flex-shrink:0; }
   .pp-select {
     font-family: 'DM Sans', sans-serif; font-size: 12px;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    padding: 7px 10px; background: var(--bg); color: var(--muted);
-    outline: none; cursor: pointer; max-width: 190px;
-    transition: border-color 0.15s;
+    border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 5px 8px; background: var(--bg); color: var(--muted);
+    outline: none; cursor: pointer; max-width: 155px; transition: border-color 0.15s;
   }
-  .pp-select:focus { border-color: var(--accent); background: var(--input-bg-focus); color: var(--text); }
+  .pp-select:focus { border-color: var(--accent); color: var(--text); }
   .pp-input {
     font-family: 'DM Sans', sans-serif; font-size: 13px;
-    border: 1.5px solid var(--border); border-radius: 8px;
-    padding: 7px 12px; background: var(--bg); color: var(--text);
+    border: 1.5px solid var(--border); border-radius: 7px;
+    padding: 5px 10px; background: var(--bg); color: var(--text);
     outline: none; transition: border-color 0.15s;
   }
   .pp-input:focus { border-color: var(--accent); background: var(--input-bg-focus); }
-  .pp-input.name  { width: 260px; font-weight: 600; }
-  .pp-sep { width: 1px; height: 26px; background: var(--border); flex-shrink: 0; }
-  .pp-logo-wrap { display: flex; align-items: center; gap: 8px; }
-  .pp-logo-preview {
-    height: 30px; max-width: 90px; object-fit: contain;
-    border-radius: 4px; display: none;
-  }
+  .pp-input.name { width: 190px; font-weight: 600; }
+
   .pp-btn {
     font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
-    padding: 6px 12px; border-radius: 7px; border: 1.5px solid var(--border);
+    padding: 5px 10px; border-radius: 6px; border: 1.5px solid var(--border);
     background: var(--bg); color: var(--muted); cursor: pointer;
-    white-space: nowrap; transition: all 0.15s;
+    white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
   }
-  .pp-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: #fff; }
-  .pp-btn.danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; background: #fff; }
+  .pp-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+  .pp-btn.danger:hover:not(:disabled) { border-color: #c0392b; color: #c0392b; background: var(--surface); }
   .pp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-  /* Standard suite button classes */
-  .btn-primary { font-family:'DM Sans',sans-serif; background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
-  .btn-primary:hover { background:var(--accent2); }
-  /* ── Exec Report config popover ── */
-  .er-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; display:flex; align-items:center; justify-content:center; }
-  .er-dialog  { background:var(--surface); border-radius:14px; padding:24px 28px; width:400px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
-  .er-dialog-title { font-size:15px; font-weight:700; margin-bottom:3px; }
-  .er-dialog-sub   { font-size:12px; color:var(--muted); margin-bottom:16px; }
-  .er-cb-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); cursor:pointer; }
-  .er-cb-row:last-of-type { border-bottom:none; }
-  .er-cb-row input[type=checkbox] { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
-  .er-cb-label { font-size:13px; font-weight:500; flex:1; }
-  .er-cb-src   { font-size:10px; color:var(--faint); }
-  .btn-green   { font-family:'DM Sans',sans-serif; background:var(--green); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:filter 0.15s; }
-  .btn-green:hover { filter:brightness(0.9); }
-  .pp-proj-count {
-    font-family: 'DM Mono', monospace; font-size: 9px; color: var(--faint);
-    white-space: nowrap;
-  }
-  .pp-sync-dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: #22c55e; flex-shrink: 0;
-    box-shadow: 0 0 0 2px #dcfce7;
-    display: none;
-  }
-  .pp-sync-dot.active { display: inline-block; }
+  .pp-proj-count { font-family:'DM Mono',monospace; font-size:9px; color:var(--faint); white-space:nowrap; }
 
-  /* ── Hero ── */
-  .hero {
-    background-color: var(--surface);
-    background-image: radial-gradient(var(--border) 0.75px, transparent 0.75px);
-    background-size: 24px 24px;
-    border-bottom: 1px solid var(--border);
-    padding: 72px 48px 96px;
+  /* Status chips */
+  .tb-status { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  .tb-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    border-radius: 99px; padding: 3px 9px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+    border: 1.5px solid transparent; flex-shrink: 0;
   }
-  .hero-inner { max-width: 1400px; margin: 0 auto; }
-  .hero-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: 2px;
-    text-transform: uppercase; color: var(--accent); margin-bottom: 16px;
-  }
-  .hero-title {
-    font-size: 60px; font-weight: 700; letter-spacing: -3px;
-    line-height: 1; color: var(--text); margin-bottom: 24px;
-  }
-  .hero-title span { color: var(--accent); opacity: 0.8; }
-  .hero-sub { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 650px; }
+  .tb-chip.c-value { background:#f0fdf4; color:#166534; border-color:#bbf7d0; }
+  .tb-chip.c-pct   { background:#eff6ff; color:var(--accent); border-color:#bfdbfe; }
+  .tb-chip.c-pct.warn  { background:#fff7ed; color:#92400e; border-color:#fed7aa; }
+  .tb-chip.c-pct.alert { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+  .tb-chip.c-risk  { background:#fef2f2; color:#991b1b; border-color:#fecaca; }
+  .tb-chip.c-risk.ok { background:#f0fdf4; color:#166534; border-color:#bbf7d0; }
+  .tb-chip.c-risk.warn { background:#fff7ed; color:#92400e; border-color:#fed7aa; }
+  .tb-chip.c-team  { background:#f5f3ff; color:#5b21b6; border-color:#ddd6fe; }
 
-  /* ── Dashboard Stats ── */
-  .dash-wrap {
-    padding: 0 48px 48px;
-    margin-top: -48px;
-    position: relative;
-    z-index: 10;
-  }
-  .dash-inner { max-width: 1400px; margin: 0 auto; }
-  .dash-stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    width: 780px;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 14px 14px;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-    min-width: 0;
-  }
-  .stat-icon {
-    width: 26px; height: 26px; border-radius: 7px;
+  /* Right-side actions */
+  .tb-actions { display:flex; align-items:center; gap:5px; margin-left:auto; flex-shrink:0; }
+  .tb-logo-slots { display:flex; align-items:center; gap:3px; }
+  .tb-logo-slot {
+    width: 26px; height: 26px; border-radius: 5px;
+    border: 1.5px dashed var(--border);
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; margin-bottom: 4px;
+    cursor: pointer; overflow: hidden; background: var(--bg);
+    transition: border-color 0.15s; flex-shrink: 0;
+    font-size: 7px; font-weight: 700; color: var(--faint); letter-spacing: 0.3px;
   }
-  .stat-icon svg { width: 13px; height: 13px; }
-  .stat-label {
-    font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
-    text-transform: uppercase; color: var(--faint);
-  }
-  .stat-value {
-    font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
-    color: var(--faint); letter-spacing: -0.3px; line-height: 1.1;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .stat-value.has-data { color: var(--text); }
-  /* Smaller text for longer strings (dates, ranges) */
-  .stat-value.sm { font-size: 11px; letter-spacing: 0; white-space: normal; line-height: 1.3; }
-  .stat-source { font-size: 8px; color: var(--faint); margin-top: 2px; }
+  .tb-logo-slot:hover { border-color: var(--accent); }
+  .tb-logo-slot img { width:100%; height:100%; object-fit:contain; }
 
-  /* ── Progress Bar ── */
-  .progress-wrap {
-  margin-top: 18px;
-  width: 780px;
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 18px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-  }
-  .progress-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 12px;
-  }
-  .progress-hd-edge {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  color: var(--faint);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  }
-  .progress-hd-pct {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--accent);
-  flex-shrink: 0;
-  }
-  .progress-track {
-  height: 6px;
-  background: var(--border);
-  border-radius: 99px;
-  overflow: hidden;
-  position: relative;
-  }
-  .progress-fill {
-  height: 100%;
-  background: var(--accent);
-  border-radius: 99px;
-  transition: width 0.4s ease;
-  min-width: 4px;
-  }
-  .progress-fill.warn { background: #d97706; }
-  .progress-fill.alert { background: #c0392b; }
+  .pp-logo-preview { height:24px; max-width:56px; object-fit:contain; border-radius:3px; display:none; }
+  .pp-sync-dot { width:6px; height:6px; border-radius:50%; background:#22c55e; flex-shrink:0; box-shadow:0 0 0 2px #dcfce7; display:none; }
+  .pp-sync-dot.active { display:inline-block; }
 
-  /* ── Stat card state indicators ── */
-  .stat-card.s-healthy { border-left: 3px solid var(--green); padding-left: 11px; }
-  .stat-card.s-warn    { border-left: 3px solid #d97706; padding-left: 11px; }
-  .stat-card.s-alert   { border-left: 3px solid #c0392b; padding-left: 11px; }
-
-  .stat-chip {
-    display: inline-flex; align-items: center;
-    font-size: 7.5px; font-weight: 700; letter-spacing: 0.3px;
-    text-transform: uppercase; border-radius: 99px;
-    padding: 2px 7px; margin-top: 3px; width: fit-content;
+  /* Header progress strip */
+  .tb-progress-strip {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    overflow: hidden; display: none;
   }
-  .stat-chip.green { background: #dcfce7; color: #166534; }
-  .stat-chip.amber { background: #fef3c7; color: #92400e; }
-  .stat-chip.red   { background: #fee2e2; color: #991b1b; }
-  .stat-chip.hidden { display: none; }
+  .tb-progress-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; min-width: 2px; }
 
-  /* ── Dashboard side-panels row (Brand + Archive) ── */
-  .dash-panels {
-    display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;
-    max-width: 780px;
-  }
-  .dash-panel {
+  /* Snapshot floating panel */
+  .tb-snap-wrap { position: relative; }
+  .tb-snap-panel {
+    position: absolute; top: calc(100% + 6px); right: 0;
     background: var(--surface); border: 1.5px solid var(--border);
-    border-radius: 12px; padding: 14px 18px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-    flex: 1; min-width: 220px;
+    border-radius: 10px; padding: 10px 12px; width: 280px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.13); z-index: 2000; display: none;
   }
-  .dash-panel-hd {
-    font-size: 8px; font-weight: 700; letter-spacing: 1px;
-    text-transform: uppercase; color: var(--faint); margin-bottom: 10px;
-  }
-  .dash-panel-row { display: flex; align-items: center; gap: 10px; }
-  .brand-logo-box {
-    width: 56px; height: 40px; flex-shrink: 0;
-    border: 1.5px dashed var(--border); border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bg); overflow: hidden; cursor: pointer;
-    transition: border-color 0.15s;
-  }
-  .brand-logo-box:hover { border-color: var(--accent); }
-  .brand-logo-box img { width: 100%; height: 100%; object-fit: contain; }
-  .brand-logo-empty { font-size: 18px; color: var(--faint); line-height: 1; }
-  .dash-panel-info { flex: 1; }
-  .dash-panel-title { font-size: 12px; font-weight: 600; color: var(--text); }
-  .dash-panel-desc  { font-size: 10px; color: var(--muted); margin-top: 1px; }
-  .dash-panel-btns  { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-  .dash-panel-btns .pp-btn { font-size: 10px; padding: 4px 10px; }
-  .archive-rows { display: flex; flex-direction: column; gap: 6px; }
-  .archive-row {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 8px;
-  }
-  .archive-row-desc { font-size: 10px; color: var(--muted); line-height: 1.4; flex: 1; }
-  .snap-list  { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:188px; overflow-y:auto; }
-  .snap-item  { display:flex; align-items:center; gap:6px; background:var(--bg); border-radius:6px; padding:5px 8px; }
+  .tb-snap-panel.open { display: block; }
+  .snap-list { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:200px; overflow-y:auto; }
+  .snap-item { display:flex; align-items:center; gap:6px; background:var(--bg); border-radius:6px; padding:5px 8px; }
   .snap-item-name { flex:1; font-size:11px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .snap-item-ts   { font-size:9px; color:var(--muted); white-space:nowrap; flex-shrink:0; }
-  .snap-empty     { font-size:10px; color:var(--muted); font-style:italic; padding:2px 0; }
+  .snap-item-ts { font-size:9px; color:var(--muted); white-space:nowrap; flex-shrink:0; }
+  .snap-empty { font-size:10px; color:var(--muted); font-style:italic; padding:2px 0; }
+
+  /* ── Recent Tools Strip ── */
+  .recent-wrap { padding: 14px 48px 0; }
+  .recent-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: none; align-items: center; gap: 7px;
+    border-bottom: 1px solid var(--border); padding-bottom: 12px;
+  }
+  .recent-inner.has-items { display: flex; }
+  .recent-label {
+    font-size: 8.5px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--faint); white-space: nowrap; flex-shrink: 0;
+  }
+  .recent-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 99px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-decoration: none; white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
+  }
+  .recent-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .recent-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
   /* ── Tab Navigation ── */
-  .tab-nav-wrap {
-    padding: 20px 48px 0;
-    position: relative;
-    z-index: 10;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-    box-sizing: border-box;
-  }
+  .tab-nav-wrap { padding: 16px 48px 0; position: relative; z-index: 10; }
   .tab-nav {
-    display: flex;
-    align-items: center;
-    gap: 2px;
+    display: flex; align-items: center; gap: 2px;
     border-bottom: 1.5px solid var(--border);
-    padding-bottom: 0;
-    flex-wrap: wrap;
+    max-width: 1400px; margin: 0 auto; flex-wrap: wrap;
   }
   .tab-btn {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    background: transparent;
-    border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--muted); background: transparent; border: none;
     border-bottom: 2.5px solid transparent;
-    padding: 9px 16px 10px;
-    cursor: pointer;
-    white-space: nowrap;
-    margin-bottom: -1.5px;
-    border-radius: 0;
-    transition: color 0.15s, border-color 0.15s;
-    letter-spacing: -0.1px;
+    padding: 9px 16px 10px; cursor: pointer; white-space: nowrap;
+    margin-bottom: -1.5px; transition: color 0.15s, border-color 0.15s;
   }
   .tab-btn:hover { color: var(--text); }
-  .tab-btn.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-btn .tab-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--border);
-    color: var(--muted);
-    font-size: 9px;
-    font-weight: 700;
-    border-radius: 99px;
-    padding: 1px 6px;
-    margin-left: 5px;
-    line-height: 1.4;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--border); color: var(--muted);
+    font-size: 9px; font-weight: 700; border-radius: 99px;
+    padding: 1px 6px; margin-left: 5px; line-height: 1.4;
     transition: background 0.15s, color 0.15s;
   }
-  .tab-btn.active .tab-count {
-    background: #dbeafe;
-    color: var(--accent);
-  }
-  [data-theme="dark"] .tab-btn.active .tab-count {
-    background: rgba(91,130,196,0.2);
-    color: var(--accent);
-  }
+  .tab-btn.active .tab-count { background: #dbeafe; color: var(--accent); }
+  [data-theme="dark"] .tab-btn.active .tab-count { background: rgba(91,130,196,0.2); }
 
   /* ── Cards ── */
-  .cards-wrap {
-    padding: 20px 48px 80px;
-    position: relative;
-    z-index: 10;
-  }
+  .cards-wrap { padding: 16px 48px 80px; position: relative; z-index: 10; }
   .cards {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 14px;
-    max-width: 1400px;
-    margin: 0 auto;
+    gap: 14px; max-width: 1400px; margin: 0 auto;
   }
-
-  @media (max-width: 900px) {
-    header { padding: 14px 24px; }
-    .hero { padding: 60px 24px 80px; }
-    .workspace-bar { padding: 0 24px; }
-    .dash-wrap { padding: 0 24px 40px; margin-top: -40px; }
-    .tab-nav-wrap { padding: 16px 24px 0; }
-    .cards-wrap { padding: 16px 24px 48px; }
-    .cards { grid-template-columns: repeat(2, 1fr); }
-    .hero-title { font-size: 42px; letter-spacing: -2px; }
-    .dash-stats { grid-template-columns: repeat(2, 1fr); width: auto; }
-  }
-  @media (max-width: 560px) {
-    .cards { grid-template-columns: 1fr; }
-    .tab-nav-wrap { padding: 12px 16px 0; }
-    .cards-wrap { padding: 12px 16px 32px; }
-    .hero-title { font-size: 36px; }
-    .dash-stats { grid-template-columns: repeat(2, 1fr); }
-    .pp-input.name { width: 180px; }
-  }
-
   .card {
-    background: var(--surface);
-    border: 1.5px solid var(--border);
-    border-radius: 14px;
-    padding: 20px 20px 16px;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 14px; padding: 20px 20px 16px;
+    text-decoration: none; color: inherit; display: flex;
     flex-direction: column;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.04);
@@ -453,38 +228,22 @@
   .card:hover {
     border-color: var(--card-color, var(--accent));
     box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-    transform: translateY(-12px);
+    transform: translateY(-10px);
   }
-
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .card-titles {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
+  .card-header { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .card-titles { display:flex; flex-direction:column; gap:2px; }
   .card-icon {
-    width: 36px; height: 36px;
-    border-radius: 9px;
+    width: 36px; height: 36px; border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-    position: relative;
+    flex-shrink: 0; position: relative;
   }
   .card-icon svg { width: 18px; height: 18px; }
-
   .card-name { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
   .card-tagline { font-size: 8.5px; font-weight: 600; color: var(--faint); letter-spacing: 1.2px; text-transform: uppercase; }
   .card-desc {
     font-size: 12px; color: var(--muted); line-height: 1.55; flex: 1;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-    overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
-
   .card-footer {
     margin-top: 14px; padding-top: 12px;
     border-top: 1px solid var(--border);
@@ -499,28 +258,53 @@
   .group-label-line { flex:1; height:1px; background:var(--border); }
   .group-label-sub { font-size:9.5px; color:var(--faint); letter-spacing:0; font-weight:400; white-space:nowrap; }
 
+  /* stat-chip: kept for refreshStats DOM manipulation */
+  .stat-chip { display:inline-flex; align-items:center; font-size:7.5px; font-weight:700; letter-spacing:0.3px; text-transform:uppercase; border-radius:99px; padding:2px 7px; margin-top:3px; width:fit-content; }
+  .stat-chip.green { background:#dcfce7; color:#166534; }
+  .stat-chip.amber { background:#fef3c7; color:#92400e; }
+  .stat-chip.red   { background:#fee2e2; color:#991b1b; }
+  .stat-chip.hidden { display:none; }
+  /* progress-fill classes kept for refreshStats */
+  .progress-fill.warn  { background: #d97706; }
+  .progress-fill.alert { background: #c0392b; }
+
   /* ── Footer ── */
   footer {
-    margin-top: auto;
-    padding: 18px 48px;
+    margin-top: auto; padding: 11px 48px;
     border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
-    font-family: 'DM Mono', monospace; font-size: 9px; color: var(--faint);
+    font-family: 'DM Mono', monospace; font-size: 8.5px; color: var(--faint);
     letter-spacing: 0.5px; text-transform: uppercase;
+    opacity: 0.45; transition: opacity 0.25s;
   }
+  footer:hover { opacity: 1; }
 
-  /* ── Executive Report ── */
+  /* Standard suite buttons */
+  .btn-primary { font-family:'DM Sans',sans-serif; background:var(--accent); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:background 0.15s; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-green { font-family:'DM Sans',sans-serif; background:var(--green); color:#fff; border:none; border-radius:7px; padding:9px 20px; font-size:13px; font-weight:600; cursor:pointer; transition:filter 0.15s; }
+  .btn-green:hover { filter:brightness(0.9); }
+
+  /* ── Exec Report config dialog ── */
+  .er-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:2000; display:flex; align-items:center; justify-content:center; }
+  .er-dialog  { background:var(--surface); border-radius:14px; padding:24px 28px; width:400px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+  .er-dialog-title { font-size:15px; font-weight:700; margin-bottom:3px; }
+  .er-dialog-sub   { font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .er-cb-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+  .er-cb-row:last-of-type { border-bottom:none; }
+  .er-cb-row input[type=checkbox] { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+  .er-cb-label { font-size:13px; font-weight:500; flex:1; }
+  .er-cb-src   { font-size:10px; color:var(--faint); }
+
+  /* ── Exec Report output (print) ── */
   body.printing-report header,
-  body.printing-report .workspace-bar,
-  body.printing-report .hero,
-  body.printing-report .dash-wrap,
+  body.printing-report .recent-wrap,
+  body.printing-report .tab-nav-wrap,
   body.printing-report .cards-wrap,
-  body.printing-report footer { display: none !important; }
-  body.printing-report #executive-report-output { display: block !important; background: #fff; }
-
-  #executive-report-output { display: none; }
-
-  .er-wrap { font-family: 'DM Sans', sans-serif; background: #fff; color: #1a1916; max-width: 210mm; margin: 0 auto; }
+  body.printing-report footer { display:none !important; }
+  body.printing-report #executive-report-output { display:block !important; background:#fff; }
+  #executive-report-output { display:none; }
+  .er-wrap { font-family:'DM Sans',sans-serif; background:#fff; color:#1a1916; max-width:210mm; margin:0 auto; }
   .er-page {
     padding: 40px 48px; min-height: 270mm;
     display: flex; flex-direction: column;
@@ -538,13 +322,31 @@
     .er-page:last-child { page-break-after: avoid; }
     .er-page + .er-page { border-top: none; }
   }
+
+  @media (max-width: 900px) {
+    header { padding: 0 20px; gap: 7px; }
+    .pp-input.name { width: 130px; }
+    .tb-status { display: none; }
+    .recent-wrap { padding: 10px 20px 0; }
+    .tab-nav-wrap { padding: 12px 20px 0; }
+    .cards-wrap { padding: 12px 20px 48px; }
+    .cards { grid-template-columns: repeat(2, 1fr); }
+    footer { padding: 10px 20px; }
+  }
+  @media (max-width: 560px) {
+    .pp-select { max-width: 100px; }
+    .pp-input.name { width: 100px; font-size: 12px; }
+    .cards { grid-template-columns: 1fr; }
+    .cards-wrap { padding: 10px 16px 32px; }
+  }
+
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo-wrap">
-    <div class="logo-icon" id="header-logo-icon">
+<header id="topbar" style="position:relative;">
+  <div class="tb-logo">
+    <div class="logo-icon">
       <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="1" y="1" width="7" height="7" rx="1.5" fill="white"/>
         <rect x="10" y="1" width="7" height="7" rx="1.5" fill="white"/>
@@ -552,280 +354,98 @@
         <rect x="10" y="10" width="7" height="7" rx="1.5" fill="white" opacity="0.4"/>
       </svg>
     </div>
-    <div class="logo-text">
-      <span class="site-name">PYL0N<span class="dot">.</span></span>
-      <div class="header-meta">100% Private · Local Execution</div>
-    </div>
+    <span class="site-name">PYL0N<span class="dot">.</span></span>
   </div>
-  <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:16px;padding:4px 8px;border:none;background:transparent;cursor:pointer;color:inherit;margin-left:auto;" aria-label="Toggle dark mode">🌙</button>
+  <div class="tb-sep"></div>
+  <div class="tb-project">
+    <select id="pp-select" class="pp-select" onchange="ppSelectChange()" title="Switch saved project"></select>
+    <input id="pp-name" class="pp-input name" type="text" placeholder="Project name…" title="Project name — syncs to all tools">
+    <button class="pp-btn" onclick="ppSave()" title="Save project">Save</button>
+    <button class="pp-btn" onclick="ppNew()" title="New project">New</button>
+    <button class="pp-btn danger" id="pp-del-btn" onclick="ppDelete()" disabled title="Delete project">Del</button>
+    <span class="pp-proj-count" id="pp-proj-count">0/5</span>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-status" id="tb-status">
+    <div class="tb-chip c-value" id="tbchip-value" style="display:none"></div>
+    <div class="tb-chip c-pct"   id="tbchip-pct"   style="display:none"></div>
+    <div class="tb-chip c-risk"  id="tbchip-risk"   style="display:none"></div>
+    <div class="tb-chip c-team"  id="tbchip-team"   style="display:none"></div>
+  </div>
+  <div class="tb-actions">
+    <div class="tb-logo-slots" title="Company / Customer logos — click to change">
+      <input type="file" id="brand-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="brandUploadLogo(this)">
+      <input type="file" id="customer-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="customerUploadLogo(this)">
+      <div class="tb-logo-slot" id="tb-co-slot" title="Company logo" onclick="document.getElementById('brand-logo-file').click()">
+        <img id="brand-logo-img" src="" alt="" style="display:none;">
+        <span id="brand-logo-empty">CO</span>
+      </div>
+      <div class="tb-logo-slot" id="tb-cx-slot" title="Customer logo" onclick="document.getElementById('customer-logo-file').click()">
+        <img id="customer-logo-img" src="" alt="" style="display:none;">
+        <span id="customer-logo-empty">CX</span>
+      </div>
+      <button class="pp-btn danger" id="brand-logo-clear" onclick="brandClearLogo()" style="display:none;font-size:9px;padding:3px 7px;" title="Remove company logo">✕ Co</button>
+      <button class="pp-btn danger" id="customer-logo-clear" onclick="customerClearLogo()" style="display:none;font-size:9px;padding:3px 7px;" title="Remove customer logo">✕ Cx</button>
+    </div>
+    <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
+    <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
+    <button class="pp-btn" id="pp-logo-btn" onclick="document.getElementById('pp-logo-input').click()" style="display:none">⊕ Logo</button>
+    <button class="pp-btn danger" id="pp-logo-clear" onclick="ppClearLogo()" style="display:none">✕</button>
+    <div class="tb-sep"></div>
+    <input type="file" id="master-import-input" accept=".json" style="display:none" onchange="masterImport(this)">
+    <button class="pp-btn" onclick="masterExport()" title="Export full archive">↓ Export</button>
+    <button class="pp-btn" onclick="document.getElementById('master-import-input').click()" title="Import archive">↑ Import</button>
+    <button class="pp-btn" onclick="openErConfig()" title="Executive Report">📄</button>
+    <div class="tb-sep"></div>
+    <div class="tb-snap-wrap">
+      <button class="pp-btn" id="tb-snap-btn" onclick="toggleSnapPanel()" title="Snapshots">📸</button>
+      <div class="tb-snap-panel" id="tb-snap-panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:0.5px;text-transform:uppercase;">Snapshots</span>
+          <button class="pp-btn" style="font-size:10px;padding:3px 8px;border-color:var(--green);color:var(--green);font-weight:700;" onclick="snapshotFreeze()">+ Freeze</button>
+        </div>
+        <div id="snap-list" class="snap-list"><div class="snap-empty">No snapshots yet.</div></div>
+      </div>
+    </div>
+    <div class="tb-sep"></div>
+    <span class="pp-sync-dot" id="pp-sync-dot" title="Synced"></span>
+    <span id="pp-sync-label" style="font-size:9px;color:var(--faint);display:none;">Synced</span>
+    <button id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle dark mode" style="font-size:15px;padding:3px 6px;border:none;background:transparent;cursor:pointer;color:inherit;" aria-label="Toggle dark mode">🌙</button>
+  </div>
+  <div class="tb-progress-strip" id="tb-progress-strip">
+    <div class="tb-progress-fill" id="tb-progress-fill-hd" style="width:0%"></div>
+  </div>
 </header>
 
-<!-- ── Workspace Bar ── -->
-<div class="workspace-bar" id="workspace-bar">
-  <div class="wb-inner">
-    <span class="wb-label">Workspace</span>
-    <div class="wb-fields">
-      <select id="pp-select" class="pp-select" onchange="ppSelectChange()" title="Switch saved project"></select>
-      <div class="pp-sep"></div>
-      <input id="pp-name" class="pp-input name" type="text" placeholder="Project name…" title="Project name — syncs to all tools instantly">
-      <div class="pp-sep"></div>
-      <button class="pp-btn" onclick="ppSave()" title="Save current project" aria-label="Save current project">Save</button>
-      <button class="pp-btn" onclick="ppNew()"  title="Create new blank project" aria-label="Create new blank project">New</button>
-      <button class="pp-btn danger" id="pp-del-btn" onclick="ppDelete()" title="Delete active project" disabled aria-label="Delete active project">Delete</button>
-      <span class="pp-proj-count" id="pp-proj-count">0/5</span>
-      <div class="pp-sep"></div>
-      <div class="pp-logo-wrap">
-        <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
-        <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
-        <button class="pp-btn" id="pp-logo-btn" onclick="document.getElementById('pp-logo-input').click()">⊕ Logo</button>
-        <button class="pp-btn danger" id="pp-logo-clear" onclick="ppClearLogo()" style="display:none" aria-label="Remove">✕</button>
-      </div>
-      <div class="pp-sep"></div>
-      <span class="pp-sync-dot" id="pp-sync-dot" title="Changes synced to all open tools"></span>
-      <span id="pp-sync-label" style="font-size:10px;color:var(--faint);display:none;">Synced</span>
-    </div>
+<!-- Hidden ghost elements — refreshStats writes to these IDs -->
+<div aria-hidden="true" style="display:none;position:absolute;pointer-events:none;">
+  <div id="stat-budget"></div><div id="stat-team"></div><div id="stat-phases"></div>
+  <div id="stat-timeline"></div><div id="stat-rfq"></div><div id="stat-org"></div>
+  <div id="stat-risk"></div><div id="stat-exposure"></div>
+  <div id="stat-card-budget"></div><div id="stat-card-timeline"></div>
+  <div id="stat-card-rfq"></div><div id="stat-card-risk"></div><div id="stat-card-exposure"></div>
+  <div id="chip-budget"></div><div id="chip-timeline"></div>
+  <div id="chip-rfq"></div><div id="chip-risk"></div><div id="chip-exposure"></div>
+  <div id="progress-wrap" style="display:none;">
+    <span id="progress-start"></span><span id="progress-pct"></span><span id="progress-end"></span>
+    <div><div class="progress-fill" id="progress-fill"></div></div>
   </div>
 </div>
 
-<!-- ── Hero ── -->
-<div class="hero">
-  <div class="hero-inner">
-    <div class="hero-eyebrow">PYL0N Bid Project Suite</div>
-    <div class="hero-title">Bid Management, <span>simplified.</span></div>
-    <div class="hero-sub">The essential toolkit for complex bid projects. Runs locally in your browser.</div>
+<!-- ── Recent Tools ── -->
+<div class="recent-wrap">
+  <div class="recent-inner" id="recent-inner">
+    <span class="recent-label">Recent</span>
   </div>
-</div>
-
-<!-- ── Dashboard Stats ── -->
-<div class="dash-wrap">
-  <div class="dash-inner">
-    <div class="dash-stats">
-
-<div class="stat-card" id="stat-card-budget">
-  <div class="stat-icon" style="background:#f0fdf8;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 10h12"/>
-      <path d="M4 14h9"/>
-      <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
-    </svg>
-  </div>
-  <div class="stat-label">Project Value</div>
-  <div class="stat-value" id="stat-budget">—</div>
-  <div class="stat-source">CalcCast · Customer Price</div>
-  <div class="stat-chip hidden" id="chip-budget"></div>
-</div>
-
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#f0f4ff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-            <circle cx="9" cy="7" r="4"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87"/>
-            <path d="M16 3.13a4 4 0 010 7.75"/>
-          </svg>
-        </div>
-        <div class="stat-label">Team Size</div>
-        <div class="stat-value" id="stat-team">—</div>
-        <div class="stat-source">ResourceCast → OrgCast</div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#fff8f0;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="5" width="20" height="15" rx="2"/>
-            <line x1="2" y1="10" x2="22" y2="10"/>
-            <line x1="7" y1="5" x2="7" y2="10"/>
-            <line x1="17" y1="5" x2="17" y2="10"/>
-            <line x1="6" y1="14" x2="14" y2="14"/>
-          </svg>
-        </div>
-        <div class="stat-label">Key Phases</div>
-        <div class="stat-value" id="stat-phases">—</div>
-        <div class="stat-source">TimeCast</div>
-      </div>
-
-      <!-- Row 2 ── -->
-
-      <div class="stat-card" id="stat-card-timeline">
-        <div class="stat-icon" style="background:#f5f3ff;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="5" width="20" height="15" rx="2"/>
-            <line x1="2" y1="10" x2="22" y2="10"/>
-            <line x1="7" y1="5" x2="7" y2="10"/>
-            <line x1="17" y1="5" x2="17" y2="10"/>
-            <line x1="6" y1="14" x2="10" y2="14"/>
-          </svg>
-        </div>
-        <div class="stat-label">Project Timeline</div>
-        <div class="stat-value sm" id="stat-timeline">—</div>
-        <div class="stat-source">TimeCast</div>
-        <div class="stat-chip hidden" id="chip-timeline"></div>
-      </div>
-
-      <div class="stat-card" id="stat-card-rfq">
-        <div class="stat-icon" style="background:#fff7f0;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <line x1="9" y1="12" x2="15" y2="12"/>
-            <line x1="9" y1="16" x2="13" y2="16"/>
-          </svg>
-        </div>
-        <div class="stat-label">RFQ Status</div>
-        <div class="stat-value sm" id="stat-rfq">—</div>
-        <div class="stat-source">RFQCast</div>
-        <div class="stat-chip hidden" id="chip-rfq"></div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon" style="background:#f0fdf8;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="5" r="2.5"/>
-            <line x1="12" y1="7.5" x2="12" y2="12"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <line x1="5" y1="12" x2="5" y2="15.5"/>
-            <line x1="12" y1="12" x2="12" y2="15.5"/>
-            <line x1="19" y1="12" x2="19" y2="15.5"/>
-          </svg>
-        </div>
-        <div class="stat-label">Org Composition</div>
-        <div class="stat-value sm" id="stat-org">—</div>
-        <div class="stat-source">OrgCast</div>
-      </div>
-
-      <div class="stat-card" id="stat-card-risk">
-        <div class="stat-icon" style="background:#fff1f2;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
-          </svg>
-        </div>
-        <div class="stat-label">Project Risks</div>
-        <div class="stat-value" id="stat-risk">—</div>
-        <div class="stat-source">RiskCast</div>
-        <div class="stat-chip hidden" id="chip-risk"></div>
-      </div>
-
-      <div class="stat-card" id="stat-card-exposure">
-        <div class="stat-icon" style="background:#fff3e0;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#b36a00" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 10h12"/>
-            <path d="M4 14h9"/>
-            <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
-          </svg>
-        </div>
-        <div class="stat-label">Risk Exposure</div>
-        <div class="stat-value" id="stat-exposure">—</div>
-        <div class="stat-source">RiskCast</div>
-        <div class="stat-chip hidden" id="chip-exposure"></div>
-      </div>
-
-    </div>
-
-    <!-- ── Progress bar (shown when Timecast has data) ── -->
-    <div class="progress-wrap" id="progress-wrap" style="display:none;">
-      <div class="progress-header">
-        <span class="progress-hd-edge" id="progress-start">—</span>
-        <span class="progress-hd-pct" id="progress-pct">—% complete</span>
-        <span class="progress-hd-edge" id="progress-end">—</span>
-      </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
-      </div>
-    </div>
-
-    <!-- ── Brand Settings + Archive panels ── -->
-    <div class="dash-panels">
-
-      <!-- Corporate Identity -->
-      <div class="dash-panel">
-        <div class="dash-panel-hd">Corporate Identity</div>
-        <div class="dash-panel-row">
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-            <div class="brand-logo-box" id="brand-logo-box" title="Click to upload company logo"
-                 onclick="document.getElementById('brand-logo-file').click()">
-              <img id="brand-logo-img" src="" alt="" style="display:none;">
-              <span class="brand-logo-empty" id="brand-logo-empty">⊕</span>
-            </div>
-            <span style="font-size:8px;font-weight:700;color:var(--faint);letter-spacing:0.5px;">COMPANY</span>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:4px;align-items:center;">
-            <div class="brand-logo-box" id="customer-logo-box" title="Click to upload customer logo"
-                 onclick="document.getElementById('customer-logo-file').click()">
-              <img id="customer-logo-img" src="" alt="" style="display:none;">
-              <span class="brand-logo-empty" id="customer-logo-empty">⊕</span>
-            </div>
-            <span style="font-size:8px;font-weight:700;color:var(--faint);letter-spacing:0.5px;">CUSTOMER</span>
-          </div>
-          <div class="dash-panel-info">
-            <div class="dash-panel-title">Brand Logos</div>
-            <div class="dash-panel-desc">Company &amp; Customer logos for PDF exports across the suite.</div>
-          </div>
-        </div>
-        <div class="dash-panel-btns">
-          <input type="file" id="brand-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg"
-                 style="display:none" onchange="brandUploadLogo(this)">
-          <input type="file" id="customer-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg"
-                 style="display:none" onchange="customerUploadLogo(this)">
-          <button class="pp-btn danger" id="brand-logo-clear" onclick="brandClearLogo()" style="display:none">✕ Company</button>
-          <button class="pp-btn danger" id="customer-logo-clear" onclick="customerClearLogo()" style="display:none">✕ Customer</button>
-        </div>
-      </div>
-
-      <!-- Suite Portfolio -->
-      <div class="dash-panel">
-        <div class="dash-panel-hd">Suite Portfolio</div>
-        <div class="archive-rows">
-          <div class="archive-row">
-            <div class="archive-row-desc"><strong>Full Project Archive</strong> — all tools, settings &amp; logo in one file.</div>
-            <button class="pp-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="masterExport()" title="Download Full_Project_Archive.json" aria-label="Download Full_Project_Archive.json">↓ Export</button>
-          </div>
-          <div class="archive-row">
-            <div class="archive-row-desc">Restore entire suite from a previously exported archive.</div>
-            <input type="file" id="master-import-input" accept=".json" style="display:none"
-                   onchange="masterImport(this)">
-            <button class="pp-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="document.getElementById('master-import-input').click()" title="Import archive JSON" aria-label="Import archive JSON">↑ Import</button>
-          </div>
-          <div class="archive-row">
-            <div class="archive-row-desc">Consolidated executive summary from all suite tools — print-ready PDF.</div>
-            <button class="pp-btn" style="border-color:var(--accent);color:var(--accent);font-weight:700;" onclick="openErConfig()" title="Generate Executive Report" aria-label="Generate Executive Report">📄 Executive Report</button>
-          </div>
-          <div class="archive-row" style="flex-direction:column;align-items:stretch;gap:4px;">
-            <div style="display:flex;align-items:center;gap:8px;">
-              <div class="archive-row-desc" style="flex:1;"><strong>Snapshots</strong> — freeze a named point-in-time you can restore later.</div>
-              <button class="pp-btn" style="border-color:var(--green);color:var(--green);font-weight:700;flex-shrink:0;" onclick="snapshotFreeze()" title="Save a named snapshot of the current state" aria-label="Save a named snapshot of the current state">📸 Freeze</button>
-            </div>
-            <div id="snap-list" class="snap-list"><div class="snap-empty">No snapshots yet.</div></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-<!-- ── First-run onboarding banner ── -->
-<div id="onboarding-banner" style="display:none; max-width:1400px; margin:0 auto 18px; border-radius:8px; background:var(--accent); color:#fff; padding:16px 20px; display:flex; align-items:center; gap:16px; box-shadow:0 2px 10px rgba(44,78,135,0.25); font-family:'DM Sans',sans-serif;">
-  <div style="font-size:22px;flex-shrink:0;">👋</div>
-  <div style="flex:1;">
-    <div style="font-weight:700;font-size:15px;margin-bottom:3px;">Welcome to PYL0N Suite!</div>
-    <div style="font-size:13px;opacity:0.9;">New here? Start with <strong>TimeCast</strong> to define your project timeline — phases and team data sync automatically to the other tools.</div>
-  </div>
-  <a href="timecast.html" style="flex-shrink:0;background:#fff;color:var(--accent);border-radius:6px;padding:8px 16px;font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;">Open TimeCast →</a>
-  <button onclick="document.getElementById('onboarding-banner').style.display='none';localStorage.setItem('bidcast_onboarding_done','1');" aria-label="Dismiss welcome banner" style="flex-shrink:0;background:none;border:none;color:#fff;font-size:18px;cursor:pointer;opacity:0.7;padding:0;line-height:1;">✕</button>
 </div>
 
 <!-- ── Tab Navigation ── -->
-<div style="padding:0 48px;position:relative;z-index:10;">
-  <div style="max-width:1400px;margin:20px auto 0;">
-    <div class="tab-nav" id="tab-nav">
-      <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
-      <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
-      <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
-      <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
-    </div>
+<div class="tab-nav-wrap">
+  <div class="tab-nav" id="tab-nav">
+    <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
+    <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
+    <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
+    <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
   </div>
 </div>
 
@@ -1231,7 +851,7 @@
 <footer>
   <span style="display:flex; align-items:center; gap:8px;">
     Made with ♥ on ⏚
-    <span style="font-family:'DM Mono', monospace; font-size:8px; font-weight:700; padding:2px 6px; background:var(--border); color:var(--muted); border-radius:4px; letter-spacing:0.5px;">v2.1.0</span>
+    <span style="font-family:'DM Mono', monospace; font-size:8px; font-weight:700; padding:2px 6px; background:var(--border); color:var(--muted); border-radius:4px; letter-spacing:0.5px;">v2.2.0</span>
   </span>
   <span>Local Processing — Your data never leaves your browser</span>
 </footer>
@@ -1943,6 +1563,7 @@ function refreshStats() {
   _badge('badge-rfqcast',      rfqItems > 0 ? rfqItems + (rfqItems === 1 ? ' item' : ' items') + (rfqReceived > 0 ? ' · ' + rfqReceived + ' received' : '') : '', 'Alerts · Dashboard');
   _badge('badge-dorcast',      dorRows > 0 ? dorRows + (dorRows === 1 ? ' row' : ' rows') + ' defined' : '',         'Excel · PDF · JSON');
   _badge('badge-calccast',     hasCalcData ? 'Data Active' : '',               'W2W · Margins');
+  _syncHeaderChips();
 }
 
 /* ── Brand Settings panel logo sync ── */
@@ -2558,30 +2179,133 @@ function runExecReport() {
   generateExecutiveReport();
 }
 
+/* ── Recent Tools ── */
+const _RECENT_KEY = 'bidcast_recent';
+const _RECENT_MAX = 4;
+
+function _trackRecent(href, name, color) {
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem(_RECENT_KEY) || '[]'); } catch {}
+  const filename = (href || '').split('/').pop().split('?')[0];
+  recent = recent.filter(r => r.href !== filename);
+  recent.unshift({ href: filename, name: name || filename, color: color || '#2c4e87' });
+  if (recent.length > _RECENT_MAX) recent = recent.slice(0, _RECENT_MAX);
+  localStorage.setItem(_RECENT_KEY, JSON.stringify(recent));
+  _renderRecent();
+}
+
+function _renderRecent() {
+  let recent = [];
+  try { recent = JSON.parse(localStorage.getItem(_RECENT_KEY) || '[]'); } catch {}
+  const inner = document.getElementById('recent-inner');
+  if (!inner) return;
+  inner.querySelectorAll('.recent-chip').forEach(c => c.remove());
+  if (recent.length === 0) { inner.classList.remove('has-items'); return; }
+  inner.classList.add('has-items');
+  recent.forEach(r => {
+    const a = document.createElement('a');
+    a.href = r.href;
+    a.className = 'recent-chip';
+    a.innerHTML = `<span class="recent-dot" style="background:${esc(r.color)}"></span>${esc(r.name)}`;
+    inner.appendChild(a);
+  });
+}
+
+/* ── Snapshot panel toggle ── */
+function toggleSnapPanel() {
+  const panel = document.getElementById('tb-snap-panel');
+  if (panel) panel.classList.toggle('open');
+}
+
+/* ── Header status chips sync ── */
+function _syncHeaderChips() {
+  const budgetEl = document.getElementById('stat-budget');
+  const budgetTxt = budgetEl?.textContent?.trim();
+  const hasVal = budgetTxt && budgetTxt !== '—';
+  const vChip = document.getElementById('tbchip-value');
+  if (vChip) { vChip.style.display = hasVal ? 'inline-flex' : 'none'; if (hasVal) vChip.textContent = budgetTxt; }
+
+  const pctEl = document.getElementById('progress-pct');
+  const pctTxt = pctEl?.textContent?.trim();
+  const hasPct = pctTxt && pctTxt !== '—' && document.getElementById('progress-wrap')?.style.display === 'block';
+  const pChip = document.getElementById('tbchip-pct');
+  if (pChip) {
+    pChip.style.display = hasPct ? 'inline-flex' : 'none';
+    if (hasPct) {
+      pChip.textContent = pctTxt;
+      const pct = parseInt(pctTxt) || 0;
+      pChip.className = 'tb-chip c-pct' + (pct >= 100 ? ' alert' : pct >= 90 ? ' warn' : '');
+    }
+  }
+
+  const riskEl = document.getElementById('stat-risk');
+  const riskTxt = riskEl?.textContent?.trim();
+  const hasRisk = riskTxt && riskTxt !== '—';
+  const rChip = document.getElementById('tbchip-risk');
+  if (rChip) {
+    rChip.style.display = hasRisk ? 'inline-flex' : 'none';
+    if (hasRisk) {
+      rChip.textContent = riskTxt;
+      const chipRisk = document.getElementById('chip-risk');
+      const isRed = chipRisk?.classList.contains('red');
+      const isAmber = chipRisk?.classList.contains('amber');
+      rChip.className = 'tb-chip c-risk' + (isRed ? '' : isAmber ? ' warn' : ' ok');
+    }
+  }
+
+  const teamEl = document.getElementById('stat-team');
+  const teamTxt = teamEl?.textContent?.trim();
+  const hasTeam = teamTxt && teamTxt !== '—';
+  const tChip = document.getElementById('tbchip-team');
+  if (tChip) { tChip.style.display = hasTeam ? 'inline-flex' : 'none'; if (hasTeam) tChip.textContent = teamTxt; }
+
+  const fill = document.getElementById('progress-fill');
+  const strip = document.getElementById('tb-progress-strip');
+  const hFill = document.getElementById('tb-progress-fill-hd');
+  if (strip && hFill && fill) {
+    const visible = document.getElementById('progress-wrap')?.style.display === 'block';
+    strip.style.display = visible ? 'block' : 'none';
+    if (visible) {
+      hFill.style.width = fill.style.width;
+      hFill.style.background = fill.className.includes('alert') ? 'var(--red)' : fill.className.includes('warn') ? '#d97706' : 'var(--accent)';
+    }
+  }
+}
+
 /* ── Boot ── */
 document.addEventListener('DOMContentLoaded', () => {
   _applyTheme(localStorage.getItem('bidcast_theme') || 'light');
   SuiteManager.migrate();
   SuiteManager.setReturnPath(null, null);
-  if (!localStorage.getItem('bidcast_onboarding_done')) {
-    const ob = document.getElementById('onboarding-banner');
-    if (ob) ob.style.display = 'flex';
-  }
   ppLoad();
   ppPopulateSelect();
   refreshStats();
   snapshotRenderList();
   _initTabCounts();
+  _renderRecent();
 
-  // Assert master dashboard dominance: broadcast stored project name to all
-  // open tools immediately so they align with the dashboard on startup.
   const _bootName = (document.getElementById('pp-name')?.value || '').trim();
   if (_bootName && _bootName !== 'Project Name') SuiteManager.write({ projectName: _bootName }, 'index');
 
   const nameEl = document.getElementById('pp-name');
   if (nameEl) nameEl.addEventListener('input', ppOnName);
 
-  /* React to changes made in other tools or tabs. */
+  document.getElementById('cards-grid')?.addEventListener('click', e => {
+    const card = e.target.closest('a.card[href]');
+    if (!card) return;
+    const name = card.querySelector('.card-name')?.textContent?.trim() || '';
+    const color = getComputedStyle(card).getPropertyValue('--card-color').trim() || '#2c4e87';
+    _trackRecent(card.getAttribute('href'), name, color);
+  });
+
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('tb-snap-panel');
+    const btn = document.getElementById('tb-snap-btn');
+    if (panel && panel.classList.contains('open') && !panel.contains(e.target) && e.target !== btn && !btn?.contains(e.target)) {
+      panel.classList.remove('open');
+    }
+  });
+
   SuiteManager.onUpdate((sync, changedKey) => {
     if (changedKey === 'bidcast_logo') { ppUpdateLogo(); _updateBrandPanel(); return; }
     if (sync && sync.theme) _applyTheme(sync.theme);
@@ -2592,7 +2316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshStats();
   });
 
-  /* Refresh stats when any tool data changes in another tab. */
   window.addEventListener('storage', e => {
     const trackedKeys = [
       'bidcast_state_timecast', 'bidcast_state_resourcecast',
@@ -2602,7 +2325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'bidcast_suite_sync',
     ];
     if (trackedKeys.includes(e.key)) {
-      window._hasUnexportedChanges = true; // Mark as dirty
+      window._hasUnexportedChanges = true;
       refreshStats();
     }
   });
