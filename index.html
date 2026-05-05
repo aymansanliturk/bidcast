@@ -264,9 +264,109 @@
   .stat-chip.amber { background:#fef3c7; color:#92400e; }
   .stat-chip.red   { background:#fee2e2; color:#991b1b; }
   .stat-chip.hidden { display:none; }
-  /* progress-fill classes kept for refreshStats */
+  /* ── Dashboard Layout ── */
+  .dashboard-layout {
+    display: flex;
+    align-items: flex-start;
+    flex: 1;
+  }
+  .dash-sidebar {
+    width: 288px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 54px;
+    max-height: calc(100vh - 54px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid var(--border);
+    padding: 18px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: var(--surface);
+  }
+  .dash-main { flex: 1; min-width: 0; }
+
+  /* ── Stat Cards Grid ── */
+  .dash-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  .stat-card {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    padding: 10px 11px 8px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .stat-card.s-healthy { border-color: #86efac; background: #f0fdf4; }
+  .stat-card.s-warn    { border-color: #fcd34d; background: #fffbeb; }
+  .stat-card.s-alert   { border-color: #fca5a5; background: #fef2f2; }
+  [data-theme="dark"] .stat-card.s-healthy { border-color: #166534; background: rgba(16,124,65,0.12); }
+  [data-theme="dark"] .stat-card.s-warn    { border-color: #b45309; background: rgba(217,119,6,0.1); }
+  [data-theme="dark"] .stat-card.s-alert   { border-color: #991b1b; background: rgba(190,18,60,0.1); }
+  .stat-source {
+    font-size: 8px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--faint); margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 12.5px; font-weight: 700; color: var(--text);
+    letter-spacing: -0.2px; min-height: 18px; line-height: 1.3;
+    word-break: break-word;
+  }
+  .stat-value:not(.has-data) { color: var(--faint); font-weight: 400; }
+
+  /* ── Sidebar Progress Bar ── */
+  #progress-wrap { padding: 2px 0; }
+  .progress-meta {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: var(--muted); margin-bottom: 5px;
+  }
+  .progress-track {
+    height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: var(--accent); border-radius: 3px;
+    transition: width 0.4s ease; min-width: 2px;
+  }
   .progress-fill.warn  { background: #d97706; }
   .progress-fill.alert { background: #c0392b; }
+
+  /* ── Dash Panels ── */
+  .dash-panels { display: flex; flex-direction: column; gap: 10px; }
+  .dash-panel {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    padding: 12px 12px 10px;
+  }
+  .dash-panel-title {
+    font-size: 8px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--faint); margin-bottom: 9px;
+  }
+  .logo-boxes { display: flex; gap: 7px; }
+  .logo-box {
+    flex: 1; height: 54px; border-radius: 7px;
+    border: 1.5px dashed var(--border);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    cursor: pointer; overflow: hidden; background: var(--surface);
+    transition: border-color 0.15s;
+  }
+  .logo-box:hover { border-color: var(--accent); }
+  .logo-box img { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+  .logo-actions { display: flex; gap: 5px; margin-top: 7px; flex-wrap: wrap; }
+  .panel-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .panel-btn {
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600;
+    padding: 7px 8px; border-radius: 7px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--muted); cursor: pointer;
+    white-space: nowrap; transition: all 0.15s; text-align: center;
+  }
+  .panel-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--surface); }
+  .panel-btn.p-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .panel-btn.p-accent:hover { background: var(--accent2); }
 
   /* ── Footer ── */
   footer {
@@ -298,6 +398,7 @@
 
   /* ── Exec Report output (print) ── */
   body.printing-report header,
+  body.printing-report .dash-sidebar,
   body.printing-report .recent-wrap,
   body.printing-report .tab-nav-wrap,
   body.printing-report .cards-wrap,
@@ -323,10 +424,14 @@
     .er-page + .er-page { border-top: none; }
   }
 
+  @media (max-width: 1100px) {
+    .dash-sidebar { width: 256px; padding: 14px 12px 32px; }
+  }
   @media (max-width: 900px) {
     header { padding: 0 20px; gap: 7px; }
     .pp-input.name { width: 130px; }
     .tb-status { display: none; }
+    .dash-sidebar { display: none; }
     .recent-wrap { padding: 10px 20px 0; }
     .tab-nav-wrap { padding: 12px 20px 0; }
     .cards-wrap { padding: 12px 20px 48px; }
@@ -373,19 +478,9 @@
     <div class="tb-chip c-team"  id="tbchip-team"   style="display:none"></div>
   </div>
   <div class="tb-actions">
-    <div class="tb-logo-slots" title="Company / Customer logos — click to change">
-      <input type="file" id="brand-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="brandUploadLogo(this)">
-      <input type="file" id="customer-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="customerUploadLogo(this)">
-      <div class="tb-logo-slot" id="tb-co-slot" title="Company logo" onclick="document.getElementById('brand-logo-file').click()">
-        <img id="brand-logo-img" src="" alt="" style="display:none;">
-        <span id="brand-logo-empty">CO</span>
-      </div>
-      <div class="tb-logo-slot" id="tb-cx-slot" title="Customer logo" onclick="document.getElementById('customer-logo-file').click()">
-        <img id="customer-logo-img" src="" alt="" style="display:none;">
-        <span id="customer-logo-empty">CX</span>
-      </div>
-      <button class="pp-btn danger" id="brand-logo-clear" onclick="brandClearLogo()" style="display:none;font-size:9px;padding:3px 7px;" title="Remove company logo">✕ Co</button>
-      <button class="pp-btn danger" id="customer-logo-clear" onclick="customerClearLogo()" style="display:none;font-size:9px;padding:3px 7px;" title="Remove customer logo">✕ Cx</button>
+    <div class="tb-logo-slots" title="Company / Customer logos — manage in sidebar">
+      <div class="tb-logo-slot" id="tb-co-slot" title="Company logo" onclick="document.getElementById('brand-logo-file').click()">CO</div>
+      <div class="tb-logo-slot" id="tb-cx-slot" title="Customer logo" onclick="document.getElementById('customer-logo-file').click()">CX</div>
     </div>
     <img id="pp-logo-preview" class="pp-logo-preview" alt="Logo">
     <input type="file" id="pp-logo-input" accept="image/*" style="display:none" onchange="ppSaveLogo(this)">
@@ -417,39 +512,128 @@
   </div>
 </header>
 
-<!-- Hidden ghost elements — refreshStats writes to these IDs -->
-<div aria-hidden="true" style="display:none;position:absolute;pointer-events:none;">
-  <div id="stat-budget"></div><div id="stat-team"></div><div id="stat-phases"></div>
-  <div id="stat-timeline"></div><div id="stat-rfq"></div><div id="stat-org"></div>
-  <div id="stat-risk"></div><div id="stat-exposure"></div>
-  <div id="stat-card-budget"></div><div id="stat-card-timeline"></div>
-  <div id="stat-card-rfq"></div><div id="stat-card-risk"></div><div id="stat-card-exposure"></div>
-  <div id="chip-budget"></div><div id="chip-timeline"></div>
-  <div id="chip-rfq"></div><div id="chip-risk"></div><div id="chip-exposure"></div>
+<!-- ── Dashboard Layout ── -->
+<div class="dashboard-layout">
+
+<aside class="dash-sidebar">
+
+  <!-- Stat Cards -->
+  <div class="dash-stats">
+    <div class="stat-card" id="stat-card-budget">
+      <div class="stat-source">Value</div>
+      <div class="stat-value" id="stat-budget">—</div>
+      <div id="chip-budget" class="stat-chip hidden"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-source">Team</div>
+      <div class="stat-value" id="stat-team">—</div>
+    </div>
+    <div class="stat-card" id="stat-card-timeline">
+      <div class="stat-source">Timeline</div>
+      <div class="stat-value" id="stat-timeline">—</div>
+      <div id="chip-timeline" class="stat-chip hidden"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-source">Phases</div>
+      <div class="stat-value" id="stat-phases">—</div>
+    </div>
+    <div class="stat-card" id="stat-card-rfq">
+      <div class="stat-source">Procurement</div>
+      <div class="stat-value" id="stat-rfq">—</div>
+      <div id="chip-rfq" class="stat-chip hidden"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-source">Org</div>
+      <div class="stat-value" id="stat-org">—</div>
+    </div>
+    <div class="stat-card" id="stat-card-risk">
+      <div class="stat-source">Risks</div>
+      <div class="stat-value" id="stat-risk">—</div>
+      <div id="chip-risk" class="stat-chip hidden"></div>
+    </div>
+    <div class="stat-card" id="stat-card-exposure">
+      <div class="stat-source">Exposure</div>
+      <div class="stat-value" id="stat-exposure">—</div>
+      <div id="chip-exposure" class="stat-chip hidden"></div>
+    </div>
+  </div>
+
+  <!-- Project Timeline Progress -->
   <div id="progress-wrap" style="display:none;">
-    <span id="progress-start"></span><span id="progress-pct"></span><span id="progress-end"></span>
-    <div><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-meta">
+      <span id="progress-start"></span>
+      <span id="progress-pct" style="font-weight:700;color:var(--accent);"></span>
+      <span id="progress-end"></span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+    </div>
   </div>
-</div>
 
-<!-- ── Recent Tools ── -->
-<div class="recent-wrap">
-  <div class="recent-inner" id="recent-inner">
-    <span class="recent-label">Recent</span>
+  <!-- Panels -->
+  <div class="dash-panels">
+
+    <!-- Corporate Identity -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Corporate Identity</div>
+      <input type="file" id="brand-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="brandUploadLogo(this)">
+      <input type="file" id="customer-logo-file" accept="image/svg+xml,image/png,image/jpeg,image/jpg" style="display:none" onchange="customerUploadLogo(this)">
+      <div class="logo-boxes">
+        <div class="logo-box" onclick="document.getElementById('brand-logo-file').click()" title="Company logo">
+          <img id="brand-logo-img" src="" alt="" style="display:none;">
+          <span id="brand-logo-empty" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:8px;font-weight:700;color:var(--faint);letter-spacing:0.5px;">CO</span>
+            <span style="font-size:7px;color:var(--faint);">Company</span>
+          </span>
+        </div>
+        <div class="logo-box" onclick="document.getElementById('customer-logo-file').click()" title="Customer logo">
+          <img id="customer-logo-img" src="" alt="" style="display:none;">
+          <span id="customer-logo-empty" style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <span style="font-size:8px;font-weight:700;color:var(--faint);letter-spacing:0.5px;">CX</span>
+            <span style="font-size:7px;color:var(--faint);">Customer</span>
+          </span>
+        </div>
+      </div>
+      <div class="logo-actions">
+        <button class="pp-btn danger" id="brand-logo-clear" onclick="brandClearLogo()" style="display:none;font-size:9px;padding:3px 7px;">✕ Co</button>
+        <button class="pp-btn danger" id="customer-logo-clear" onclick="customerClearLogo()" style="display:none;font-size:9px;padding:3px 7px;">✕ Cx</button>
+      </div>
+    </div>
+
+    <!-- Suite Portfolio -->
+    <div class="dash-panel">
+      <div class="dash-panel-title">Suite Portfolio</div>
+      <div class="panel-btn-row">
+        <button class="panel-btn p-accent" onclick="masterExport()">↓ Export</button>
+        <button class="panel-btn" onclick="document.getElementById('master-import-input').click()">↑ Import</button>
+        <button class="panel-btn" onclick="openErConfig()">📄 Exec Report</button>
+        <button class="panel-btn" onclick="snapshotFreeze()">📸 Freeze</button>
+      </div>
+    </div>
+
+  </div><!-- /.dash-panels -->
+</aside><!-- /.dash-sidebar -->
+
+<main class="dash-main">
+
+  <!-- ── Recent Tools ── -->
+  <div class="recent-wrap">
+    <div class="recent-inner" id="recent-inner">
+      <span class="recent-label">Recent</span>
+    </div>
   </div>
-</div>
 
-<!-- ── Tab Navigation ── -->
-<div class="tab-nav-wrap">
-  <div class="tab-nav" id="tab-nav">
-    <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
-    <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
-    <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
-    <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
+  <!-- ── Tab Navigation ── -->
+  <div class="tab-nav-wrap">
+    <div class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
+      <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
+      <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
+      <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
+    </div>
   </div>
-</div>
 
-<!-- ── Tool Cards ── -->
+  <!-- ── Tool Cards ── -->
 <div class="cards-wrap">
 <div class="cards" id="cards-grid">
 
@@ -846,7 +1030,10 @@
   </div>
 
 </div>
-</div>
+</div><!-- /.cards-wrap -->
+
+</main><!-- /.dash-main -->
+</div><!-- /.dashboard-layout -->
 
 <footer>
   <span style="display:flex; align-items:center; gap:8px;">
