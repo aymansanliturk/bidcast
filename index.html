@@ -29,27 +29,15 @@
     --input-bg: #faf9f7; --input-bg-focus: #ffffff;
   }
 
-/* ── Dark mode ── */
-[data-theme="dark"] {
-  --bg: #1a1917;
-  --surface: #242320;
-  --border: #3a3835;
-  --text: #e8e6e1;
-  --muted: #9b9891;
-  --faint: #6b6860;
-  --accent: #5b82c4;
-  --accent2: #4a6da8;
-  --green: #22a85a;
-  --green-dk: #1a8a47;
-  --input-bg: #2a2825; --input-bg-focus: #333230;
-}
-[data-theme="dark"] #toolbar,
-[data-theme="dark"] header {
-  background: rgba(36,35,32,0.95);
-}
-[data-theme="dark"] { --navy: #2a3f6a; }
-[data-theme="dark"] .stat-icon,
-[data-theme="dark"] .card-icon { background: rgba(255,255,255,0.07) !important; }
+  [data-theme="dark"] {
+    --bg: #1a1917; --surface: #242320; --border: #3a3835;
+    --text: #e8e6e1; --muted: #9b9891; --faint: #6b6860;
+    --accent: #5b82c4; --accent2: #4a6da8; --green: #22a85a;
+    --green-dk: #1a8a47; --input-bg: #2a2825; --input-bg-focus: #333230;
+  }
+  [data-theme="dark"] header { background: rgba(36,35,32,0.97); }
+  [data-theme="dark"] { --navy: #2a3f6a; }
+  [data-theme="dark"] .card-icon { background: rgba(255,255,255,0.07) !important; }
 
   body {
     font-family: 'DM Sans', sans-serif;
