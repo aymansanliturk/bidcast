@@ -468,18 +468,29 @@
     transform: translateY(-12px);
   }
 
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .card-titles {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
   .card-icon {
     width: 36px; height: 36px;
     border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 14px;
     flex-shrink: 0;
     position: relative;
   }
   .card-icon svg { width: 18px; height: 18px; }
 
-  .card-name { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 3px; }
-  .card-tagline { font-size: 8.5px; font-weight: 600; color: var(--faint); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 10px; }
+  .card-name { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .card-tagline { font-size: 8.5px; font-weight: 600; color: var(--faint); letter-spacing: 1.2px; text-transform: uppercase; }
   .card-desc {
     font-size: 12px; color: var(--muted); line-height: 1.55; flex: 1;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -835,18 +846,22 @@
 <div class="cards" id="cards-grid">
 
   <a href="timecast.html" class="card" data-category="operations" style="--card-color:#4f46e5;">
-    <div class="card-icon" style="background:#f5f3ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="5" width="20" height="15" rx="2"/>
-        <line x1="2" y1="10" x2="22" y2="10"/>
-        <line x1="7" y1="5" x2="7" y2="10"/>
-        <line x1="17" y1="5" x2="17" y2="10"/>
-        <line x1="6" y1="14" x2="14" y2="14"/>
-        <line x1="6" y1="17" x2="10" y2="17"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f5f3ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="5" width="20" height="15" rx="2"/>
+          <line x1="2" y1="10" x2="22" y2="10"/>
+          <line x1="7" y1="5" x2="7" y2="10"/>
+          <line x1="17" y1="5" x2="17" y2="10"/>
+          <line x1="6" y1="14" x2="14" y2="14"/>
+          <line x1="6" y1="17" x2="10" y2="17"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">TimeCast</div>
+        <div class="card-tagline">Timeline Intelligence</div>
+      </div>
     </div>
-    <div class="card-name">TimeCast</div>
-    <div class="card-tagline">Timeline Intelligence</div>
     <div class="card-desc">Multi-project Gantt charts with baseline tracking and A3-ready PDF output. Start here — phases flow to ResourceCast automatically.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-timecast">Gantt · Baseline</span>
@@ -856,16 +871,20 @@
   </a>
 
   <a href="resourcecast.html" class="card" data-category="operations" style="--card-color:#0d9488;">
-    <div class="card-icon" style="background:#f0fdfc;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="7" width="20" height="14" rx="2"/>
-        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-        <line x1="12" y1="12" x2="12" y2="16"/>
-        <line x1="10" y1="14" x2="14" y2="14"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0fdfc;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/>
+          <line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">ResourceCast</div>
+        <div class="card-tagline">Cost Intelligence</div>
+      </div>
     </div>
-    <div class="card-name">ResourceCast</div>
-    <div class="card-tagline">Cost Intelligence</div>
     <div class="card-desc">Plan team hours and calculate EUR costs per phase. Phases sync in from Timecast, team roles flow out to Orgcast.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-resourcecast">Rates · Cost Planning</span>
@@ -875,21 +894,25 @@
   </a>
 
   <a href="orgcast.html" class="card" data-category="operations" style="--card-color:#059669;">
-    <div class="card-icon" style="background:#f0fdf8;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="5" r="2.5"/>
-        <line x1="12" y1="7.5" x2="12" y2="12"/>
-        <line x1="5" y1="12" x2="19" y2="12"/>
-        <line x1="5" y1="12" x2="5" y2="15.5"/>
-        <line x1="12" y1="12" x2="12" y2="15.5"/>
-        <line x1="19" y1="12" x2="19" y2="15.5"/>
-        <rect x="2.5" y="15.5" width="5" height="3.5" rx="1"/>
-        <rect x="9.5" y="15.5" width="5" height="3.5" rx="1"/>
-        <rect x="16.5" y="15.5" width="5" height="3.5" rx="1"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0fdf8;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="5" r="2.5"/>
+          <line x1="12" y1="7.5" x2="12" y2="12"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <line x1="5" y1="12" x2="5" y2="15.5"/>
+          <line x1="12" y1="12" x2="12" y2="15.5"/>
+          <line x1="19" y1="12" x2="19" y2="15.5"/>
+          <rect x="2.5" y="15.5" width="5" height="3.5" rx="1"/>
+          <rect x="9.5" y="15.5" width="5" height="3.5" rx="1"/>
+          <rect x="16.5" y="15.5" width="5" height="3.5" rx="1"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">OrgCast</div>
+        <div class="card-tagline">Org Charts</div>
+      </div>
     </div>
-    <div class="card-name">OrgCast</div>
-    <div class="card-tagline">Org Charts</div>
     <div class="card-desc">Dynamic project organisation charts with SVG connectors. Team roles sync in from ResourceCast.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-orgcast">SVG · Print</span>
@@ -899,21 +922,25 @@
   </a>
 
   <a href="calccast.html" class="card" data-category="pricing" style="--card-color:#6366f1;">
-    <div class="card-icon" style="background:#eef2ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="4" y="2" width="16" height="20" rx="2"/>
-        <line x1="8" y1="6" x2="16" y2="6"/>
-        <line x1="8" y1="10" x2="8" y2="10"/>
-        <line x1="12" y1="10" x2="12" y2="10"/>
-        <line x1="16" y1="10" x2="16" y2="10"/>
-        <line x1="8" y1="14" x2="8" y2="14"/>
-        <line x1="12" y1="14" x2="12" y2="14"/>
-        <line x1="16" y1="14" x2="16" y2="14"/>
-        <line x1="8" y1="18" x2="16" y2="18"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#eef2ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="8" y2="10"/>
+          <line x1="12" y1="10" x2="12" y2="10"/>
+          <line x1="16" y1="10" x2="16" y2="10"/>
+          <line x1="8" y1="14" x2="8" y2="14"/>
+          <line x1="12" y1="14" x2="12" y2="14"/>
+          <line x1="16" y1="14" x2="16" y2="14"/>
+          <line x1="8" y1="18" x2="16" y2="18"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">CalcCast</div>
+        <div class="card-tagline">Financial Pricing Engine</div>
+      </div>
     </div>
-    <div class="card-name">CalcCast</div>
-    <div class="card-tagline">Financial Pricing Engine</div>
     <div class="card-desc">Calculate W2W project costs, apply KPI stacks, and determine final customer price. Feeds directly from ResourceCast.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-calccast">W2W · Margins</span>
@@ -923,16 +950,20 @@
   </a>
 
   <a href="dorcast.html" class="card" data-category="risk" style="--card-color:#d97706;">
-    <div class="card-icon" style="background:#fffbf0;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="3" y1="15" x2="21" y2="15"/>
-        <line x1="9" y1="3" x2="9" y2="21"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#fffbf0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="3" y1="15" x2="21" y2="15"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">DORCast</div>
+        <div class="card-tagline">Responsibility Matrix</div>
+      </div>
     </div>
-    <div class="card-name">DORCast</div>
-    <div class="card-tagline">Responsibility Matrix</div>
     <div class="card-desc">Build multi-party responsibility matrices (DOR/RAC) for complex project scopes.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-dorcast">Excel · PDF · JSON</span>
@@ -941,16 +972,20 @@
   </a>
 
   <a href="rfqcast.html" class="card" data-category="pricing" style="--card-color:#ea580c;">
-    <div class="card-icon" style="background:#fff7f0;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-        <rect x="9" y="3" width="6" height="4" rx="1"/>
-        <line x1="9" y1="12" x2="15" y2="12"/>
-        <line x1="9" y1="16" x2="13" y2="16"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#fff7f0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+          <rect x="9" y="3" width="6" height="4" rx="1"/>
+          <line x1="9" y1="12" x2="15" y2="12"/>
+          <line x1="9" y1="16" x2="13" y2="16"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">RFQCast</div>
+        <div class="card-tagline">Supplier Tracking</div>
+      </div>
     </div>
-    <div class="card-name">RFQCast</div>
-    <div class="card-tagline">Supplier Tracking</div>
     <div class="card-desc">Track supplier enquiries, offer validity status, and high-volume RFQ package timelines.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-rfqcast">Alerts · Dashboard</span>
@@ -959,15 +994,19 @@
   </a>
 
   <a href="riskcast.html" class="card" data-category="risk" style="--card-color:#be123c;">
-    <div class="card-icon" style="background:#fff1f2;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#fff1f2;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#be123c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">RiskCast</div>
+        <div class="card-tagline">Risk Register</div>
+      </div>
     </div>
-    <div class="card-name">RiskCast</div>
-    <div class="card-tagline">Risk Register</div>
     <div class="card-desc">Identify, score, and track project risks on a 5×5 matrix. Automatic criticality scoring with heat map output.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-riskcast">5×5 Matrix · Heat Map</span>
@@ -976,17 +1015,21 @@
   </a>
 
   <a href="lettercast.html" class="card" data-category="risk" style="--card-color:#0369a1;">
-    <div class="card-icon" style="background:#f0f9ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="14" rx="2"/>
-        <line x1="7" y1="8"  x2="17" y2="8"/>
-        <line x1="7" y1="12" x2="13" y2="12"/>
-        <line x1="8" y1="21" x2="16" y2="21"/>
-        <line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0f9ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0369a1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="14" rx="2"/>
+          <line x1="7" y1="8"  x2="17" y2="8"/>
+          <line x1="7" y1="12" x2="13" y2="12"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">LetterCast</div>
+        <div class="card-tagline">Cover Letter Generator</div>
+      </div>
     </div>
-    <div class="card-name">LetterCast</div>
-    <div class="card-tagline">Cover Letter Generator</div>
     <div class="card-desc">Compose professional A4 commercial offer letters with dynamic sections, dual logos, and one-click PDF export.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-lettercast">A4 Print · PDF · JSON</span>
@@ -995,16 +1038,20 @@
   </a>
 
   <a href="cashflow.html" class="card" data-category="operations" style="--card-color:#7c3aed;">
-    <div class="card-icon" style="background:#faf5ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2" y="13" width="4" height="7" rx="1"/>
-        <rect x="9" y="9" width="4" height="11" rx="1"/>
-        <rect x="16" y="5" width="4" height="15" rx="1"/>
-        <path d="M3 12 Q7 8 12 8 Q17 8 21 4" stroke-linecap="round"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#faf5ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="13" width="4" height="7" rx="1"/>
+          <rect x="9" y="9" width="4" height="11" rx="1"/>
+          <rect x="16" y="5" width="4" height="15" rx="1"/>
+          <path d="M3 12 Q7 8 12 8 Q17 8 21 4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">CashFlow</div>
+        <div class="card-tagline">Monthly Cash Simulation</div>
+      </div>
     </div>
-    <div class="card-name">CashFlow</div>
-    <div class="card-tagline">Monthly Cash Simulation</div>
     <div class="card-desc">Simulate monthly cash-flow, model payment milestones, and visualise cancellation penalty curves across the bid timeline.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-cashflow">Cash · Forecast</span>
@@ -1014,15 +1061,19 @@
   </a>
 
   <a href="w2w-report.html" class="card" data-category="pricing" style="--card-color:#475569;">
-    <div class="card-icon" style="background:#f8fafc;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <polyline points="8 14 10 17 14 12 17 17"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f8fafc;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <polyline points="8 14 10 17 14 12 17 17"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">W2W Report</div>
+        <div class="card-tagline">Wall-to-Wall Analysis</div>
+      </div>
     </div>
-    <div class="card-name">W2W Report</div>
-    <div class="card-tagline">Wall-to-Wall Analysis</div>
     <div class="card-desc">Consolidated factory-level financial report with sequential KPI stack (Risk → SG&amp;A → HQ Adders → EBIT) and scope breakdown.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-w2wreport">KPI Stack · EBIT</span>
@@ -1032,15 +1083,19 @@
   </a>
 
   <a href="bidscore.html" class="card" data-category="pricing" style="--card-color:#0891b2;">
-    <div class="card-icon" style="background:#ecfeff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="9"/>
-        <circle cx="12" cy="12" r="5"/>
-        <circle cx="12" cy="12" r="1.5" fill="#0891b2" stroke="none"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#ecfeff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="12" r="5"/>
+          <circle cx="12" cy="12" r="1.5" fill="#0891b2" stroke="none"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">BidScore</div>
+        <div class="card-tagline">Bid / No-Bid Decision</div>
+      </div>
     </div>
-    <div class="card-name">BidScore</div>
-    <div class="card-tagline">Bid / No-Bid Decision</div>
     <div class="card-desc">Score your bid on strategic, commercial, technical, and risk criteria with weighted scoring and an automatic Bid / Conditional / No-Bid recommendation.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-bidscore">Weighted Score · Decision</span>
@@ -1049,17 +1104,21 @@
   </a>
 
   <a href="actionlog.html" class="card" data-category="operations" style="--card-color:#15803d;">
-    <div class="card-icon" style="background:#f0fdf4;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <polyline points="7 8 9 10.5 13 6.5"/>
-        <line x1="16" y1="8.5" x2="19" y2="8.5"/>
-        <line x1="7" y1="13" x2="19" y2="13"/>
-        <line x1="7" y1="17" x2="14" y2="17"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0fdf4;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <polyline points="7 8 9 10.5 13 6.5"/>
+          <line x1="16" y1="8.5" x2="19" y2="8.5"/>
+          <line x1="7" y1="13" x2="19" y2="13"/>
+          <line x1="7" y1="17" x2="14" y2="17"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">ActionLog</div>
+        <div class="card-tagline">Bid Action Tracker</div>
+      </div>
     </div>
-    <div class="card-name">ActionLog</div>
-    <div class="card-tagline">Bid Action Tracker</div>
     <div class="card-desc">Track open actions, owners, and due dates across the bid. Overdue detection, priority flags, and status rollup keep the team aligned.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-actionlog">Actions · Tracker</span>
@@ -1068,16 +1127,20 @@
   </a>
 
   <a href="forecast.html" class="card" data-category="operations" style="--card-color:#c026d3;">
-    <div class="card-icon" style="background:#fdf4ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#c026d3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="2"  y="13" width="5" height="9"  rx="1"/>
-        <rect x="9"  y="8"  width="5" height="14" rx="1"/>
-        <rect x="16" y="3"  width="5" height="19" rx="1"/>
-        <path d="M4 12 Q11 7 18 2.5" stroke-width="1.5"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#fdf4ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c026d3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2"  y="13" width="5" height="9"  rx="1"/>
+          <rect x="9"  y="8"  width="5" height="14" rx="1"/>
+          <rect x="16" y="3"  width="5" height="19" rx="1"/>
+          <path d="M4 12 Q11 7 18 2.5" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">ForeCast</div>
+        <div class="card-tagline">Pipeline &amp; Overlap Monitor</div>
+      </div>
     </div>
-    <div class="card-name">ForeCast</div>
-    <div class="card-tagline">Pipeline &amp; Overlap Monitor</div>
     <div class="card-desc">Track sales opportunities, calculate weighted pipelines, and visually detect quarterly resource overlaps and bottlenecks before they happen.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-forecast">Weighted Pipeline · Alarms</span>
@@ -1086,17 +1149,21 @@
   </a>
 
   <a href="cvcast.html" class="card" data-category="pricing" style="--card-color:#0f766e;">
-    <div class="card-icon" style="background:#f0fdfa;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="7" r="3"/>
-        <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
-        <line x1="16" y1="3" x2="22" y2="3"/>
-        <line x1="16" y1="8" x2="22" y2="8"/>
-        <line x1="19" y1="13" x2="22" y2="13"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f0fdfa;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0f766e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="7" r="3"/>
+          <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
+          <line x1="16" y1="3" x2="22" y2="3"/>
+          <line x1="16" y1="8" x2="22" y2="8"/>
+          <line x1="19" y1="13" x2="22" y2="13"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">CVCast</div>
+        <div class="card-tagline">Key Personnel Résumés</div>
+      </div>
     </div>
-    <div class="card-name">CVCast</div>
-    <div class="card-tagline">Key Personnel Résumés</div>
     <div class="card-desc">Build polished two-column A4 résumés for bid submissions — experience, skills, languages, and PDF export in minutes.</div>
     <div class="card-footer">
       <span class="feat-tag">A4 PDF · JSON</span>
@@ -1105,16 +1172,20 @@
   </a>
 
   <a href="bidpack.html" class="card" data-category="pricing" style="--card-color:#1e40af;">
-    <div class="card-icon" style="background:#eff6ff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <line x1="10" y1="9"  x2="8" y2="9"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#eff6ff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <line x1="10" y1="9"  x2="8" y2="9"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">BidPack</div>
+      </div>
     </div>
-    <div class="card-name">BidPack</div>
     <div class="card-desc">Assemble a complete bid document from all suite tools — cover page, timeline, cost breakdown, risks, suppliers, and actions in one printable PDF.</div>
     <div class="card-footer">
       <span class="feat-tag" id="badge-bidpack">Document Assembler</span>
@@ -1123,18 +1194,22 @@
   </a>
 
   <a href="estimator.html" class="card" data-category="pricing" style="--card-color:#0e7490;">
-    <div class="card-icon" style="background:#ecfeff;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0e7490" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="4" y="2" width="16" height="20" rx="2"/>
-        <line x1="8" y1="7" x2="16" y2="7"/>
-        <line x1="8" y1="11" x2="16" y2="11"/>
-        <line x1="8" y1="15" x2="13" y2="15"/>
-        <circle cx="17" cy="17" r="3"/>
-        <line x1="19.5" y1="19.5" x2="22" y2="22"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#ecfeff;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0e7490" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2"/>
+          <line x1="8" y1="7" x2="16" y2="7"/>
+          <line x1="8" y1="11" x2="16" y2="11"/>
+          <line x1="8" y1="15" x2="13" y2="15"/>
+          <circle cx="17" cy="17" r="3"/>
+          <line x1="19.5" y1="19.5" x2="22" y2="22"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">Estimator</div>
+        <div class="card-tagline">Pricing Engine</div>
+      </div>
     </div>
-    <div class="card-name">Estimator</div>
-    <div class="card-tagline">Pricing Engine</div>
     <div class="card-desc">Calculate equipment prices from an offline Excel pricing database. Upload a local database, set technical parameters, and get instant estimates with confidence scoring.</div>
     <div class="card-footer">
       <span class="feat-tag">Offline DB · Blackbox Engine</span>
@@ -1143,14 +1218,18 @@
   </a>
 
   <div class="card" data-category="pricing" style="--card-color:#1c1917; cursor:pointer;" onclick="openErConfig()">
-    <div class="card-icon" style="background:#f8fafc;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="9" y1="21" x2="9" y2="9"/>
-      </svg>
+    <div class="card-header">
+      <div class="card-icon" style="background:#f8fafc;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#1c1917" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="3" y1="9" x2="21" y2="9"/>
+          <line x1="9" y1="21" x2="9" y2="9"/>
+        </svg>
+      </div>
+      <div class="card-titles">
+        <div class="card-name">Executive Report</div>
+      </div>
     </div>
-    <div class="card-name">Executive Report</div>
     <div class="card-desc">One-click internal dossier — financial KPIs, risk EMV, org breakdown and project schedule assembled into a print-ready summary. Configure sections before generating.</div>
     <div class="card-footer">
       <span class="feat-tag">Quick Summary · Internal</span>
