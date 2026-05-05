@@ -217,8 +217,8 @@
     flex-direction: column;
     gap: 4px;
     border-bottom: none;
-    border-right: 1.5px solid var(--border);
-    padding-right: 16px;
+    border-left: 1.5px solid var(--border);
+    padding-left: 16px;
     max-width: none;
     margin: 0;
   }
@@ -231,7 +231,7 @@
     border: none;
     border-left: 3px solid transparent;
     border-bottom: none;
-    border-radius: 6px 0 0 6px;
+    border-radius: 0 6px 6px 0;
     padding: 10px 14px;
     cursor: pointer;
     white-space: nowrap;
@@ -684,17 +684,6 @@
   <!-- ── Content: Vertical Tabs + Cards ── -->
   <div class="dash-content">
 
-  <!-- ── Tab Navigation (vertical) ── -->
-  <div class="tab-nav-wrap">
-    <div style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);padding:0 14px 10px;border-right:1.5px solid var(--border);">Filter</div>
-    <div class="tab-nav" id="tab-nav">
-      <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
-      <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
-      <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
-      <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
-    </div>
-  </div>
-
   <!-- ── Tool Cards ── -->
 <div class="cards-wrap">
 <div class="cards" id="cards-grid">
@@ -1093,6 +1082,17 @@
 
 </div>
 </div><!-- /.cards-wrap -->
+
+  <!-- ── Filter Navigation (vertical, right column) ── -->
+  <div class="tab-nav-wrap">
+    <div style="font-size:8px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--faint);padding:0 0 10px 16px;border-left:1.5px solid var(--border);">Filter</div>
+    <div class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="all" onclick="switchTab('all')">All Tools <span class="tab-count" id="tc-all">17</span></button>
+      <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing &amp; Bidding <span class="tab-count" id="tc-pricing"></span></button>
+      <button class="tab-btn" data-tab="risk" onclick="switchTab('risk')">Risk &amp; Legal <span class="tab-count" id="tc-risk"></span></button>
+      <button class="tab-btn" data-tab="operations" onclick="switchTab('operations')">Operations &amp; Planning <span class="tab-count" id="tc-operations"></span></button>
+    </div>
+  </div>
 
   </div><!-- /.dash-content -->
 
